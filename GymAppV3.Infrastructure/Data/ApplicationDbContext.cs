@@ -1,4 +1,5 @@
 ﻿using GymAppV3.Core.Models;
+using GymAppV3.Infrastructure.Abstractions.Data;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -6,7 +7,7 @@ using System.Text;
 
 namespace GymAppV3.Infrastructure.Data
 {
-    public class ApplicationDbContext : DbContext
+    public class ApplicationDbContext : DbContext, IApplicationDbContext
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
@@ -14,6 +15,13 @@ namespace GymAppV3.Infrastructure.Data
         }
 
         public DbSet<MembershipPackage> MembershipPackages => Set<MembershipPackage>();
+        public DbSet<Member> Members => Set<Member>();
+        public DbSet<Trainer> Trainers => Set<Trainer>();
+        public DbSet<ClassSession> ClassSessions => Set<ClassSession>();
+        public DbSet<Membership> Memberships => Set<Membership>();
+        public DbSet<Booking> Bookings => Set<Booking>();
+        public DbSet<Payment> Payments => Set<Payment>();
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
