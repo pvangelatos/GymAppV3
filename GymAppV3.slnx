@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".gitignore" />
+  </Folder>
   <Project Path="GymAppV3.Application/GymAppV3.Application.csproj" />
   <Project Path="GymAppV3.Core/GymAppV3.Core.csproj" />
   <Project Path="GymAppV3.Infrastructure/GymAppV3.Infrastructure.csproj" />
