@@ -16,4 +16,6 @@ public class Payment : AuditableEntity
     public PaymentMethod Method { get; set; }
     public DateTimeOffset PaidAt { get; set; }
 
+    //TODO: status of the payment, e.g., Pending, Completed, Failed
+
 }
