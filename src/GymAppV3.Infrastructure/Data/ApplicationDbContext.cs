@@ -41,6 +41,7 @@ public class ApplicationDbContext : DbContext
         // repeated in each mapping — a single source of truth.
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
+            
             if (!typeof(AuditableEntity).IsAssignableFrom(entityType.ClrType))
                 continue;
 

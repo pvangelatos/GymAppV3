@@ -8,4 +8,5 @@
     <Project Path="src/GymAppV3.Infrastructure/GymAppV3.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/test/" />
+  <Project Path="GymAppV3.Tests/GymAppV3.Tests.csproj" />
 </Solution>
