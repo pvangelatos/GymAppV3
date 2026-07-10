@@ -5,8 +5,8 @@ using Microsoft.EntityFrameworkCore;
 namespace GymAppV3.Infrastructure.Data;
 
 /// <summary>
-/// The EF Core database context. Implements IApplicationDbContext so the Application
-/// layer can depend on the abstraction rather than this concrete class.
+/// The EF Core database context. Registered in DI and injected directly into
+/// application services.
 /// </summary>
 public class ApplicationDbContext : DbContext
 {
