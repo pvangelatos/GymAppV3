@@ -1,15 +1,24 @@
-﻿using GymAppV3.Core.Models;
+﻿using System.Linq.Expressions;
+using GymAppV3.Core.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace GymAppV3.Infrastructure.Data;
 
+/// <summary>
+/// The EF Core database context. Implements IApplicationDbContext so the Application
+/// layer can depend on the abstraction rather than this concrete class.
+/// </summary>
 public class ApplicationDbContext : DbContext
 {
+    // Options (connection string, provider, interceptors) are injected from the
+    // outside via DI, keeping this context free of hard-coded configuration.
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
     {
     }
 
+    // Each DbSet is a table as seen from code. Expression-bodied Set<T>() avoids
+    // nullable warnings that the classic { get; set; } form produces.
     public DbSet<MembershipPackage> MembershipPackages => Set<MembershipPackage>();
     public DbSet<Member> Members => Set<Member>();
     public DbSet<Trainer> Trainers => Set<Trainer>();
@@ -17,11 +26,46 @@ public class ApplicationDbContext : DbContext
     public DbSet<Membership> Memberships => Set<Membership>();
     public DbSet<Booking> Bookings => Set<Booking>();
     public DbSet<Payment> Payments => Set<Payment>();
-
+    public DbSet<ClassRoom> ClassRooms => Set<ClassRoom>();
+    public DbSet<GymBuilding> GymBuildings => Set<GymBuilding>();
+    public DbSet<TrainerSpecialty> TrainerSpecialties => Set<TrainerSpecialty>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // Scan this assembly and apply every IEntityTypeConfiguration<T> automatically
+        // (all the *Map classes in Data/Mappings). No need to register each by hand.
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+
+        // Apply soft-delete configuration to every entity deriving from AuditableEntity.
+        // Done centrally via reflection so the rule lives in one place instead of being
+        // repeated in each mapping — a single source of truth.
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            if (!typeof(AuditableEntity).IsAssignableFrom(entityType.ClrType))
+                continue;
+
+            // Build the lambda "(TEntity e) => !e.IsDeleted" dynamically, because the
+            // entity type is only known at runtime inside this loop.
+            var parameter = Expression.Parameter(entityType.ClrType, "e");
+            var isDeletedProperty = Expression.Property(parameter, nameof(AuditableEntity.IsDeleted));
+            var notDeleted = Expression.Not(isDeletedProperty);
+            var filterLambda = Expression.Lambda(notDeleted, parameter);
+
+            // Global query filter: soft-deleted rows are hidden from every query on this
+            // entity unless explicitly bypassed with IgnoreQueryFilters().
+            modelBuilder.Entity(entityType.ClrType).HasQueryFilter(filterLambda);
+
+            // Filtered index supporting the query filter. Without it, each query scans
+            // deleted rows only to discard them.
+            modelBuilder.Entity(entityType.ClrType)
+                .HasIndex(nameof(AuditableEntity.IsDeleted))
+                .HasFilter("[IsDeleted] = 0");
+
+            // Length constraint for the DeletedBy audit column.
+            modelBuilder.Entity(entityType.ClrType)
+                .Property(nameof(AuditableEntity.DeletedBy))
+                .HasMaxLength(64);
+        }
 
         base.OnModelCreating(modelBuilder);
     }
