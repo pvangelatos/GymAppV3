@@ -1,4 +1,4 @@
-﻿namespace GymAppV3.Infrastructure.Abstractions;
+﻿namespace GymAppV3.Core.Abstractions;
 
 /// <summary>
 /// Abstraction for accessing the current authenticated user information

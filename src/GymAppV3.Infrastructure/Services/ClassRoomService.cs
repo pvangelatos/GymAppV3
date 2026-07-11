@@ -1,5 +1,5 @@
 ﻿
-using GymAppV3.Application.Exceptions;
+using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.DTOs.ClassRoom;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Models;

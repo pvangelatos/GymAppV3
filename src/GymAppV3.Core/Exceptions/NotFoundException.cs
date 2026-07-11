@@ -1,4 +1,4 @@
-﻿namespace GymAppV3.Application.Exceptions;
+﻿namespace GymAppV3.Core.Exceptions;
 
 // Thrown when an operation targets an entity that does not exist (or is soft-deleted
 // and therefore invisible). The API layer maps this to a 404 response.

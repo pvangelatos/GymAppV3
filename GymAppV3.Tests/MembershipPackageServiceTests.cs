@@ -1,8 +1,8 @@
 ﻿using FluentAssertions;
-using GymAppV3.Application.Exceptions;
 using GymAppV3.Core.DTOs.MembershipPackage;
 using GymAppV3.Infrastructure.Services;
 using Xunit;
+using GymAppV3.Core.Exceptions;
 
 namespace GymAppV3.Tests;
 

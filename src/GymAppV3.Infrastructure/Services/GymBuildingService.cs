@@ -1,4 +1,4 @@
-﻿using GymAppV3.Application.Exceptions;
+﻿using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.DTOs;
 using GymAppV3.Core.DTOs.GymBuilding;
 using GymAppV3.Core.Interfaces;
