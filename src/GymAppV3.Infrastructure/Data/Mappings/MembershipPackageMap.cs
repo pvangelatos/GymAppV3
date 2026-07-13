@@ -40,5 +40,12 @@ public class MembershipPackageMap : IEntityTypeConfiguration<MembershipPackage>
         // Number of class sessions included in the package is required
         builder.Property(x => x.SessionsIncluded)
             .IsRequired();
+
+        // A package belongs to one category; a category has many packages.
+        // Restrict deletion so removing a category can't silently orphan packages.
+        builder.HasOne(x => x.ClassCategory)
+            .WithMany()
+            .HasForeignKey(x => x.ClassCategoryId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

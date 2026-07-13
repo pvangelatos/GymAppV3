@@ -13,7 +13,8 @@ namespace GymAppV3.Core.Models
         // Navigation property to the Trainer entity
         public Trainer Trainer { get; set; } = null!;
 
-        // The specialty/area of expertise
-        public Specialty Specialty { get; set; }
+        // The category the trainer is qualified in (replaces the old Specialty enum).
+        public Guid ClassCategoryId { get; set; }
+        public ClassCategory ClassCategory { get; set; } = null!;
     }
 }

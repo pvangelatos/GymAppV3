@@ -11,5 +11,7 @@ namespace GymAppV3.Core.DTOs.MembershipPackage
         string Name,
         decimal Price,
         int DurationInDays,
-        int SessionsIncluded);
+        int SessionsIncluded,
+        Guid ClassCategoryId,
+        string ClassCategoryName);
 }

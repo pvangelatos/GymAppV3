@@ -69,5 +69,11 @@ public class ClassSessionMap : IEntityTypeConfiguration<ClassSession>
             .WithMany()
             .HasForeignKey(x => x.ClassRoomId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // A session belongs to one category; a category has many sessions.
+        builder.HasOne(x => x.ClassCategory)
+            .WithMany()
+            .HasForeignKey(x => x.ClassCategoryId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

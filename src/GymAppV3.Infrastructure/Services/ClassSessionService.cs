@@ -27,7 +27,8 @@ namespace GymAppV3.Infrastructure.Services
             return await _context.ClassSessions
                 .Where(s => s.Id == id)
                 .Select(s => new ClassSessionDto(
-                    s.Id, s.Title, s.StartsAt, s.DurationInMinutes,
+                    s.Id, s.Title, s.ClassCategoryId, s.ClassCategory.Name,
+                    s.StartsAt, s.DurationInMinutes,
                     s.Capacity, s.AvailableSeats, s.TrainerId,
                     s.Trainer.Firstname + " " + s.Trainer.Lastname,
                     s.ClassRoomId, s.ClassRoom.ClassRoomName))
@@ -44,9 +45,10 @@ namespace GymAppV3.Infrastructure.Services
             // if the session count grew large.)
             var sessions = await _context.ClassSessions
                 .Select(s => new ClassSessionDto(
-                    s.Id, s.Title, s.StartsAt, s.DurationInMinutes,
-                    s.Capacity, s.AvailableSeats,
-                    s.TrainerId, s.Trainer.Firstname + " " + s.Trainer.Lastname,
+                    s.Id, s.Title, s.ClassCategoryId, s.ClassCategory.Name,
+                    s.StartsAt, s.DurationInMinutes,
+                    s.Capacity, s.AvailableSeats, s.TrainerId,
+                    s.Trainer.Firstname + " " + s.Trainer.Lastname,
                     s.ClassRoomId, s.ClassRoom.ClassRoomName))
                 .ToListAsync(cancellationToken);
 
@@ -104,10 +106,16 @@ namespace GymAppV3.Infrastructure.Services
             if (hasConflict)
                 throw new BusinessRuleException("The room is already booked for an overlapping time slot.");
 
+            // --- The category must exist ---
+            var category = await _context.ClassCategories
+                .FirstOrDefaultAsync(c => c.Id == request.ClassCategoryId, cancellationToken)
+                ?? throw new NotFoundException(nameof(ClassCategory), request.ClassCategoryId);
+
             // All rules passed - create the session
             var session = new ClassSession
             {
                 Title = request.Title,
+                ClassCategoryId = request.ClassCategoryId,
                 StartsAt = request.StartsAt,
                 EndsAt = newEnd,
                 DurationInMinutes = request.DurationInMinutes,
@@ -121,15 +129,17 @@ namespace GymAppV3.Infrastructure.Services
             _context.ClassSessions.Add(session);
             await _context.SaveChangesAsync(cancellationToken);
 
-            return MapToDto(session, trainer, room);
+            return MapToDto(session, trainer, room, category);
         }
 
         // Local mapping helper for the create path, where we already have the loaded
         // trainer and room in memory and don't need a second query.
-        private static ClassSessionDto MapToDto(ClassSession session, Trainer trainer, ClassRoom room) =>
+        private static ClassSessionDto MapToDto(ClassSession session, Trainer trainer, 
+            ClassRoom room, ClassCategory category) =>
             new(
-                session.Id, session.Title, session.StartsAt, session.DurationInMinutes,
-                session.Capacity, session.AvailableSeats, session.TrainerId,
-                trainer.Firstname + " " + trainer.Lastname, room.Id, room.ClassRoomName); 
+                session.Id, session.Title, category.Id, category.Name, session.StartsAt,
+                session.DurationInMinutes, session.Capacity, session.AvailableSeats, 
+                session.TrainerId, trainer.Firstname + " " + trainer.Lastname,
+                room.Id, room.ClassRoomName); 
     }
 }

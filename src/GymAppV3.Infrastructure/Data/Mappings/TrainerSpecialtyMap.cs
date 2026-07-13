@@ -12,17 +12,17 @@ public class TrainerSpecialtyMap : IEntityTypeConfiguration<TrainerSpecialty>
         builder.ToTable("TrainerSpecialties", "dbo");
 
         // Composite primary key — one trainer, one specialty.
-        builder.HasKey(x => new { x.TrainerId, x.Specialty });
+        builder.HasKey(x => new { x.TrainerId, x.ClassCategoryId });
 
-        builder.Property(x => x.Specialty)
-            .IsRequired()
-            .HasConversion<string>()
-            .HasMaxLength(TextSizePresets.XS32);
+        builder.HasOne(x => x.ClassCategory)
+            .WithMany()
+            .HasForeignKey(x => x.ClassCategoryId)
+            .OnDelete(DeleteBehavior.Restrict);     // don't cascade-delete categories
 
         // One trainer has many specialties.
         builder.HasOne(x => x.Trainer)
             .WithMany(t => t.Specialties)          
             .HasForeignKey(x => x.TrainerId)
-            .OnDelete(DeleteBehavior.Cascade);     // delete trainer and his specialties
+            .OnDelete(DeleteBehavior.Cascade);     // remove trainer -> remove their links
     }
 }

@@ -43,12 +43,14 @@ public class MembershipServiceTests : TestBase
     private async Task<Guid> SeedPackage(
         string name = "Pilates", decimal price = 50m, int days = 30, int sessions = 8)
     {
+        var categoryId = await SeedCategory(name);      // Category with the same name of the package
         var package = new MembershipPackage
         {
             Name = name,
             Price = price,
             DurationInDays = days,
-            SessionsIncluded = sessions
+            SessionsIncluded = sessions,
+            ClassCategoryId = categoryId
         };
         Context.MembershipPackages.Add(package);
         await Context.SaveChangesAsync();
@@ -171,5 +173,14 @@ public class MembershipServiceTests : TestBase
         var result = await sut.GetByMemberAsync(memberId);
 
         result.Should().HaveCount(2);
+    }
+
+    // Seeds a class category and returns its id. Memberships now requires one.
+    private async Task<Guid> SeedCategory(string name = "Pilates Reformer")
+    {
+        var category = new ClassCategory { Name = name };
+        Context.ClassCategories.Add(category);
+        await Context.SaveChangesAsync();
+        return category.Id;
     }
 }

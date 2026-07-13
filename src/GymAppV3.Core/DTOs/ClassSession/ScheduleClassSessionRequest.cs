@@ -9,6 +9,7 @@ namespace GymAppV3.Core.DTOs.ClassSession
     // and RowVersion (managed by EF). The client only supplies real decisions.
     public record ScheduleClassSessionRequest(
         string Title,
+        Guid ClassCategoryId,
         DateTimeOffset StartsAt,
         int DurationInMinutes,
         int Capacity,

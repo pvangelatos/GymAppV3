@@ -28,7 +28,8 @@ public class MembershipPackageService : IMembershipPackageService
         // by projecting to a non-entity type.
         return await _context.MembershipPackages
             .Select(p => new MembershipPackageDto(
-                p.Id, p.Name, p.Price, p.DurationInDays, p.SessionsIncluded))
+                p.Id, p.Name, p.Price, p.DurationInDays, p.SessionsIncluded,
+                p.ClassCategoryId, p.ClassCategory.Name))
             .ToListAsync(cancellationToken);
     }
 
@@ -40,19 +41,26 @@ public class MembershipPackageService : IMembershipPackageService
         return await _context.MembershipPackages
             .Where(p => p.Id == id)
             .Select(p => new MembershipPackageDto(
-                p.Id, p.Name, p.Price, p.DurationInDays, p.SessionsIncluded))
+                p.Id, p.Name, p.Price, p.DurationInDays, p.SessionsIncluded,
+                p.ClassCategoryId, p.ClassCategory.Name))
             .FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<MembershipPackageDto> CreateAsync(
         CreateMembershipPackageRequest request, CancellationToken cancellationToken = default)
     {
+        // The referenced category must exist (and be active).
+        var category = await _context.ClassCategories
+            .FirstOrDefaultAsync(c => c.Id == request.ClassCategoryId, cancellationToken)
+            ?? throw new NotFoundException(nameof(ClassCategory), request.ClassCategoryId);
+
         var package = new MembershipPackage
         {
             Name = request.Name,
             Price = request.Price,
             DurationInDays = request.DurationInDays,
-            SessionsIncluded = request.SessionsIncluded
+            SessionsIncluded = request.SessionsIncluded,
+            ClassCategoryId = request.ClassCategoryId
         };
 
         _context.MembershipPackages.Add(package);
@@ -60,7 +68,8 @@ public class MembershipPackageService : IMembershipPackageService
 
         return new MembershipPackageDto(
             package.Id, package.Name, package.Price,
-            package.DurationInDays, package.SessionsIncluded);
+            package.DurationInDays, package.SessionsIncluded,
+            category.Id, category.Name);
     }
 
     public async Task UpdateAsync(
@@ -72,10 +81,19 @@ public class MembershipPackageService : IMembershipPackageService
             .FirstOrDefaultAsync(p => p.Id == id, cancellationToken)
             ?? throw new NotFoundException(nameof(MembershipPackage), id);
 
+        if (package.ClassCategoryId != request.ClassCategoryId)
+        {
+            var categoryExists = await _context.ClassCategories
+                .AnyAsync(c => c.Id == request.ClassCategoryId, cancellationToken);
+            if (!categoryExists)
+                throw new NotFoundException(nameof(ClassCategory), request.ClassCategoryId);
+        }
+
         package.Name = request.Name;
         package.Price = request.Price;
         package.DurationInDays = request.DurationInDays;
         package.SessionsIncluded = request.SessionsIncluded;
+        package.ClassCategoryId = request.ClassCategoryId;
 
         await _context.SaveChangesAsync(cancellationToken);
     }

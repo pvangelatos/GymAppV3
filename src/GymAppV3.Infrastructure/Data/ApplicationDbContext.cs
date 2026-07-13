@@ -29,6 +29,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<ClassRoom> ClassRooms => Set<ClassRoom>();
     public DbSet<GymBuilding> GymBuildings => Set<GymBuilding>();
     public DbSet<TrainerSpecialty> TrainerSpecialties => Set<TrainerSpecialty>();
+    public DbSet<ClassCategory> ClassCategories => Set<ClassCategory>();
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

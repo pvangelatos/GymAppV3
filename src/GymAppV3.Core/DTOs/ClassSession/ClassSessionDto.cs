@@ -10,6 +10,8 @@ namespace GymAppV3.Core.DTOs.ClassSession
     public record ClassSessionDto(
         Guid Id,
         string Title,
+        Guid ClassCategoryId,
+        string ClassCategoryName,
         DateTimeOffset StartsAt,
         int DurationInMinutes,
         int Capacity,

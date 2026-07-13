@@ -36,6 +36,11 @@ public class ClassSession : AuditableEntity
     // Navigation property for the classroom entity
     public ClassRoom ClassRoom { get; set; } = null!;
 
+    // The category of this session (e.g. Pilates Reformer). A booking for this session
+    // is paid from the member's membership whose package has the SAME category.
+    public Guid ClassCategoryId { get; set; }
+    public ClassCategory ClassCategory { get; set; } = null!;
+
     // Row version for optimistic concurrency control in database updates
     public byte[] RowVersion { get; set; } = Array.Empty<byte>();
 

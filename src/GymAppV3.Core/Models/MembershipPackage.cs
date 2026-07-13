@@ -17,4 +17,9 @@ public class MembershipPackage : AuditableEntity
 
     // Number of class sessions included in this membership package
     public int SessionsIncluded { get; set; }
+
+    // The category this package grants access to (e.g. Pilates Reformer). A booking
+    // is paid from a membership whose package has the SAME category as the session.
+    public Guid ClassCategoryId { get; set; }
+    public ClassCategory ClassCategory { get; set; } = null!;
 }

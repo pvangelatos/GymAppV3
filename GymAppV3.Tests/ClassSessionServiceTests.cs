@@ -20,7 +20,7 @@ namespace GymAppV3.Tests
 
         // Seeds a trainer and a room (capacity 8) and returns their ids, since every
         // schedule call needs both to exist.
-        private async Task<(Guid trainerId, Guid roomId)> SeedTrainerAndRoom(int roomCapacity = 8)
+        private async Task<(Guid trainerId, Guid roomId, Guid categoryId)> SeedTrainerAndRoom(int roomCapacity = 8)
         {
             var building = new GymBuilding
             {
@@ -48,28 +48,41 @@ namespace GymAppV3.Tests
                 GymBuilding = building
             };
 
+            var category = new ClassCategory
+            {
+                Name = $"{nameof(ClassCategory)}",
+            };
+
             Context.GymBuildings.Add(building);
             Context.Trainers.Add(trainer);
             Context.ClassRooms.Add(room);
+            Context.ClassCategories.Add(category);
             await Context.SaveChangesAsync();
 
-            return (trainer.Id, room.Id);
+            return (trainer.Id, room.Id, category.Id);
         }
 
         private static ScheduleClassSessionRequest Request(
-            Guid trainerId, Guid roomId,
+            Guid trainerId, Guid roomId, Guid categoryId,
             DateTimeOffset? startsAt = null, int capacity = 6, int duration = 60) =>
-            new("Morning Yoga", startsAt ?? Now.AddDays(1), duration, capacity, trainerId, roomId);
+            new(
+                "Morning Yoga",
+                categoryId,
+                startsAt ?? Now.AddDays(1),
+                duration,
+                capacity,
+                trainerId,
+                roomId);
 
         // --- Happy path ---------------------------------------------------------
 
         [Fact]
         public async Task ScheduleAsync_creates_session_when_all_rules_pass()
         {
-            var (trainerId, roomId) = await SeedTrainerAndRoom();
+            var (trainerId, roomId, categoryId) = await SeedTrainerAndRoom();
             var sut = CreateSut();
 
-            var result = await sut.ScheduleAsync(Request(trainerId, roomId));
+            var result = await sut.ScheduleAsync(Request(trainerId, roomId, categoryId));
 
             result.Id.Should().NotBeEmpty();
             result.Title.Should().Be("Morning Yoga");
@@ -84,11 +97,11 @@ namespace GymAppV3.Tests
         [Fact]
         public async Task ScheduleAsync_rejects_a_session_in_the_past()
         {
-            var (trainerId, roomId) = await SeedTrainerAndRoom();
+            var (trainerId, roomId, categoryId) = await SeedTrainerAndRoom();
             var sut = CreateSut();
 
             var act = () => sut.ScheduleAsync(
-                Request(trainerId, roomId, startsAt: Now.AddHours(-1)));
+                Request(trainerId, roomId, categoryId, startsAt: Now.AddHours(-1)));
 
             await act.Should().ThrowAsync<BusinessRuleException>();
         }
@@ -98,10 +111,10 @@ namespace GymAppV3.Tests
         [Fact]
         public async Task ScheduleAsync_throws_NotFound_when_trainer_missing()
         {
-            var (_, roomId) = await SeedTrainerAndRoom();
+            var (_, roomId, categoryId) = await SeedTrainerAndRoom();
             var sut = CreateSut();
 
-            var act = () => sut.ScheduleAsync(Request(Guid.NewGuid(), roomId));
+            var act = () => sut.ScheduleAsync(Request(Guid.NewGuid(), roomId, categoryId));
 
             await act.Should().ThrowAsync<NotFoundException>();
         }
@@ -109,10 +122,10 @@ namespace GymAppV3.Tests
         [Fact]
         public async Task ScheduleAsync_throws_NotFound_when_room_missing()
         {
-            var (trainerId, _) = await SeedTrainerAndRoom();
+            var (trainerId, _, categoryId) = await SeedTrainerAndRoom();
             var sut = CreateSut();
 
-            var act = () => sut.ScheduleAsync(Request(trainerId, Guid.NewGuid()));
+            var act = () => sut.ScheduleAsync(Request(trainerId, Guid.NewGuid(), categoryId));
 
             await act.Should().ThrowAsync<NotFoundException>();
         }
@@ -122,11 +135,11 @@ namespace GymAppV3.Tests
         [Fact]
         public async Task ScheduleAsync_rejects_capacity_over_room_capacity()
         {
-            var (trainerId, roomId) = await SeedTrainerAndRoom(roomCapacity: 8);
+            var (trainerId, roomId, categoryId) = await SeedTrainerAndRoom(roomCapacity: 8);
             var sut = CreateSut();
 
             // Room holds 8; asking for 12 must fail.
-            var act = () => sut.ScheduleAsync(Request(trainerId, roomId, capacity: 12));
+            var act = () => sut.ScheduleAsync(Request(trainerId, roomId, categoryId, capacity: 12));
 
             await act.Should().ThrowAsync<BusinessRuleException>();
         }
@@ -136,16 +149,16 @@ namespace GymAppV3.Tests
         [Fact]
         public async Task ScheduleAsync_rejects_overlapping_session_in_same_room()
         {
-            var (trainerId, roomId) = await SeedTrainerAndRoom();
+            var (trainerId, roomId, categoryId ) = await SeedTrainerAndRoom();
             var sut = CreateSut();
 
             // First session: tomorrow 09:00, 60 min → ends 10:00.
             var start = Now.AddDays(1);
-            await sut.ScheduleAsync(Request(trainerId, roomId, startsAt: start, duration: 60));
+            await sut.ScheduleAsync(Request(trainerId, roomId, categoryId, startsAt: start, duration: 60));
 
             // Second session: overlaps (starts 09:30, while first runs until 10:00).
             var act = () => sut.ScheduleAsync(
-                Request(trainerId, roomId, startsAt: start.AddMinutes(30), duration: 60));
+                Request(trainerId, roomId, categoryId, startsAt: start.AddMinutes(30), duration: 60));
 
             await act.Should().ThrowAsync<BusinessRuleException>();
         }
@@ -153,15 +166,15 @@ namespace GymAppV3.Tests
         [Fact]
         public async Task ScheduleAsync_allows_back_to_back_sessions_in_same_room()
         {
-            var (trainerId, roomId) = await SeedTrainerAndRoom();
+            var (trainerId, roomId, categoryId) = await SeedTrainerAndRoom();
             var sut = CreateSut();
 
             var start = Now.AddDays(1);
-            await sut.ScheduleAsync(Request(trainerId, roomId, startsAt: start, duration: 60));
+            await sut.ScheduleAsync(Request(trainerId, roomId, categoryId, startsAt: start, duration: 60));
 
             // Starts exactly when the first ends — touching, not overlapping. Allowed.
             var act = () => sut.ScheduleAsync(
-                Request(trainerId, roomId, startsAt: start.AddMinutes(60), duration: 60));
+                Request(trainerId, roomId, categoryId, startsAt: start.AddMinutes(60), duration: 60));
 
             await act.Should().NotThrowAsync();
         }
@@ -171,11 +184,11 @@ namespace GymAppV3.Tests
         [Fact]
         public async Task GetUpcomingAsync_returns_only_future_sessions_ordered()
         {
-            var (trainerId, roomId) = await SeedTrainerAndRoom();
+            var (trainerId, roomId, categoryId) = await SeedTrainerAndRoom();
             var sut = CreateSut();
 
-            await sut.ScheduleAsync(Request(trainerId, roomId, startsAt: Now.AddDays(2)));
-            await sut.ScheduleAsync(Request(trainerId, roomId, startsAt: Now.AddDays(1)));
+            await sut.ScheduleAsync(Request(trainerId, roomId, categoryId, startsAt: Now.AddDays(2)));
+            await sut.ScheduleAsync(Request(trainerId, roomId, categoryId, startsAt: Now.AddDays(1)));
 
             var result = await sut.GetUpcomingAsync();
 
