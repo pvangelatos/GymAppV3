@@ -61,11 +61,9 @@ public class MembershipMap : IEntityTypeConfiguration<Membership>
             .HasForeignKey(x => x.MembershipPackageId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Optimistic concurrency token. SQL Server updates this automatically on every row
-        // modification. EF Core adds it to the WHERE clause of UPDATE statements, so a
-        // concurrent decrement raises DbUpdateConcurrencyException instead of silently
-        // overwriting the other transaction's result.
+        // RowVersion is configured centrally in ApplicationDbContext.OnModelCreating,
+        // because its setup differs by provider (SQL Server rowversion vs SQLite fallback).
         builder.Property(x => x.RowVersion)
-            .IsRowVersion();
+            .IsRequired();
     }
 }

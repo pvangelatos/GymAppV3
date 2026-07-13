@@ -1,4 +1,6 @@
-﻿using GymAppV3.Infrastructure.Data;
+﻿using GymAppV3.Core.Abstractions;
+using GymAppV3.Infrastructure.Data;
+using GymAppV3.Infrastructure.Data.Interceptors;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,8 +21,13 @@ public abstract class TestBase : IDisposable
         _connection = new SqliteConnection("DataSource=:memory:");
         _connection.Open();
 
+        var interceptor = new AuditableEntityInterceptor(
+            new DateTimeProvider(),
+            new UserContext());
+
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseSqlite(_connection)
+            .AddInterceptors(interceptor)
             .Options;
 
         Context = new ApplicationDbContext(options);

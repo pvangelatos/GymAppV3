@@ -5,14 +5,14 @@ public abstract class AuditableEntity
     // Tracks the user ID who originally created the record
     public string? CreatedBy { get; set; }
 
-    // Tracks when the record was first created - timestamp is set at the time of entity instantiation
-    public DateTimeOffset CreatedAt { get; set; } = DateTime.UtcNow;
+    // Tracks when the record was first created - timestamp is set by the interceptor
+    public DateTimeOffset CreatedAt { get; set; } 
 
     // Tracks the user ID who last modified the record
     public string? UpdatedBy { get; set; }
 
-    // Tracks when the record was last updated - timestamp is set at the time of entity instantiation
-    public DateTimeOffset UpdatedAt { get; set; } = DateTime.UtcNow;
+    // Tracks when the record was last updated - timestamp is set by the interceptor
+    public DateTimeOffset UpdatedAt { get; set; } 
 
     // Soft delete marker. Rows are never physically removed — they are hidden by
     // a global query filter. Preserves referential integrity and audit history.

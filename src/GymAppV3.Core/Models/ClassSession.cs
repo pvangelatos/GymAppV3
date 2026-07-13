@@ -11,6 +11,10 @@ public class ClassSession : AuditableEntity
     // Date and time when the class session begins
     public DateTimeOffset StartsAt { get; set; }
 
+    // Date and time when the class session ends
+    public DateTimeOffset EndsAt { get; set; }
+
+
     // Length of the class session in minutes
     public int DurationInMinutes { get; set; }
 
@@ -33,7 +37,7 @@ public class ClassSession : AuditableEntity
     public ClassRoom ClassRoom { get; set; } = null!;
 
     // Row version for optimistic concurrency control in database updates
-    public byte[] RowVersion { get; set; } = null!;
+    public byte[] RowVersion { get; set; } = Array.Empty<byte>();
 
     /// <summary>
     /// Validates that DurationInMinutes and Capacity are valid values

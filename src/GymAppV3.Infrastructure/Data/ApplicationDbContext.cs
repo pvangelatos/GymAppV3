@@ -68,6 +68,39 @@ public class ApplicationDbContext : DbContext
                 .HasMaxLength(64);
         }
 
+        // RowVersion (optimistic concurrency) is configured per provider:
+        //  - SQL Server has a native rowversion type that the database auto-manages.
+        //  - SQLite has no such type, so in tests we treat it as an ordinary column with
+        //    a default, and rely on manual concurrency handling if ever needed there.
+        var isSqlServer = Database.IsSqlServer();
+
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            if (entityType.IsOwned())
+                continue;
+
+            var rowVersionProperty = entityType.FindProperty("RowVersion");
+            if (rowVersionProperty is null)
+                continue;
+
+            if (isSqlServer)
+            {
+                // Native SQL Server rowversion — database-generated concurrency token.
+                modelBuilder.Entity(entityType.ClrType)
+                    .Property("RowVersion")
+                    .IsRowVersion();
+            }
+            else
+            {
+                // SQLite (tests): plain byte[] column with a default, so inserts don't
+                // violate NOT NULL. Not a real concurrency token here, which is fine —
+                // concurrency behaviour is verified against SQL Server, not SQLite.
+                modelBuilder.Entity(entityType.ClrType)
+                    .Property("RowVersion")
+                    .HasDefaultValue(Array.Empty<byte>());
+            }
+        }
+
         base.OnModelCreating(modelBuilder);
     }
 }

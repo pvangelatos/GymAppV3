@@ -35,6 +35,10 @@ public class ClassSessionMap : IEntityTypeConfiguration<ClassSession>
         builder.Property(x => x.StartsAt)
             .IsRequired();
 
+        // Date and time when the class session ends
+        builder.Property(x => x.EndsAt)
+            .IsRequired();
+
         // Duration of the class in minutes - required and must be > 0
         builder.Property(x => x.DurationInMinutes)
             .IsRequired();
@@ -49,10 +53,10 @@ public class ClassSessionMap : IEntityTypeConfiguration<ClassSession>
         builder.Property(x => x.AvailableSeats)
             .IsRequired();
 
-        // Optimistic concurrency token — guards the AvailableSeats counter against two
-        // concurrent bookings both reading the same value and both decrementing it.
+        // RowVersion is configured centrally in ApplicationDbContext.OnModelCreating,
+        // because its setup differs by provider (SQL Server rowversion vs SQLite fallback).
         builder.Property(x => x.RowVersion)
-            .IsRowVersion();
+            .IsRequired();
 
         // Relationship to Trainer - required, cascade delete prevented to maintain referential integrity
         builder.HasOne(x => x.Trainer)

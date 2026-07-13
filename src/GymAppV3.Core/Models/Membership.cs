@@ -36,5 +36,5 @@ public class Membership : AuditableEntity
 
     // Optimistic concurrency token. Prevents lost updates when two concurrent bookings
     // read the same RemainingSessions value and both decrement it.
-    public byte[] RowVersion { get; set; } = null!;
+    public byte[] RowVersion { get; set; } = Array.Empty<byte>();
 }
