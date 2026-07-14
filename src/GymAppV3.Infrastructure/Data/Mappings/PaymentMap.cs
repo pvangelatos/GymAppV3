@@ -24,6 +24,11 @@ public class PaymentMap : IEntityTypeConfiguration<Payment>
             .IsRequired()
             .HasColumnType("decimal(18,2)");
 
+        // VAT rate as a fraction, e.g. 0.2400. Four decimals is plenty for a percentage.
+        builder.Property(x => x.VatRate)
+            .IsRequired()
+            .HasColumnType("decimal(5,4)");
+
         // Payment method (enum converted to string) - required with max 32 characters (e.g., "Cash", "Card", "BankTransfer")
         builder.Property(x => x.Method)
             .IsRequired()
