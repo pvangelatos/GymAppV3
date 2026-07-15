@@ -14,4 +14,8 @@
     <ProjectReference Include="..\GymAppV3.Core\GymAppV3.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Requests\" />
+  </ItemGroup>
+
 </Project>

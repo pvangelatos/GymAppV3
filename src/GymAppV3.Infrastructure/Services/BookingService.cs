@@ -6,9 +6,6 @@ using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Models;
 using GymAppV3.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace GymAppV3.Infrastructure.Services
 {
@@ -138,19 +135,15 @@ namespace GymAppV3.Infrastructure.Services
             await _context.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task<IReadOnlyList<BookingDto>> GetByMemberAsync(Guid memberId, CancellationToken cancellationToken = default)
-        {
-            var bookings = await _context.Bookings
-            .Where(b => b.MemberId == memberId)
-            .Select(b => new BookingDto(
-                b.Id, b.MemberId, b.ClassSessionId,
-                b.ClassSession.Title, b.ClassSession.StartsAt,
-                b.Status.ToString(), b.BookedAt, b.CancelledAt))
-            .ToListAsync(cancellationToken);
-
-            // Order in memory (DateTimeOffset ordering is unreliable in SQLite).
-            return bookings.OrderByDescending(b => b.BookedAt).ToList();
-        }
+        public async Task<IReadOnlyList<BookingDto>> GetByMemberAsync(Guid memberId, CancellationToken cancellationToken = default) =>
+                    await _context.Bookings
+                            .Where(b => b.MemberId == memberId)
+                            .Select(b => new BookingDto(
+                                b.Id, b.MemberId, b.ClassSessionId,
+                                b.ClassSession.Title, b.ClassSession.StartsAt,
+                                b.Status.ToString(), b.BookedAt, b.CancelledAt))
+                            .OrderByDescending(b => b.BookedAt)
+                            .ToListAsync(cancellationToken);
 
         // Finds an active membership of the given category to refund a session credit to.
         // Prefers the one ending soonest, mirroring how BookAsync chooses which to spend.

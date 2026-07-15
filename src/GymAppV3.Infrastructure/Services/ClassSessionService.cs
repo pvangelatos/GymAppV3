@@ -5,10 +5,6 @@ using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Models;
 using GymAppV3.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace GymAppV3.Infrastructure.Services
 {
@@ -44,6 +40,8 @@ namespace GymAppV3.Infrastructure.Services
             // database. (For a real app you'd narrow the fetch by a translatable column
             // if the session count grew large.)
             var sessions = await _context.ClassSessions
+                .Where(s => s.StartsAt > now)
+                .OrderBy(s => s.StartsAt)
                 .Select(s => new ClassSessionDto(
                     s.Id, s.Title, s.ClassCategoryId, s.ClassCategory.Name,
                     s.StartsAt, s.DurationInMinutes,
@@ -52,10 +50,7 @@ namespace GymAppV3.Infrastructure.Services
                     s.ClassRoomId, s.ClassRoom.ClassRoomName))
                 .ToListAsync(cancellationToken);
 
-            return sessions
-                .Where(s => s.StartsAt > now)
-                .OrderBy(s => s.StartsAt)
-                .ToList();
+            return sessions;
         }
 
         public async Task<ClassSessionDto> ScheduleAsync(ScheduleClassSessionRequest request, CancellationToken cancellationToken = default)
@@ -90,20 +85,11 @@ namespace GymAppV3.Infrastructure.Services
             var newStart = request.StartsAt;
             var newEnd = request.StartsAt.AddMinutes(request.DurationInMinutes);
 
-            // SQLite cannot translate DateTimeOffset comparisons, so we pull the room's
-            // sessions into memory and check overlap in C#. On SQL Server this could stay
-            // fully in the database; the room-level filter keeps the set small either way.
-            var roomSessions = await _context.ClassSessions
-                .Where(s => s.ClassRoomId == request.ClassRoomId)
-                .Select(s => new { s.StartsAt, s.EndsAt })
-                .ToListAsync(cancellationToken);
+            var hasRoomSessionsConficts = await _context.ClassSessions
+                .Where(s => s.ClassRoomId == request.ClassRoomId && s.StartsAt < newEnd && s.EndsAt > newStart)
+                .AnyAsync(cancellationToken);
 
-            // Two sessions overlap when: existing.Start < new.End AND existing.End > new.Start.
-            // We compute existing.End in the database as StartsAt + DurationInMinutes.
-            var hasConflict = roomSessions.Any(
-                s => s.StartsAt < newEnd && s.EndsAt >  newStart);
-
-            if (hasConflict)
+            if (hasRoomSessionsConficts)
                 throw new BusinessRuleException("The room is already booked for an overlapping time slot.");
 
             // --- The category must exist ---

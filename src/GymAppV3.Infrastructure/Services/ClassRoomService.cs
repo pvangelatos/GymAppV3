@@ -1,6 +1,7 @@
 ﻿
-using GymAppV3.Core.Exceptions;
+using System.Linq.Expressions;
 using GymAppV3.Core.DTOs.ClassRoom;
+using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Models;
 using GymAppV3.Infrastructure.Data;
@@ -12,6 +13,14 @@ public class ClassRoomService : IClassRoomService
 {
     private readonly ApplicationDbContext _context;
 
+    // EF Core uses the Expression to build a SQL SELECT with only the needed columns.
+    private static readonly Expression<Func<ClassRoom, ClassRoomDto>> ToDto =
+        r => new ClassRoomDto(r.Id, r.ClassRoomName, r.Capacity, r.GymBuildingId);
+
+    // Compiled once at class load time — used when projecting an in-memory entity
+    // (e.g. after an insert) so the mapping logic is never duplicated.
+    private static readonly Func<ClassRoom, ClassRoomDto> ToDtoCompiled = ToDto.Compile();
+
     public ClassRoomService(ApplicationDbContext context)
     {
         _context = context;
@@ -21,7 +30,7 @@ public class ClassRoomService : IClassRoomService
         CancellationToken cancellationToken = default)
     {
         return await _context.ClassRooms
-            .Select(r => new ClassRoomDto(r.Id, r.ClassRoomName, r.Capacity, r.GymBuildingId))
+            .Select(ToDto)
             .ToListAsync(cancellationToken);
     }
 
@@ -30,7 +39,7 @@ public class ClassRoomService : IClassRoomService
     {
         return await _context.ClassRooms
             .Where(r => r.Id == id)
-            .Select(r => new ClassRoomDto(r.Id, r.ClassRoomName, r.Capacity, r.GymBuildingId))
+            .Select(ToDto)
             .FirstOrDefaultAsync(cancellationToken);
     }
 
@@ -55,7 +64,7 @@ public class ClassRoomService : IClassRoomService
         _context.ClassRooms.Add(room);
         await _context.SaveChangesAsync(cancellationToken);
 
-        return new ClassRoomDto(room.Id, room.ClassRoomName, room.Capacity, room.GymBuildingId);
+        return ToDtoCompiled(room);
     }
 
     public async Task UpdateAsync(
@@ -65,30 +74,16 @@ public class ClassRoomService : IClassRoomService
             .FirstOrDefaultAsync(r => r.Id == id, cancellationToken)
             ?? throw new NotFoundException(nameof(ClassRoom), id);
 
-        // If the building is being changed, validate the new one exists.
-        if (room.GymBuildingId != request.GymBuildingId)
-        {
-            var buildingExists = await _context.GymBuildings
-                .AnyAsync(b => b.Id == request.GymBuildingId, cancellationToken);
-
-            if (!buildingExists)
-                throw new NotFoundException(nameof(GymBuilding), request.GymBuildingId);
-        }
-
         room.ClassRoomName = request.ClassRoomName;
         room.Capacity = request.Capacity;
-        room.GymBuildingId = request.GymBuildingId;
 
         await _context.SaveChangesAsync(cancellationToken);
     }
 
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var room = await _context.ClassRooms
-            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken)
-            ?? throw new NotFoundException(nameof(ClassRoom), id);
-
-        _context.ClassRooms.Remove(room);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _context.ClassRooms
+            .Where(r => r.Id == id)
+            .ExecuteDeleteAsync(cancellationToken);
     }
 }

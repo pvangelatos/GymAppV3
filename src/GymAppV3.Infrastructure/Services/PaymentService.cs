@@ -39,28 +39,22 @@ namespace GymAppV3.Infrastructure.Services
 
         public async Task<MonthlyFinancialReportDto> GetMonthlyReportAsync(int year, int month, CancellationToken cancellationToken = default)
         {
-            // Only completed payments count toward the financial report.
-            // DateTimeOffset filtering is done in memory (SQLite limitation).
-            var allCompleted = await _context.Payments
-                .Where(p => p.Status == PaymentStatus.Completed)
+            // Fetch only the two columns needed for the aggregation — avoids loading
+            // unneeded fields. Filtering by year/month is done in memory because
+            var monthPayments = await _context.Payments 
+                .Where(p => p.Status == PaymentStatus.Completed
+                         && p.PaidAt.Year == year
+                         && p.PaidAt.Month == month)
+                .Select(p => new { p.Amount, p.VatRate })
                 .ToListAsync(cancellationToken);
 
-            var monthPayments = allCompleted
-                .Where(p => p.PaidAt.Year == year && p.PaidAt.Month == month)
-                .ToList();
-
-            decimal totalGross = 0m, totalNet = 0m, totalVat = 0m;
-
-            foreach (var p in monthPayments)
-            {
-                var (net, vat) = SplitVat(p.Amount, p.VatRate);
-                totalGross += p.Amount;
-                totalNet += net;
-                totalVat += vat;
-            }
+            var count = monthPayments.Count;    
+            var totalGross = monthPayments.Sum(p => p.Amount);
+            var totalNet = monthPayments.Sum(p => SplitVat(p.Amount, p.VatRate).net);
+            var totalVat = totalGross - totalNet;
 
             return new MonthlyFinancialReportDto(
-                year, month, monthPayments.Count,
+                year, month, count,
                 totalGross, totalNet, totalVat);
         }
 
