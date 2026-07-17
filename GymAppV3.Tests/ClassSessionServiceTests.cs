@@ -1,11 +1,9 @@
 ﻿using FluentAssertions;
-using GymAppV3.Core.DTOs.ClassSession;
+using GymAppV3.Core.Commands;
 using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.Models;
 using GymAppV3.Infrastructure.Services;
-using System;
-using System.Collections.Generic;
-using System.Text;
+
 
 namespace GymAppV3.Tests
 {
@@ -62,7 +60,7 @@ namespace GymAppV3.Tests
             return (trainer.Id, room.Id, category.Id);
         }
 
-        private static ScheduleClassSessionRequest Request(
+        private static ScheduleClassSessionCommand Request(
             Guid trainerId, Guid roomId, Guid categoryId,
             DateTimeOffset? startsAt = null, int capacity = 6, int duration = 60) =>
             new(

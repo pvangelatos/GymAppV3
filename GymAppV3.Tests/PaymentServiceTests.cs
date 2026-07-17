@@ -1,11 +1,12 @@
 ﻿
 using FluentAssertions;
-using GymAppV3.Core.DTOs.Payment;
+using GymAppV3.Core.DTOs;
 using GymAppV3.Core.Enums;
 using GymAppV3.Core.Exceptions;
 using GymAppV3.Infrastructure.Services;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Models;
+using GymAppV3.Core.Commands;
 
 namespace GymAppV3.Tests;
 
@@ -46,7 +47,7 @@ public class PaymentServiceTests : TestBase
         var sut = CreateSut();
 
         // 124 gross at 24% → 100 net + 24 VAT.
-        var result = await sut.RecordAsync(new RecordPaymentRequest(
+        var result = await sut.RecordAsync(new RecordPaymentCommand(
             member.Id, null, 124m, 0.24m, PaymentMethod.Card));
 
         result.Amount.Should().Be(124m);
@@ -60,7 +61,7 @@ public class PaymentServiceTests : TestBase
     {
         var sut = CreateSut();
 
-        var act = () => sut.RecordAsync(new RecordPaymentRequest(
+        var act = () => sut.RecordAsync(new RecordPaymentCommand(
             Guid.NewGuid(), null, 100m, 0.24m, PaymentMethod.Cash));
 
         await act.Should().ThrowAsync<NotFoundException>();
@@ -75,7 +76,7 @@ public class PaymentServiceTests : TestBase
         var sut = CreateSut();
 
         // An amount that doesn't divide cleanly, to stress the rounding.
-        var result = await sut.RecordAsync(new RecordPaymentRequest(
+        var result = await sut.RecordAsync(new RecordPaymentCommand(
             member.Id, null, 99.99m, 0.24m, PaymentMethod.Cash));
 
         // The key invariant: net + vat must equal gross exactly.
@@ -91,9 +92,9 @@ public class PaymentServiceTests : TestBase
         var sut = CreateSut();
 
         // Two payments; we'll report on whatever month "now" falls in.
-        await sut.RecordAsync(new RecordPaymentRequest(
+        await sut.RecordAsync(new RecordPaymentCommand(
             member.Id, null, 124m, 0.24m, PaymentMethod.Card));
-        await sut.RecordAsync(new RecordPaymentRequest(
+        await sut.RecordAsync(new RecordPaymentCommand(
             member.Id, null, 62m, 0.24m, PaymentMethod.Cash));
 
         
@@ -128,9 +129,9 @@ public class PaymentServiceTests : TestBase
         var member = await SeedMember();
         var sut = CreateSut();
 
-        await sut.RecordAsync(new RecordPaymentRequest(
+        await sut.RecordAsync(new RecordPaymentCommand(
             member.Id, null, 100m, 0.24m, PaymentMethod.Card));
-        await sut.RecordAsync(new RecordPaymentRequest(
+        await sut.RecordAsync(new RecordPaymentCommand(
             member.Id, null, 50m, 0.24m, PaymentMethod.Cash));
 
         var result = await sut.GetByMemberAsync(member.Id);

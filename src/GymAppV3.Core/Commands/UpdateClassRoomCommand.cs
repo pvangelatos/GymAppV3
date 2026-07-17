@@ -1,7 +1,7 @@
-﻿namespace GymAppV3.Core.DTOs.ClassRoom
+﻿namespace GymAppV3.Core.Commands
 {
     // Input for updating a room. Id comes from the route.
-    public record UpdateClassRoomRequest(
+    public record UpdateClassRoomCommand(
         string ClassRoomName,
         int Capacity);
 }

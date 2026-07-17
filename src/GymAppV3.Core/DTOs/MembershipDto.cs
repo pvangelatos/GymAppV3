@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace GymAppV3.Core.DTOs.Membership
+namespace GymAppV3.Core.DTOs
 {
     // Read model for a membership. Includes the package name so clients can display
     // it without a second lookup, and the frozen PricePaid rather than the package's

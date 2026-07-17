@@ -1,6 +1,7 @@
 ﻿
 using System.Linq.Expressions;
-using GymAppV3.Core.DTOs.ClassRoom;
+using GymAppV3.Core.Commands;
+using GymAppV3.Core.DTOs;
 using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Models;
@@ -44,7 +45,7 @@ public class ClassRoomService : IClassRoomService
     }
 
     public async Task<ClassRoomDto> CreateAsync(
-        CreateClassRoomRequest request, CancellationToken cancellationToken = default)
+        CreateClassRoomCommand request, CancellationToken cancellationToken = default)
     {
         // Referential validation: the target building must exist (and be active).
         // AnyAsync respects the soft-delete query filter, so a deleted building fails.
@@ -68,7 +69,7 @@ public class ClassRoomService : IClassRoomService
     }
 
     public async Task UpdateAsync(
-        Guid id, UpdateClassRoomRequest request, CancellationToken cancellationToken = default)
+        Guid id, UpdateClassRoomCommand request, CancellationToken cancellationToken = default)
     {
         var room = await _context.ClassRooms
             .FirstOrDefaultAsync(r => r.Id == id, cancellationToken)

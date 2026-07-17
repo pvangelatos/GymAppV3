@@ -1,5 +1,6 @@
 ﻿using GymAppV3.Core.Abstractions;
-using GymAppV3.Core.DTOs.Booking;
+using GymAppV3.Core.Commands;
+using GymAppV3.Core.DTOs;
 using GymAppV3.Core.Enums;
 using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.Interfaces;
@@ -20,7 +21,7 @@ namespace GymAppV3.Infrastructure.Services
             _clock = clock;
         }
 
-        public async Task<BookingDto> BookAsync(CreateBookingRequest request, CancellationToken cancellationToken = default)
+        public async Task<BookingDto> BookAsync(CreateBookingCommand request, CancellationToken cancellationToken = default)
         {
             var now = _clock.UtcNow;
 

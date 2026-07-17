@@ -1,4 +1,5 @@
-﻿using GymAppV3.Core.DTOs.MembershipPackage;
+﻿using GymAppV3.Core.Commands;
+using GymAppV3.Core.DTOs;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -14,10 +15,10 @@ namespace GymAppV3.Core.Interfaces
         Task<MembershipPackageDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
         // Creates a new package and returns the created record.
-        Task<MembershipPackageDto> CreateAsync(CreateMembershipPackageRequest request, CancellationToken cancellationToken = default);
+        Task<MembershipPackageDto> CreateAsync(CreateMembershipPackageCommand request, CancellationToken cancellationToken = default);
 
         // Updates an existing package. Throws NotFoundException if it does not exist.
-        Task UpdateAsync(Guid id, UpdateMembershipPackageRequest request, CancellationToken cancellationToken = default);
+        Task UpdateAsync(Guid id, UpdateMembershipPackageCommand request, CancellationToken cancellationToken = default);
 
         // Soft-deletes a package (the interceptor converts the delete to an update).
         Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);

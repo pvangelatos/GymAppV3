@@ -1,4 +1,5 @@
-﻿using GymAppV3.Core.DTOs.Membership;
+﻿using GymAppV3.Core.Commands;
+using GymAppV3.Core.DTOs;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -14,7 +15,7 @@ namespace GymAppV3.Core.Interfaces
         // future membership for the SAME package, the new one starts when that ends
         // (renewal stacking). Different packages run in parallel from now.
         Task<MembershipDto> PurchaseAsync(
-            PurchaseMembershipRequest request, CancellationToken cancellationToken = default);
+            PurchaseMembershipCommand request, CancellationToken cancellationToken = default);
 
         // Returns a single membership by id, or null if not found.
         Task<MembershipDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);

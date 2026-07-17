@@ -1,4 +1,5 @@
-﻿using GymAppV3.Core.DTOs.Payment;
+﻿using GymAppV3.Core.Commands;
+using GymAppV3.Core.DTOs;
 
 namespace GymAppV3.Core.Interfaces
 {
@@ -9,7 +10,7 @@ namespace GymAppV3.Core.Interfaces
     {
         // Records a payment. Validates that the member (and membership, if given) exist.
         Task<PaymentDto> RecordAsync(
-            RecordPaymentRequest request, CancellationToken cancellationToken = default);
+            RecordPaymentCommand request, CancellationToken cancellationToken = default);
 
         // Returns a member's payment history, newest first.
         Task<IReadOnlyList<PaymentDto>> GetByMemberAsync(

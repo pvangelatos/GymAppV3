@@ -1,4 +1,5 @@
-﻿using GymAppV3.Core.DTOs.ClassCategory;
+﻿using GymAppV3.Core.Commands;
+using GymAppV3.Core.DTOs;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -18,10 +19,10 @@ namespace GymAppV3.Core.Interfaces
         Task<ClassCategoryDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
         // Creates a new category and returns the created record.
-        Task<ClassCategoryDto> CreateAsync(CreateClassCategoryRequest request, CancellationToken cancellationToken = default);
+        Task<ClassCategoryDto> CreateAsync(CreateClassCategoryCommand request, CancellationToken cancellationToken = default);
 
         // Updates an existing category. Throws NotFoundException if it does not exist.
-        Task UpdateAsync(Guid id, UpdateClassCategoryRequest request, CancellationToken cancellationToken = default);
+        Task UpdateAsync(Guid id, UpdateClassCategoryCommand request, CancellationToken cancellationToken = default);
 
         // Soft-deletes a category (the interceptor converts the delete to an update).
         Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);

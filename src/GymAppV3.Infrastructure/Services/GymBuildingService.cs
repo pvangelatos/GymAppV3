@@ -1,10 +1,10 @@
 ﻿using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.DTOs;
-using GymAppV3.Core.DTOs.GymBuilding;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Models;
 using GymAppV3.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using GymAppV3.Core.Commands;
 
 namespace GymAppV3.Infrastructure.Services;
 
@@ -45,7 +45,7 @@ public class GymBuildingService : IGymBuildingService
     }
 
     public async Task<GymBuildingDto> CreateAsync(
-        CreateGymBuildingRequest request, CancellationToken cancellationToken = default)
+        CreateGymBuildingCommand request, CancellationToken cancellationToken = default)
     {
         var building = new GymBuilding
         {
@@ -76,7 +76,7 @@ public class GymBuildingService : IGymBuildingService
     }
 
     public async Task UpdateAsync(
-        Guid id, UpdateGymBuildingRequest request, CancellationToken cancellationToken = default)
+        Guid id, UpdateGymBuildingCommand request, CancellationToken cancellationToken = default)
     {
         var building = await _context.GymBuildings
             .FirstOrDefaultAsync(b => b.Id == id, cancellationToken)

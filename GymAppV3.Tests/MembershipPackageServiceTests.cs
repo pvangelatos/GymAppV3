@@ -1,5 +1,5 @@
 ﻿using FluentAssertions;
-using GymAppV3.Core.DTOs.MembershipPackage;
+using GymAppV3.Core.Commands;
 using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.Models;
 using GymAppV3.Infrastructure.Services;
@@ -17,7 +17,7 @@ public class MembershipPackageServiceTests : TestBase
     {
         var sut = CreateSut();
         var categoryId = await SeedCategory();
-        var request = new CreateMembershipPackageRequest("Basic", 49.99m, 30, 8, categoryId);
+        var request = new CreateMembershipPackageCommand("Basic", 49.99m, 30, 8, categoryId);
 
         var result = await sut.CreateAsync(request);
 
@@ -46,7 +46,7 @@ public class MembershipPackageServiceTests : TestBase
     {
         var sut = CreateSut();
         var categoryId = await SeedCategory();
-        var created = await sut.CreateAsync(new CreateMembershipPackageRequest("Premium", 89m, 30, 12, categoryId));
+        var created = await sut.CreateAsync(new CreateMembershipPackageCommand("Premium", 89m, 30, 12, categoryId));
 
         var result = await sut.GetByIdAsync(created.Id);
 
@@ -59,9 +59,9 @@ public class MembershipPackageServiceTests : TestBase
     {
         var sut = CreateSut();
         var categoryId = await SeedCategory();
-        var created = await sut.CreateAsync(new CreateMembershipPackageRequest("Basic", 49m, 30, 8, categoryId));
+        var created = await sut.CreateAsync(new CreateMembershipPackageCommand("Basic", 49m, 30, 8, categoryId));
 
-        await sut.UpdateAsync(created.Id, new UpdateMembershipPackageRequest("Basic Plus", 59m, 45, 10, categoryId));
+        await sut.UpdateAsync(created.Id, new UpdateMembershipPackageCommand("Basic Plus", 59m, 45, 10, categoryId));
 
         var updated = await sut.GetByIdAsync(created.Id);
         updated!.Name.Should().Be("Basic Plus");
@@ -77,7 +77,7 @@ public class MembershipPackageServiceTests : TestBase
         var categoryId = await SeedCategory();
         var act = () => sut.UpdateAsync(
             Guid.NewGuid(),
-            new UpdateMembershipPackageRequest("X", 1m, 1, 1, categoryId));
+            new UpdateMembershipPackageCommand("X", 1m, 1, 1, categoryId));
 
         await act.Should().ThrowAsync<NotFoundException>();
     }
@@ -87,7 +87,7 @@ public class MembershipPackageServiceTests : TestBase
     {
         var sut = CreateSut();
         var categoryId = await SeedCategory();
-        var created = await sut.CreateAsync(new CreateMembershipPackageRequest("Basic", 49m, 30, 8, categoryId));
+        var created = await sut.CreateAsync(new CreateMembershipPackageCommand("Basic", 49m, 30, 8, categoryId));
 
         await sut.DeleteAsync(created.Id);
 

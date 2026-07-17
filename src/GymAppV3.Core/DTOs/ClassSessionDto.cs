@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace GymAppV3.Core.DTOs.ClassSession
+namespace GymAppV3.Core.DTOs
 {
     // Read model for a class session. Includes the trainer and room *names* (not the
     // full entities) so a client can display the session without extra lookups, and

@@ -1,14 +1,13 @@
 ﻿using GymAppV3.Core.Abstractions;
-using GymAppV3.Core.DTOs.Payment;
+using GymAppV3.Core.Commands;
+using GymAppV3.Core.DTOs;
 using GymAppV3.Core.Enums;
 using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Models;
 using GymAppV3.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Text;
+
 
 namespace GymAppV3.Infrastructure.Services
 {
@@ -37,7 +36,7 @@ namespace GymAppV3.Infrastructure.Services
                 .ToList();
         }
 
-        public async Task<MonthlyFinancialReportDto> GetMonthlyReportAsync(int year, int month, CancellationToken cancellationToken = default)
+        public async Task<Core.DTOs.MonthlyFinancialReportDto> GetMonthlyReportAsync(int year, int month, CancellationToken cancellationToken = default)
         {
             // Fetch only the two columns needed for the aggregation — avoids loading
             // unneeded fields. Filtering by year/month is done in memory because
@@ -58,7 +57,7 @@ namespace GymAppV3.Infrastructure.Services
                 totalGross, totalNet, totalVat);
         }
 
-        public async Task<PaymentDto> RecordAsync(RecordPaymentRequest request, CancellationToken cancellationToken = default)
+        public async Task<PaymentDto> RecordAsync(RecordPaymentCommand request, CancellationToken cancellationToken = default)
         {
             // --- The member must exist ---
             var memberExists = await _context.Members

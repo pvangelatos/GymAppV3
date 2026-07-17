@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\GymAppV3.Application\GymAppV3.Application.csproj" />
+	  <ProjectReference Include="..\GymAppV3.Core\GymAppV3.Core.csproj" />
   </ItemGroup>
 
 </Project>

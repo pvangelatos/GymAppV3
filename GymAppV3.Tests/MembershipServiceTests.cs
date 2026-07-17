@@ -1,5 +1,5 @@
 ﻿using FluentAssertions;
-using GymAppV3.Core.DTOs.Membership;
+using GymAppV3.Core.Commands;
 using GymAppV3.Core.Enums;
 using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.Models;
@@ -66,7 +66,7 @@ public class MembershipServiceTests : TestBase
         var packageId = await SeedPackage(price: 50m, days: 30, sessions: 8);
         var sut = CreateSut();
 
-        var result = await sut.PurchaseAsync(new PurchaseMembershipRequest(memberId, packageId));
+        var result = await sut.PurchaseAsync(new PurchaseMembershipCommand(memberId, packageId));
 
         result.StartDate.Should().Be(Now);
         result.EndDate.Should().Be(Now.AddDays(30));
@@ -84,7 +84,7 @@ public class MembershipServiceTests : TestBase
         var packageId = await SeedPackage(price: 50m);
         var sut = CreateSut();
 
-        var membership = await sut.PurchaseAsync(new PurchaseMembershipRequest(memberId, packageId));
+        var membership = await sut.PurchaseAsync(new PurchaseMembershipCommand(memberId, packageId));
 
         // Change the package price afterwards.
         var package = await Context.MembershipPackages.FindAsync(packageId);
@@ -106,10 +106,10 @@ public class MembershipServiceTests : TestBase
         var sut = CreateSut();
 
         // First Pilates: 15/1 → 14/2.
-        var first = await sut.PurchaseAsync(new PurchaseMembershipRequest(memberId, packageId));
+        var first = await sut.PurchaseAsync(new PurchaseMembershipCommand(memberId, packageId));
 
         // Second Pilates (renewal): must start when the first ends, not now.
-        var second = await sut.PurchaseAsync(new PurchaseMembershipRequest(memberId, packageId));
+        var second = await sut.PurchaseAsync(new PurchaseMembershipCommand(memberId, packageId));
 
         second.StartDate.Should().Be(first.EndDate);
         second.EndDate.Should().Be(first.EndDate.AddDays(30));
@@ -125,8 +125,8 @@ public class MembershipServiceTests : TestBase
         var yogaId = await SeedPackage(name: "Yoga", days: 30);
         var sut = CreateSut();
 
-        var pilates = await sut.PurchaseAsync(new PurchaseMembershipRequest(memberId, pilatesId));
-        var yoga = await sut.PurchaseAsync(new PurchaseMembershipRequest(memberId, yogaId));
+        var pilates = await sut.PurchaseAsync(new PurchaseMembershipCommand(memberId, pilatesId));
+        var yoga = await sut.PurchaseAsync(new PurchaseMembershipCommand(memberId, yogaId));
 
         // Yoga ignores Pilates — both start now.
         yoga.StartDate.Should().Be(Now);
@@ -141,7 +141,7 @@ public class MembershipServiceTests : TestBase
         var packageId = await SeedPackage();
         var sut = CreateSut();
 
-        var act = () => sut.PurchaseAsync(new PurchaseMembershipRequest(Guid.NewGuid(), packageId));
+        var act = () => sut.PurchaseAsync(new PurchaseMembershipCommand(Guid.NewGuid(), packageId));
 
         await act.Should().ThrowAsync<NotFoundException>();
     }
@@ -152,7 +152,7 @@ public class MembershipServiceTests : TestBase
         var memberId = await SeedMember();
         var sut = CreateSut();
 
-        var act = () => sut.PurchaseAsync(new PurchaseMembershipRequest(memberId, Guid.NewGuid()));
+        var act = () => sut.PurchaseAsync(new PurchaseMembershipCommand(memberId, Guid.NewGuid()));
 
         await act.Should().ThrowAsync<NotFoundException>();
     }
@@ -167,8 +167,8 @@ public class MembershipServiceTests : TestBase
         var yogaId = await SeedPackage(name: "Yoga");
         var sut = CreateSut();
 
-        await sut.PurchaseAsync(new PurchaseMembershipRequest(memberId, pilatesId));
-        await sut.PurchaseAsync(new PurchaseMembershipRequest(memberId, yogaId));
+        await sut.PurchaseAsync(new PurchaseMembershipCommand(memberId, pilatesId));
+        await sut.PurchaseAsync(new PurchaseMembershipCommand(memberId, yogaId));
 
         var result = await sut.GetByMemberAsync(memberId);
 

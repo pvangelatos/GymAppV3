@@ -1,4 +1,4 @@
-﻿using GymAppV3.Core.DTOs.ClassRoom;
+﻿using GymAppV3.Core.DTOs;
 using GymAppV3.Core.Models;
 using System;
 using System.Linq.Expressions;

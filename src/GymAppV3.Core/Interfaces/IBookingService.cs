@@ -1,4 +1,5 @@
-﻿using GymAppV3.Core.DTOs.Booking;
+﻿using GymAppV3.Core.Commands;
+using GymAppV3.Core.DTOs;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -15,7 +16,7 @@ namespace GymAppV3.Core.Interfaces
         // the booking, decrements the session's AvailableSeats, and decrements the
         // matching membership's RemainingSessions. Throws on any rule violation.
         Task<BookingDto> BookAsync(
-            CreateBookingRequest request, CancellationToken cancellationToken = default);
+            CreateBookingCommand request, CancellationToken cancellationToken = default);
 
         // Cancels a booking. If cancelled more than 24h before the session starts, the
         // seat is freed and the session credit is returned to the membership. Within

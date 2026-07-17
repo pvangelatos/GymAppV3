@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace GymAppV3.Core.DTOs.MembershipPackage
+namespace GymAppV3.Core.Commands
 {
     // Input for updating a package. Id comes from the route, not the body.
-    public record UpdateMembershipPackageRequest(
+    public record UpdateMembershipPackageCommand(
         string Name,
         decimal Price,
         int DurationInDays,

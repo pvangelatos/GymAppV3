@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace GymAppV3.Core.DTOs.Booking
+namespace GymAppV3.Core.DTOs
 {
     // Read model for a booking. Includes the session title and start time so a client
     // can display the booking without a second lookup.

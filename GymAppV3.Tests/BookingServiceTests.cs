@@ -1,14 +1,10 @@
 ﻿using FluentAssertions;
-using GymAppV3.Core.DTOs.Booking;
+using GymAppV3.Core.Commands;
 using GymAppV3.Core.Enums;
 using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.Models;
 using GymAppV3.Infrastructure.Services;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Channels;
+
 
 namespace GymAppV3.Tests
 {
@@ -140,7 +136,7 @@ namespace GymAppV3.Tests
             var session = await SeedSession(category.Id, availableSeats: 5);
             var sut = CreateSut();
 
-            var result = await sut.BookAsync(new CreateBookingRequest(member.Id, session.Id));
+            var result = await sut.BookAsync(new CreateBookingCommand(member.Id, session.Id));
 
             result.Status.Should().Be(nameof(BookingStatus.Confirmed));
 
@@ -164,7 +160,7 @@ namespace GymAppV3.Tests
             var session = await SeedSession(pilates.Id);           // session is PILATES
             var sut = CreateSut();
 
-            var act = () => sut.BookAsync(new CreateBookingRequest(member.Id, session.Id));
+            var act = () => sut.BookAsync(new CreateBookingCommand(member.Id, session.Id));
 
             await act.Should().ThrowAsync<BusinessRuleException>();
         }
@@ -180,7 +176,7 @@ namespace GymAppV3.Tests
             var session = await SeedSession(category.Id);
             var sut = CreateSut();
 
-            var act = () => sut.BookAsync(new CreateBookingRequest(member.Id, session.Id));
+            var act = () => sut.BookAsync(new CreateBookingCommand(member.Id, session.Id));
 
             await act.Should().ThrowAsync<BusinessRuleException>();
         }
@@ -196,7 +192,7 @@ namespace GymAppV3.Tests
             var session = await SeedSession(category.Id, availableSeats: 0);   // full
             var sut = CreateSut();
 
-            var act = () => sut.BookAsync(new CreateBookingRequest(member.Id, session.Id));
+            var act = () => sut.BookAsync(new CreateBookingCommand(member.Id, session.Id));
 
             await act.Should().ThrowAsync<BusinessRuleException>();
         }
@@ -212,7 +208,7 @@ namespace GymAppV3.Tests
             var session = await SeedSession(category.Id, startsAt: Now.AddHours(-1)); // past
             var sut = CreateSut();
 
-            var act = () => sut.BookAsync(new CreateBookingRequest(member.Id, session.Id));
+            var act = () => sut.BookAsync(new CreateBookingCommand(member.Id, session.Id));
 
             await act.Should().ThrowAsync<BusinessRuleException>();
         }
@@ -228,9 +224,9 @@ namespace GymAppV3.Tests
             var session = await SeedSession(category.Id);
             var sut = CreateSut();
 
-            await sut.BookAsync(new CreateBookingRequest(member.Id, session.Id));
+            await sut.BookAsync(new CreateBookingCommand(member.Id, session.Id));
 
-            var act = () => sut.BookAsync(new CreateBookingRequest(member.Id, session.Id));
+            var act = () => sut.BookAsync(new CreateBookingCommand(member.Id, session.Id));
 
             await act.Should().ThrowAsync<BusinessRuleException>();
         }
@@ -247,7 +243,7 @@ namespace GymAppV3.Tests
             var session = await SeedSession(category.Id, startsAt: Now.AddDays(2), availableSeats: 5);
             var sut = CreateSut();
 
-            var booking = await sut.BookAsync(new CreateBookingRequest(member.Id, session.Id));
+            var booking = await sut.BookAsync(new CreateBookingCommand(member.Id, session.Id));
             // After booking: seat 4, credit 7.
 
             await sut.CancelAsync(booking.Id);
@@ -270,7 +266,7 @@ namespace GymAppV3.Tests
             var session = await SeedSession(category.Id, startsAt: Now.AddHours(10), availableSeats: 5);
             var sut = CreateSut();
 
-            var booking = await sut.BookAsync(new CreateBookingRequest(member.Id, session.Id));
+            var booking = await sut.BookAsync(new CreateBookingCommand(member.Id, session.Id));
             // After booking: seat 4, credit 7.
 
             await sut.CancelAsync(booking.Id);

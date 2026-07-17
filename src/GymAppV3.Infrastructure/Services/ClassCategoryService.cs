@@ -1,4 +1,5 @@
-﻿using GymAppV3.Core.DTOs.ClassCategory;
+﻿using GymAppV3.Core.Commands;
+using GymAppV3.Core.DTOs;
 using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Models;
@@ -20,7 +21,7 @@ namespace GymAppV3.Infrastructure.Services
         {
             _context = context;
         }
-        public async Task<ClassCategoryDto> CreateAsync(CreateClassCategoryRequest request, CancellationToken cancellationToken = default)
+        public async Task<ClassCategoryDto> CreateAsync(CreateClassCategoryCommand request, CancellationToken cancellationToken = default)
         {
             var category = new ClassCategory { Name = request.Name };
 
@@ -62,7 +63,7 @@ namespace GymAppV3.Infrastructure.Services
                 .FirstOrDefaultAsync(cancellationToken);
         }
 
-        public async Task UpdateAsync(Guid id, UpdateClassCategoryRequest request, CancellationToken cancellationToken = default)
+        public async Task UpdateAsync(Guid id, UpdateClassCategoryCommand request, CancellationToken cancellationToken = default)
         {
             // Load the tracked entity (not a projection) so the change tracker can
             // generate the UPDATE from the mutation below.

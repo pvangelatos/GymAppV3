@@ -1,5 +1,6 @@
 ﻿using GymAppV3.Core.Abstractions;
-using GymAppV3.Core.DTOs.Membership;
+using GymAppV3.Core.Commands;
+using GymAppV3.Core.DTOs;
 using GymAppV3.Core.Enums;
 using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.Interfaces;
@@ -44,7 +45,7 @@ namespace GymAppV3.Infrastructure.Services
             return memberships.OrderByDescending(m => m.StartDate).ToList();
         }
 
-        public async Task<MembershipDto> PurchaseAsync(PurchaseMembershipRequest request, CancellationToken cancellationToken = default)
+        public async Task<MembershipDto> PurchaseAsync(PurchaseMembershipCommand request, CancellationToken cancellationToken = default)
         {
             // --- The member must exist (soft-deleted ones are already filtered out) ---
             var member = await _context.Members

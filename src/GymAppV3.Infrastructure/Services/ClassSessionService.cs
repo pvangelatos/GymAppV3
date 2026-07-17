@@ -1,5 +1,6 @@
 ﻿using GymAppV3.Core.Abstractions;
-using GymAppV3.Core.DTOs.ClassSession;
+using GymAppV3.Core.Commands;
+using GymAppV3.Core.DTOs;
 using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Models;
@@ -53,7 +54,7 @@ namespace GymAppV3.Infrastructure.Services
             return sessions;
         }
 
-        public async Task<ClassSessionDto> ScheduleAsync(ScheduleClassSessionRequest request, CancellationToken cancellationToken = default)
+        public async Task<ClassSessionDto> ScheduleAsync(ScheduleClassSessionCommand request, CancellationToken cancellationToken = default)
         {
             // --- Rule 2: the session must start in the future ---
             // Uses the injected clock (not DateTimeOffset.UtcNow) so this is testable.

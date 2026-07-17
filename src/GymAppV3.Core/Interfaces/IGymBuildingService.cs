@@ -1,4 +1,5 @@
-﻿using GymAppV3.Core.DTOs.GymBuilding;
+﻿using GymAppV3.Core.Commands;
+using GymAppV3.Core.DTOs;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -14,10 +15,10 @@ namespace GymAppV3.Core.Interfaces
         Task<GymBuildingDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
         // Creates a new building and returns the created record.
-        Task<GymBuildingDto> CreateAsync(CreateGymBuildingRequest request, CancellationToken cancellationToken = default);
+        Task<GymBuildingDto> CreateAsync(CreateGymBuildingCommand request, CancellationToken cancellationToken = default);
 
         // Updates an existing building. Throws NotFoundException if it does not exist.
-        Task UpdateAsync(Guid id, UpdateGymBuildingRequest request, CancellationToken cancellationToken = default);
+        Task UpdateAsync(Guid id, UpdateGymBuildingCommand request, CancellationToken cancellationToken = default);
 
         // Soft-deletes a building (the interceptor converts the delete to an update).
         Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);

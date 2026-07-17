@@ -1,10 +1,11 @@
 ﻿
 using GymAppV3.Core.Exceptions;
-using GymAppV3.Core.DTOs.MembershipPackage;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Models;
 using GymAppV3.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using GymAppV3.Core.Commands;
+using GymAppV3.Core.DTOs;
 
 namespace GymAppV3.Infrastructure.Services;
 
@@ -47,7 +48,7 @@ public class MembershipPackageService : IMembershipPackageService
     }
 
     public async Task<MembershipPackageDto> CreateAsync(
-        CreateMembershipPackageRequest request, CancellationToken cancellationToken = default)
+        CreateMembershipPackageCommand request, CancellationToken cancellationToken = default)
     {
         // The referenced category must exist (and be active).
         var category = await _context.ClassCategories
@@ -73,7 +74,7 @@ public class MembershipPackageService : IMembershipPackageService
     }
 
     public async Task UpdateAsync(
-        Guid id, UpdateMembershipPackageRequest request, CancellationToken cancellationToken = default)
+        Guid id, UpdateMembershipPackageCommand request, CancellationToken cancellationToken = default)
     {
         // Here we DO need the tracked entity (not a projection), because we mutate
         // it and let the change tracker generate the UPDATE.
