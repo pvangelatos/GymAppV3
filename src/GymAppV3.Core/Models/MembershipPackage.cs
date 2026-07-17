@@ -1,4 +1,6 @@
 ﻿
+using GymAppV3.Core.Enums;
+
 namespace GymAppV3.Core.Models;
 
 public class MembershipPackage : AuditableEntity
@@ -17,6 +19,9 @@ public class MembershipPackage : AuditableEntity
 
     // Number of class sessions included in this membership package
     public int SessionsIncluded { get; set; }
+
+    // The category of vat (etc. Services)
+    public VatCategory VatCategory { get; set; } = VatCategory.Services;
 
     // The category this package grants access to (e.g. Pilates Reformer). A booking
     // is paid from a membership whose package has the SAME category as the session.

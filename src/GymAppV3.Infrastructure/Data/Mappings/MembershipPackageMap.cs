@@ -3,6 +3,7 @@ using GymAppV3.Infrastructure.Data.Common;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
+
 namespace GymAppV3.Infrastructure.Data.Mappings;
 
 /// <summary>
@@ -47,5 +48,11 @@ public class MembershipPackageMap : IEntityTypeConfiguration<MembershipPackage>
             .WithMany()
             .HasForeignKey(x => x.ClassCategoryId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        //
+        builder.Property(x => x.VatCategory)
+            .HasConversion<string>()
+            .HasMaxLength(TextSizePresets.XS32)
+            .IsRequired();
     }
 }

@@ -1,5 +1,6 @@
 ﻿using GymAppV3.Core.Abstractions;
 using GymAppV3.Core.Commands;
+using GymAppV3.Core.Common;
 using GymAppV3.Core.DTOs;
 using GymAppV3.Core.Enums;
 using GymAppV3.Core.Exceptions;
@@ -7,6 +8,8 @@ using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Models;
 using GymAppV3.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
+using Microsoft.Identity.Client;
 
 
 namespace GymAppV3.Infrastructure.Services
@@ -16,15 +19,18 @@ namespace GymAppV3.Infrastructure.Services
     {
         public readonly ApplicationDbContext _context;
         private readonly IDateTimeProvider _clock;
+        private readonly IVatRateProvider _vatRates;
 
-        public PaymentService(ApplicationDbContext context, IDateTimeProvider clock)
+        public PaymentService(ApplicationDbContext context, IDateTimeProvider clock, IVatRateProvider vatRates)
         {
             _context = context;
             _clock = clock;
+            _vatRates = vatRates;
         }
 
-        public async Task<IReadOnlyList<PaymentDto>> GetByMemberAsync(Guid memberId, CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<PaymentDto>> GetPaymentsByMemberAsync(Guid memberId, CancellationToken cancellationToken = default)
         {
+            
             var payments = await _context.Payments
                 .Where(p => p.MemberId == memberId)
                 .ToListAsync(cancellationToken);
@@ -36,55 +42,62 @@ namespace GymAppV3.Infrastructure.Services
                 .ToList();
         }
 
-        public async Task<Core.DTOs.MonthlyFinancialReportDto> GetMonthlyReportAsync(int year, int month, CancellationToken cancellationToken = default)
+        public async Task<MonthlyFinancialReportDto> GetMonthlyReportAsync(int year, int month, CancellationToken cancellationToken = default)
         {
-            // Fetch only the two columns needed for the aggregation — avoids loading
-            // unneeded fields. Filtering by year/month is done in memory because
-            var monthPayments = await _context.Payments 
+            var totals = await _context.Payments
                 .Where(p => p.Status == PaymentStatus.Completed
-                         && p.PaidAt.Year == year
-                         && p.PaidAt.Month == month)
-                .Select(p => new { p.Amount, p.VatRate })
-                .ToListAsync(cancellationToken);
-
-            var count = monthPayments.Count;    
-            var totalGross = monthPayments.Sum(p => p.Amount);
-            var totalNet = monthPayments.Sum(p => SplitVat(p.Amount, p.VatRate).net);
-            var totalVat = totalGross - totalNet;
+                    && p.PaidAt.Year == year
+                    && p.PaidAt.Month == month)
+                .GroupBy(_ => 1)
+                .Select(g => new {
+                                    Count = g.Count(),
+                                    Gross = g.Sum(p => p.Amount),
+                                    Net = g.Sum(p => p.NetAmount)
+                                 })
+                .FirstOrDefaultAsync(cancellationToken);
 
             return new MonthlyFinancialReportDto(
-                year, month, count,
-                totalGross, totalNet, totalVat);
+                year, month,
+                totals?.Count ?? 0,
+                totals?.Gross ?? 0m,
+                totals?.Net ?? 0m,
+                (totals?.Gross ?? 0m) - (totals?.Net ?? 0m));
         }
 
-        public async Task<PaymentDto> RecordAsync(RecordPaymentCommand request, CancellationToken cancellationToken = default)
+        public async Task<PaymentDto> RecordAsync(RecordPaymentCommand command, CancellationToken cancellationToken = default)
         {
+            var vatCategory = VatCategory.Services; // default for payments without membership
+
             // --- The member must exist ---
             var memberExists = await _context.Members
-                .AnyAsync(m => m.Id == request.MemberId, cancellationToken);
+                .AnyAsync(m => m.Id == command.MemberId, cancellationToken);
 
             if (!memberExists) 
-                throw new NotFoundException(nameof(Member), request.MemberId);
+                throw new NotFoundException(nameof(Member), command.MemberId);
 
             // --- If a membership is referenced, it must exist and belong to this member ---
-            if (request.MembershipId is not null)
+            if (command.MembershipId is not null)
             {
-                var membershipValid = await _context.Memberships
-                    .AnyAsync(m => m.Id == request.MembershipId
-                                && m.MemberId == request.MemberId,
-                                cancellationToken);
+                var membership = await _context.Memberships
+                    .Where(m => m.Id == command.MembershipId && m.MemberId == command.MemberId)
+                    .Select(m => new { m.MembershipPackage.VatCategory })
+                    .FirstOrDefaultAsync(cancellationToken) ??
+                    throw new NotFoundException(nameof(Membership), command.MembershipId);
 
-                if(!membershipValid)
-                    throw new NotFoundException(nameof(Membership), request.MembershipId);
+                vatCategory = membership.VatCategory;
             }
+
+            var rate = _vatRates.GetVatRate(vatCategory);
+            var (net, _) = VatCalculator.Split(command.Amount, rate);
 
             var payment = new Payment
             {
-                MemberId = request.MemberId,
-                MembershipId = request.MembershipId,
-                Amount = request.Amount,
-                VatRate = request.VatRate,
-                Method = request.Method,
+                MemberId = command.MemberId,
+                MembershipId = command.MembershipId,
+                Amount = command.Amount,
+                VatRate = rate,                     // snapshot
+                NetAmount = net,                    // snapshot
+                Method = command.Method,
                 Status = PaymentStatus.Completed,   // recorded payments are completed
                 PaidAt = _clock.UtcNow
             };
@@ -95,22 +108,9 @@ namespace GymAppV3.Infrastructure.Services
             return ToDto(payment);
         }
 
-        // Splits a gross amount into (net, vat) using the given rate.
-        // net = gross / (1 + rate); vat = gross - net. Rounded to 2 decimals (currency).
-        private static (decimal net, decimal vat) SplitVat(decimal gross, decimal rate)
-        {
-            var net = Math.Round(gross / (1 + rate), 2, MidpointRounding.AwayFromZero);
-            var vat = gross - net;
-            return (net, vat);
-        }
-
-        private static PaymentDto ToDto(Payment p)
-        {
-            var (net, vat) = SplitVat(p.Amount, p.VatRate);
-            return new PaymentDto(
-                p.Id, p.MemberId, p.MembershipId,
-                p.Amount, net, vat, p.VatRate,
-                p.Method.ToString(), p.Status.ToString(), p.PaidAt);
-        }
+        private static PaymentDto ToDto(Payment p) => new(
+            p.Id, p.MemberId, p.MembershipId,
+            p.Amount, p.NetAmount, p.Amount - p.NetAmount, p.VatRate,
+            p.Method.ToString(), p.Status.ToString(), p.PaidAt);
     }
 }

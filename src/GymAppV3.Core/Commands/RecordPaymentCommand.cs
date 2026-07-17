@@ -12,7 +12,6 @@ namespace GymAppV3.Core.Commands
         Guid MemberId,
         Guid? MembershipId,         // optional - a payment may not tie to a specific membership
         decimal Amount,             // gross (VAT included)
-        decimal VatRate,            // e.g 0.13 or 0.24
         PaymentMethod Method);
 
 }

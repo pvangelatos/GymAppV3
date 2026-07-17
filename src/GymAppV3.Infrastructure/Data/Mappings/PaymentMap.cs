@@ -51,5 +51,9 @@ public class PaymentMap : IEntityTypeConfiguration<Payment>
             .HasForeignKey(x => x.MembershipId)
             .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Property(x => x.NetAmount)
+            .HasColumnType("decimal(18,2)")
+            .IsRequired();
     }
 }

@@ -1,33 +1,26 @@
 ﻿using GymAppV3.Core.Abstractions;
 using GymAppV3.Infrastructure.Data;
 using GymAppV3.Infrastructure.Data.Interceptors;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
 namespace GymAppV3.Tests;
 
-// Base class that spins up a fresh SQLite in-memory database per test.
-// SQLite (unlike the EF in-memory provider) enforces real relational rules —
-// foreign keys, unique indexes, and NOT NULL — so tests exercise the actual schema.
+// Base class that spins up a fresh EF Core In-Memory database per test.
+// This isolates each test to prevent data bleeding, allowing fast execution 
+// without the translation restrictions of relational database engines.
 public abstract class TestBase : IDisposable
 {
-    private readonly SqliteConnection _connection;
+    
     protected readonly ApplicationDbContext Context;
 
     protected TestBase()
     {
-        // The connection must stay open for the lifetime of the test: an in-memory
-        // SQLite database exists only while at least one connection to it is open.
-        _connection = new SqliteConnection("DataSource=:memory:");
-        _connection.Open();
-
         var interceptor = new AuditableEntityInterceptor(
             new DateTimeProvider(),
             new UserContext());
 
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseSqlite(_connection)
-            .AddInterceptors(interceptor)
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
 
         Context = new ApplicationDbContext(options);
@@ -40,7 +33,7 @@ public abstract class TestBase : IDisposable
     public void Dispose()
     {
         Context.Dispose();
-        _connection.Dispose();   // closing the connection drops the in-memory database
+        
         GC.SuppressFinalize(this);
     }
 }

@@ -31,6 +31,10 @@ public class Payment : AuditableEntity
     // Vat rate applied to the payment, stored as a fraction (e.g. 0.24 for 24%).
     public decimal VatRate { get; set; }
 
+    // Snapshot of net amount at paid time. The amount of Vat does NOT
+    // stpred — produced always as Amount - NetAmount (exact subtraction).
+    public decimal NetAmount { get; set; }
+
     // Current status of the payment (defaults to Pending when created)
     public PaymentStatus Status { get; set; } = PaymentStatus.Pending;
 

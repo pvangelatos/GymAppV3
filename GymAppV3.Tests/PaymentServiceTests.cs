@@ -7,13 +7,18 @@ using GymAppV3.Infrastructure.Services;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Models;
 using GymAppV3.Core.Commands;
+using GymAppV3.Core.Abstractions;
+using GymAppV3.Core.Common;
 
 namespace GymAppV3.Tests;
 
 public class PaymentServiceTests : TestBase
 {
     private static readonly DateTimeOffset Now = new(2026, 1, 15, 10, 0, 0, TimeSpan.Zero);
-    private PaymentService CreateSut() => new(Context, new FixedClock(Now));
+
+    private readonly IVatRateProvider _vatRates = new MockVatRateProvider();
+
+    private PaymentService CreateSut() => new(Context, new FixedClock(Now), _vatRates);
     private async Task<Member> SeedMember(string email = "m@gym.gr")
     {
         var member = new Member
@@ -46,13 +51,13 @@ public class PaymentServiceTests : TestBase
         var member = await SeedMember();
         var sut = CreateSut();
 
-        // 124 gross at 24% → 100 net + 24 VAT.
+        // 113 gross at 13% → 100 net + 13 VAT.
         var result = await sut.RecordAsync(new RecordPaymentCommand(
-            member.Id, null, 124m, 0.24m, PaymentMethod.Card));
+            member.Id, null, 113m, PaymentMethod.Card));
 
-        result.Amount.Should().Be(124m);
+        result.Amount.Should().Be(113m);
         result.NetAmount.Should().Be(100m);
-        result.VatAmount.Should().Be(24m);
+        result.VatAmount.Should().Be(13m);
         result.Status.Should().Be(nameof(PaymentStatus.Completed));
     }
 
@@ -62,7 +67,7 @@ public class PaymentServiceTests : TestBase
         var sut = CreateSut();
 
         var act = () => sut.RecordAsync(new RecordPaymentCommand(
-            Guid.NewGuid(), null, 100m, 0.24m, PaymentMethod.Cash));
+            Guid.NewGuid(), null, 100m, PaymentMethod.Cash));
 
         await act.Should().ThrowAsync<NotFoundException>();
     }
@@ -77,7 +82,7 @@ public class PaymentServiceTests : TestBase
 
         // An amount that doesn't divide cleanly, to stress the rounding.
         var result = await sut.RecordAsync(new RecordPaymentCommand(
-            member.Id, null, 99.99m, 0.24m, PaymentMethod.Cash));
+            member.Id, null, 99.99m, PaymentMethod.Cash));
 
         // The key invariant: net + vat must equal gross exactly.
         (result.NetAmount + result.VatAmount).Should().Be(result.Amount);
@@ -93,9 +98,9 @@ public class PaymentServiceTests : TestBase
 
         // Two payments; we'll report on whatever month "now" falls in.
         await sut.RecordAsync(new RecordPaymentCommand(
-            member.Id, null, 124m, 0.24m, PaymentMethod.Card));
+            member.Id, null, 124m, PaymentMethod.Card));
         await sut.RecordAsync(new RecordPaymentCommand(
-            member.Id, null, 62m, 0.24m, PaymentMethod.Cash));
+            member.Id, null, 62m, PaymentMethod.Cash));
 
         
         var report = await sut.GetMonthlyReportAsync(2026, 1);
@@ -124,18 +129,26 @@ public class PaymentServiceTests : TestBase
     // --- Member payment history -----------------------------------------------
 
     [Fact]
-    public async Task GetByMemberAsync_returns_all_payments_of_member()
+    public async Task GetPaymentsByMemberAsync_returns_all_payments_of_member()
     {
         var member = await SeedMember();
         var sut = CreateSut();
 
         await sut.RecordAsync(new RecordPaymentCommand(
-            member.Id, null, 100m, 0.24m, PaymentMethod.Card));
+            member.Id, null, 100m, PaymentMethod.Card));
         await sut.RecordAsync(new RecordPaymentCommand(
-            member.Id, null, 50m, 0.24m, PaymentMethod.Cash));
+            member.Id, null, 50m, PaymentMethod.Cash));
 
-        var result = await sut.GetByMemberAsync(member.Id);
+        var result = await sut.GetPaymentsByMemberAsync(member.Id);
 
         result.Should().HaveCount(2);
+    }
+
+    /// <summary>
+    /// Mock implementation of IVatRateProvider with fixed 24% Greece rate
+    /// </summary>
+    internal class MockVatRateProvider : IVatRateProvider
+    {
+        public decimal GetVatRate(VatCategory category) => category == VatCategory.Services ? 0.13m : 0.24m;
     }
 }

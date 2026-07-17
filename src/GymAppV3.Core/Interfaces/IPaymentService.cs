@@ -13,7 +13,7 @@ namespace GymAppV3.Core.Interfaces
             RecordPaymentCommand request, CancellationToken cancellationToken = default);
 
         // Returns a member's payment history, newest first.
-        Task<IReadOnlyList<PaymentDto>> GetByMemberAsync(
+        Task<IReadOnlyList<PaymentDto>> GetPaymentsByMemberAsync(
             Guid memberId, CancellationToken cancellationToken = default);
 
         // Produces a financial summary (gross/net/VAT totals) for a given month.
