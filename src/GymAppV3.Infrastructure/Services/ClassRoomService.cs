@@ -14,14 +14,6 @@ public class ClassRoomService : IClassRoomService
 {
     private readonly ApplicationDbContext _context;
 
-    // EF Core uses the Expression to build a SQL SELECT with only the needed columns.
-    private static readonly Expression<Func<ClassRoom, ClassRoomDto>> ToDto =
-        r => new ClassRoomDto(r.Id, r.ClassRoomName, r.Capacity, r.GymBuildingId);
-
-    // Compiled once at class load time — used when projecting an in-memory entity
-    // (e.g. after an insert) so the mapping logic is never duplicated.
-    private static readonly Func<ClassRoom, ClassRoomDto> ToDtoCompiled = ToDto.Compile();
-
     public ClassRoomService(ApplicationDbContext context)
     {
         _context = context;
@@ -31,7 +23,7 @@ public class ClassRoomService : IClassRoomService
         CancellationToken cancellationToken = default)
     {
         return await _context.ClassRooms
-            .Select(ToDto)
+            .Select(ObjectMapper.ClassRoom.ToDto)
             .ToListAsync(cancellationToken);
     }
 
@@ -40,7 +32,7 @@ public class ClassRoomService : IClassRoomService
     {
         return await _context.ClassRooms
             .Where(r => r.Id == id)
-            .Select(ToDto)
+            .Select(ObjectMapper.ClassRoom.ToDto)
             .FirstOrDefaultAsync(cancellationToken);
     }
 
@@ -65,7 +57,7 @@ public class ClassRoomService : IClassRoomService
         _context.ClassRooms.Add(room);
         await _context.SaveChangesAsync(cancellationToken);
 
-        return ToDtoCompiled(room);
+        return ObjectMapper.ClassRoom.ToDtoCompiled(room);
     }
 
     public async Task UpdateAsync(

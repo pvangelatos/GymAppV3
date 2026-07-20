@@ -19,16 +19,11 @@ namespace GymAppV3.Infrastructure.Services
             _context = context;
             _clock = clock;
         }
-        public async Task<ClassSessionDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<ClassSessionDto?> GetClassSessionByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             return await _context.ClassSessions
                 .Where(s => s.Id == id)
-                .Select(s => new ClassSessionDto(
-                    s.Id, s.Title, s.ClassCategoryId, s.ClassCategory.Name,
-                    s.StartsAt, s.DurationInMinutes,
-                    s.Capacity, s.AvailableSeats, s.TrainerId,
-                    s.Trainer.Firstname + " " + s.Trainer.Lastname,
-                    s.ClassRoomId, s.ClassRoom.ClassRoomName))
+                .Select(ObjectMapper.ClassSession.ToDto)
                 .FirstOrDefaultAsync(cancellationToken);
         }
 
@@ -36,53 +31,46 @@ namespace GymAppV3.Infrastructure.Services
         {
             var now = _clock.UtcNow;
 
-            // SQLite cannot translate DateTimeOffset comparisons, so we fetch first and
-            // filter/order in memory. On SQL Server this comparison would run in the
-            // database. (For a real app you'd narrow the fetch by a translatable column
-            // if the session count grew large.)
-            var sessions = await _context.ClassSessions
+            // Fetch upcoming sessions starting in the future, projected straight to DTOs via ObjectMapper
+            return await _context.ClassSessions
                 .Where(s => s.StartsAt > now)
                 .OrderBy(s => s.StartsAt)
-                .Select(s => new ClassSessionDto(
-                    s.Id, s.Title, s.ClassCategoryId, s.ClassCategory.Name,
-                    s.StartsAt, s.DurationInMinutes,
-                    s.Capacity, s.AvailableSeats, s.TrainerId,
-                    s.Trainer.Firstname + " " + s.Trainer.Lastname,
-                    s.ClassRoomId, s.ClassRoom.ClassRoomName))
+                .Select(ObjectMapper.ClassSession.ToDto)
                 .ToListAsync(cancellationToken);
 
-            return sessions;
         }
 
         public async Task<ClassSessionDto> ScheduleAsync(ScheduleClassSessionCommand request, CancellationToken cancellationToken = default)
         {
-            // --- Rule 2: the session must start in the future ---
-            // Uses the injected clock (not DateTimeOffset.UtcNow) so this is testable.
+            // --- Business Rule: Future scheduling validation ---
             if (request.StartsAt <= _clock.UtcNow)
                 throw new BusinessRuleException("A session cannot be scheduled in the past.");
 
-            // --- Rule 1 (part a): capacity must be positive ---
+            // ---Business Rule: Capacity validation ---
             if (request.Capacity <= 0)
                 throw new BusinessRuleException("Capacity must be greater than zero.");
 
-            // --- Rule 3: the trainer must exist (and not be soft-deleted) ---
-            // The global query filter already excludes soft-deleted rows, so a simple
-            // existence check is enough.
+            // --- Business Rule: Trainer existence check ---
+            // Global query filters automatically exclude soft-deleted trainers
             var trainer = await _context.Trainers
                 .FirstOrDefaultAsync(t => t.Id == request.TrainerId, cancellationToken) ??
                 throw new NotFoundException(nameof(Trainer), request.TrainerId);
 
-            // --- Rule 4: the room must exist ---
+            // --- Business Rule: Room existence & physical capacity check ---
             var room = await _context.ClassRooms
                 .FirstOrDefaultAsync(r => r.Id == request.ClassRoomId, cancellationToken) ??
                 throw new NotFoundException(nameof(ClassRoom), request.ClassRoomId);
 
-            // --- Rule 1 (part b): session capacity cannot exceed the room's physical capacity ---
             if (request.Capacity > room.Capacity)
                 throw new BusinessRuleException(
                     $"Session capacity ({request.Capacity}) exceeds room capacity ({room.Capacity}).");
 
-            // --- Rule 5: no overlapping session in the same room ---
+            // --- Business Rule: Category existence check ---
+            var category = await _context.ClassCategories
+                .FirstOrDefaultAsync(c => c.Id == request.ClassCategoryId, cancellationToken)
+                ?? throw new NotFoundException(nameof(ClassCategory), request.ClassCategoryId);
+
+            // --- Business Rule: Room schedule overlap check ---
             var newStart = request.StartsAt;
             var newEnd = request.StartsAt.AddMinutes(request.DurationInMinutes);
 
@@ -93,12 +81,7 @@ namespace GymAppV3.Infrastructure.Services
             if (hasRoomSessionsConficts)
                 throw new BusinessRuleException("The room is already booked for an overlapping time slot.");
 
-            // --- The category must exist ---
-            var category = await _context.ClassCategories
-                .FirstOrDefaultAsync(c => c.Id == request.ClassCategoryId, cancellationToken)
-                ?? throw new NotFoundException(nameof(ClassCategory), request.ClassCategoryId);
-
-            // All rules passed - create the session
+            // --- Construct entity ---
             var session = new ClassSession
             {
                 Title = request.Title,
@@ -116,17 +99,10 @@ namespace GymAppV3.Infrastructure.Services
             _context.ClassSessions.Add(session);
             await _context.SaveChangesAsync(cancellationToken);
 
-            return MapToDto(session, trainer, room, category);
+            // Return in-memory projection using the central ObjectMapper compiled delegate
+            return ObjectMapper.ClassSession.ToDtoCompiled(session);
         }
 
-        // Local mapping helper for the create path, where we already have the loaded
-        // trainer and room in memory and don't need a second query.
-        private static ClassSessionDto MapToDto(ClassSession session, Trainer trainer, 
-            ClassRoom room, ClassCategory category) =>
-            new(
-                session.Id, session.Title, category.Id, category.Name, session.StartsAt,
-                session.DurationInMinutes, session.Capacity, session.AvailableSeats, 
-                session.TrainerId, trainer.Firstname + " " + trainer.Lastname,
-                room.Id, room.ClassRoomName); 
+        
     }
 }

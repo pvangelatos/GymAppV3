@@ -17,7 +17,7 @@ namespace GymAppV3.Core.Interfaces
             ScheduleClassSessionCommand request, CancellationToken cancellationToken = default);
 
         // Returns a single session by id, or null if not found.
-        Task<ClassSessionDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+        Task<ClassSessionDto?> GetClassSessionByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
         // Returns all sessions that start in the future, ordered by start time.
         Task<IReadOnlyList<ClassSessionDto>> GetUpcomingAsync(CancellationToken cancellationToken = default);

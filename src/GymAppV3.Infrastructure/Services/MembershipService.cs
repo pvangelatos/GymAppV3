@@ -35,34 +35,28 @@ namespace GymAppV3.Infrastructure.Services
         {
             var memberships = await _context.Memberships
                 .Where(m => m.MemberId == memberId)
-                .Select(m => new MembershipDto(
-                    m.Id, m.MemberId, m.MembershipPackageId, m.MembershipPackage.Name,
-                    m.PricePaid, m.StartDate, m.EndDate, m.RemainingSessions,
-                     m.Status.ToString()))
+                .Select(ObjectMapper.Membership.ToDto)
                 .ToListAsync(cancellationToken);
 
-            // Order in memory (DateTimeOffset ordering is unreliable in SQLite).
             return memberships.OrderByDescending(m => m.StartDate).ToList();
         }
 
         public async Task<MembershipDto> PurchaseAsync(PurchaseMembershipCommand request, CancellationToken cancellationToken = default)
         {
-            // --- The member must exist (soft-deleted ones are already filtered out) ---
+            // --- Member existence validation ---
             var member = await _context.Members
                 .FirstOrDefaultAsync(m => m.Id == request.MemberId, cancellationToken) ??
                 throw new NotFoundException(nameof(Member), request.MemberId);
 
-            // --- The package must exist ---
+            // --- Package existence validation ---
             var package = await _context.MembershipPackages
                 .FirstOrDefaultAsync(p => p.Id == request.MembershipPackageId, cancellationToken) ??
                 throw new NotFoundException(nameof(MembershipPackage), request.MembershipPackageId);
 
             var now = _clock.UtcNow;
 
-            // --- Renewal stacking: find the latest end date among the member's existing
-            // memberships for the SAME package. A new purchase of the same package starts
-            // when the previous one ends; a first purchase (or a different package) starts now.
-            // DateTimeOffset comparison is done in memory (SQLite limitation).
+            // --- Renewal Stacking ---
+            // If the member has an unexpired membership for the same package, the new package starts when the previous one ends.
             var samePackageMemberships = await _context.Memberships
                 .Where(m => m.MemberId ==  request.MemberId
                          && m.MembershipPackageId == request.MembershipPackageId
@@ -78,9 +72,8 @@ namespace GymAppV3.Infrastructure.Services
             var startDate = latestEnd;
             var endDate = startDate.AddDays(package.DurationInDays);
 
-            // --- Build the membership. Price, sessions and status are derived from the
-            // package — never taken from client input. PricePaid is a snapshot of the
-            // package's price at purchase time. ---
+            // --- Price snapshot ---
+            // PricePaid freezes the package price at the exact moment of purchase.
             var membership = new Membership
             {
                 MemberId = member.Id,
@@ -96,12 +89,8 @@ namespace GymAppV3.Infrastructure.Services
             _context.Memberships.Add(membership);
             await _context.SaveChangesAsync(cancellationToken);
 
-            return MapToDto(membership, package.Name);
+            return ObjectMapper.Membership.ToDtoCompiled(membership);
         }
 
-        private static MembershipDto MapToDto(Membership m, string packageName) =>
-        new(
-            m.Id, m.MemberId, m.MembershipPackageId, packageName,
-            m.PricePaid, m.StartDate, m.EndDate, m.RemainingSessions, m.Status.ToString());
     }
 }

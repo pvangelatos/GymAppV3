@@ -25,25 +25,25 @@ namespace GymAppV3.Infrastructure.Services
         {
             var now = _clock.UtcNow;
 
-            // --- The member must exist ---
+            // --- Member and Session existence checks ---
             var member = await _context.Members
                 .FirstOrDefaultAsync(m => m.Id == request.MemberId, cancellationToken)
                 ?? throw new NotFoundException(nameof(Member), request.MemberId);
 
-            // --- The session must exist ---
+           
             var session = await _context.ClassSessions
                 .FirstOrDefaultAsync(s => s.Id == request.ClassSessionId, cancellationToken)
                 ?? throw new NotFoundException(nameof(ClassSession), request.ClassSessionId);
 
-            // --- The session must not have started yet ---
+            // --- Business Rule: Session timing ---
             if (session.StartsAt <= now)
                 throw new BusinessRuleException("Cannot book a session that has already started.");
 
-            // --- The session must have a free seat ---
+            // --- Business Rule: Available seats check ---
             if (session.AvailableSeats <= 0)
                 throw new BusinessRuleException("The session is fully booked.");
 
-            // --- The member must not already have an active booking for this session ---
+            // --- Business Rule: Prevent duplicate active booking ---
             var alreadyBooked = await _context.Bookings
                 .AnyAsync(b => b.ClassSessionId == session.Id
                             && b.MemberId == member.Id
@@ -52,9 +52,7 @@ namespace GymAppV3.Infrastructure.Services
             if (alreadyBooked)
                 throw new BusinessRuleException("You already have a booking for this session.");
 
-            // --- Find a membership that covers this session's category, with balance ---
-            // DateTimeOffset comparisons are done in memory (SQLite limitation), so we
-            // pull the candidate memberships first and pick in C#.
+            // --- Find active membership with remaining balance for this class category ---
             var candidateMemberships = await _context.Memberships
                 .Where(m => m.MemberId == member.Id
                          && m.Status == MembershipStatus.Active
@@ -62,15 +60,14 @@ namespace GymAppV3.Infrastructure.Services
                          && m.MembershipPackage.ClassCategoryId == session.ClassCategoryId)
                 .ToListAsync(cancellationToken);
 
-            // Only memberships whose validity window includes "now", and among those,
-            // spend the one that ends soonest (use up expiring credit first).
+            // Pick active membership that expires earliest to consume expiring credits first
             var membership = candidateMemberships
                 .Where(m => m.StartDate <= now && m.EndDate >= now)
                 .OrderBy(m => m.EndDate)
                 .FirstOrDefault() ??
                 throw new BusinessRuleException("No active membership with remaining sessions covers this class category.");
 
-            // --- All rules passed. Apply the three changes atomically. ---
+            // --- Execute mutations ---
             var booking = new Booking
             {
                 MemberId = member.Id,
@@ -86,12 +83,14 @@ namespace GymAppV3.Infrastructure.Services
 
             _context.Bookings.Add(booking);
 
-            // SaveChanges writes all three changes in a single transaction. The
-            // RowVersion tokens on session and membership guard against concurrent
-            // bookings both decrementing the same values.
+            // SaveChanges executes atomically. Optimistic Concurrency (RowVersion) prevents race conditions.
             await _context.SaveChangesAsync(cancellationToken);
 
-            return ObjectMapper.Booking.ToDtoCompiled(booking);
+            // Fetch clean DTO via ObjectMapper projection
+            return await _context.Bookings
+                .Where(b => b.Id == booking.Id)
+                .Select(ObjectMapper.Booking.ToDto)
+                .FirstAsync(cancellationToken);
         }
 
         public async Task CancelAsync(Guid bookingId, CancellationToken cancellationToken = default)
@@ -116,8 +115,8 @@ namespace GymAppV3.Infrastructure.Services
             // The seat is always freed — the spot becomes available again.
             session.AvailableSeats++;
 
-            // Session credit is returned ONLY if cancelling more than 24h ahead.
-            // Within 24h the credit is forfeited (the member loses that session).
+            // --- 24-Hour Policy Rule ---
+            // Session credit is refunded ONLY if cancelled >= 24h ahead of class start time.
             var hoursUntilStart = (session.StartsAt - now).TotalHours;
             if (hoursUntilStart >= 24)
             {

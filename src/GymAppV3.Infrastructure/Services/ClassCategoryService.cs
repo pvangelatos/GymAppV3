@@ -46,7 +46,7 @@ namespace GymAppV3.Infrastructure.Services
             // Project straight to the DTO so EF selects only the needed columns and
             // never materialises the full entity.
             return await _context.ClassCategories
-                .Select(c => new ClassCategoryDto(c.Id, c.Name))
+                .Select(ObjectMapper.ClassCategory.ToDto)
                 .ToListAsync(cancellationToken);
         }
 
@@ -56,7 +56,7 @@ namespace GymAppV3.Infrastructure.Services
             // respected — FindAsync would bypass it and could return a deleted row.
             return await _context.ClassCategories
                 .Where(c => c.Id == id)
-                .Select(c => new ClassCategoryDto(c.Id, c.Name))
+                .Select(ObjectMapper.ClassCategory.ToDto)
                 .FirstOrDefaultAsync(cancellationToken);
         }
 

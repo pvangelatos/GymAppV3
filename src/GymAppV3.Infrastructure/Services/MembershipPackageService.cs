@@ -28,9 +28,7 @@ public class MembershipPackageService : IMembershipPackageService
         // columns and never materialises the full entity. AsNoTracking is implied
         // by projecting to a non-entity type.
         return await _context.MembershipPackages
-            .Select(p => new MembershipPackageDto(
-                p.Id, p.Name, p.Price, p.DurationInDays, p.SessionsIncluded,
-                p.ClassCategoryId, p.ClassCategory.Name))
+            .Select(ObjectMapper.MembershipPackage.ToDto)
             .ToListAsync(cancellationToken);
     }
 
@@ -41,9 +39,7 @@ public class MembershipPackageService : IMembershipPackageService
         // filters, so it would return soft-deleted rows. This respects the filter.
         return await _context.MembershipPackages
             .Where(p => p.Id == id)
-            .Select(p => new MembershipPackageDto(
-                p.Id, p.Name, p.Price, p.DurationInDays, p.SessionsIncluded,
-                p.ClassCategoryId, p.ClassCategory.Name))
+            .Select(ObjectMapper.MembershipPackage.ToDto)
             .FirstOrDefaultAsync(cancellationToken);
     }
 
@@ -67,10 +63,7 @@ public class MembershipPackageService : IMembershipPackageService
         _context.MembershipPackages.Add(package);
         await _context.SaveChangesAsync(cancellationToken);
 
-        return new MembershipPackageDto(
-            package.Id, package.Name, package.Price,
-            package.DurationInDays, package.SessionsIncluded,
-            category.Id, category.Name);
+        return ObjectMapper.MembershipPackage.ToDtoCompiled(package);
     }
 
     public async Task UpdateAsync(

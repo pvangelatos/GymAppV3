@@ -21,12 +21,7 @@ public class GymBuildingService : IGymBuildingService
         CancellationToken cancellationToken = default)
     {
         return await _context.GymBuildings
-            .Select(b => new GymBuildingDto(
-                b.Id, b.Name, b.Description,
-                new AddressDto(
-                    b.Address.Street, b.Address.City, b.Address.State,
-                    b.Address.ZipCode, b.Address.Country),
-                b.Phone, b.Email))
+            .Select(ObjectMapper.GymBuilding.ToDto)
             .ToListAsync(cancellationToken);
     }
 
@@ -35,12 +30,7 @@ public class GymBuildingService : IGymBuildingService
     {
         return await _context.GymBuildings
             .Where(b => b.Id == id)
-            .Select(b => new GymBuildingDto(
-                b.Id, b.Name, b.Description,
-                new AddressDto(
-                    b.Address.Street, b.Address.City, b.Address.State,
-                    b.Address.ZipCode, b.Address.Country),
-                b.Phone, b.Email))
+            .Select(ObjectMapper.GymBuilding.ToDto)
             .FirstOrDefaultAsync(cancellationToken);
     }
 
@@ -67,12 +57,7 @@ public class GymBuildingService : IGymBuildingService
         _context.GymBuildings.Add(building);
         await _context.SaveChangesAsync(cancellationToken);
 
-        return new GymBuildingDto(
-            building.Id, building.Name, building.Description,
-            new AddressDto(
-                building.Address.Street, building.Address.City, building.Address.State,
-                building.Address.ZipCode, building.Address.Country),
-            building.Phone, building.Email);
+        return ObjectMapper.GymBuilding.ToDtoCompiled(building);
     }
 
     public async Task UpdateAsync(
