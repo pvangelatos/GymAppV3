@@ -5,12 +5,13 @@ using GymAppV3.Core.Enums;
 using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Models;
+using GymAppV3.Core.Queries.Memberships;
 using GymAppV3.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace GymAppV3.Infrastructure.Services
 {
-    public class MembershipService : IMembershipService
+    public class MembershipService : IMembershipCommandService, IMembershipQueryService
     {
         private readonly ApplicationDbContext _context;
         private readonly IDateTimeProvider _clock;
@@ -20,10 +21,10 @@ namespace GymAppV3.Infrastructure.Services
             _context = context;
             _clock = clock;
         }
-        public async Task<MembershipDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<MembershipDto?> GetByIdAsync(GetMembershipByIdQuery query, CancellationToken cancellationToken = default)
         {
             return await _context.Memberships
-                .Where(m => m.Id == id)
+                .Where(m => m.Id == query.Id)
                 .Select(m => new MembershipDto(
                     m.Id, m.MemberId, m.MembershipPackageId, m.MembershipPackage.Name,
                     m.PricePaid, m.StartDate, m.EndDate, m.RemainingSessions,
@@ -31,10 +32,10 @@ namespace GymAppV3.Infrastructure.Services
                 .FirstOrDefaultAsync(cancellationToken);
         }
 
-        public async Task<IReadOnlyList<MembershipDto>> GetByMemberAsync(Guid memberId, CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<MembershipDto>> GetByMemberAsync(GetMembershipsByMemberQuery query, CancellationToken cancellationToken = default)
         {
             var memberships = await _context.Memberships
-                .Where(m => m.MemberId == memberId)
+                .Where(m => m.MemberId == query.MemberId)
                 .Select(ObjectMapper.Membership.ToDto)
                 .ToListAsync(cancellationToken);
 

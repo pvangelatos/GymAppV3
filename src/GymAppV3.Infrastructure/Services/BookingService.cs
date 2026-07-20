@@ -5,12 +5,13 @@ using GymAppV3.Core.Enums;
 using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Models;
+using GymAppV3.Core.Queries.Bookings;
 using GymAppV3.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace GymAppV3.Infrastructure.Services
 {
-    public class BookingService : IBookingService
+    public class BookingService : IBookingCommandService, IBookingQueryService
     {
         private readonly ApplicationDbContext _context;
         private readonly IDateTimeProvider _clock;
@@ -132,9 +133,9 @@ namespace GymAppV3.Infrastructure.Services
             await _context.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task<IReadOnlyList<BookingDto>> GetByMemberAsync(Guid memberId, CancellationToken cancellationToken = default) =>
+        public async Task<IReadOnlyList<BookingDto>> GetByMemberAsync(GetBookingsByMemberQuery query, CancellationToken cancellationToken = default) =>
                     await _context.Bookings
-                            .Where(b => b.MemberId == memberId)
+                            .Where(b => b.MemberId == query.MemberId)
                             .Select(ObjectMapper.Booking.ToDto)
                             .ToListAsync(cancellationToken);
 

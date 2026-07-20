@@ -6,13 +6,14 @@ using GymAppV3.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using GymAppV3.Core.Commands;
 using GymAppV3.Core.DTOs;
+using GymAppV3.Core.Queries.MembershipPackages;
 
 namespace GymAppV3.Infrastructure.Services;
 
 // CRUD implementation using IApplicationDbContext directly — no repository layer.
 // The soft-delete global query filter means "deleted" rows are invisible here
 // automatically; none of these methods need to check IsDeleted by hand.
-public class MembershipPackageService : IMembershipPackageService
+public class MembershipPackageService : IMembershipPackageCommandService, IMembershipPackageQueryService
 {
     private readonly ApplicationDbContext _context;
 
@@ -22,7 +23,7 @@ public class MembershipPackageService : IMembershipPackageService
     }
 
     public async Task<IReadOnlyList<MembershipPackageDto>> GetAllAsync(
-        CancellationToken cancellationToken = default)
+        GetAllMembershipPackagesQuery query, CancellationToken cancellationToken = default)
     {
         // Project straight to the DTO in the query, so EF selects only the needed
         // columns and never materialises the full entity. AsNoTracking is implied
@@ -33,12 +34,12 @@ public class MembershipPackageService : IMembershipPackageService
     }
 
     public async Task<MembershipPackageDto?> GetByIdAsync(
-        Guid id, CancellationToken cancellationToken = default)
+        GetMembershipPackageByIdQuery query, CancellationToken cancellationToken = default)
     {
         // FirstOrDefaultAsync (not FindAsync) — FindAsync bypasses global query
         // filters, so it would return soft-deleted rows. This respects the filter.
         return await _context.MembershipPackages
-            .Where(p => p.Id == id)
+            .Where(p => p.Id == query.Id)
             .Select(ObjectMapper.MembershipPackage.ToDto)
             .FirstOrDefaultAsync(cancellationToken);
     }

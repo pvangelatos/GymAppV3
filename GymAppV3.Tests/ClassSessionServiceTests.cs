@@ -2,6 +2,7 @@
 using GymAppV3.Core.Commands;
 using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.Models;
+using GymAppV3.Core.Queries.ClassSessions;
 using GymAppV3.Infrastructure.Services;
 
 
@@ -188,7 +189,7 @@ namespace GymAppV3.Tests
             await sut.ScheduleAsync(Request(trainerId, roomId, categoryId, startsAt: Now.AddDays(2)));
             await sut.ScheduleAsync(Request(trainerId, roomId, categoryId, startsAt: Now.AddDays(1)));
 
-            var result = await sut.GetUpcomingAsync();
+            var result = await sut.GetUpcomingAsync(new GetUpcomingClassSessionsQuery());
 
             result.Should().HaveCount(2);
             // Ordered by start time ascending.

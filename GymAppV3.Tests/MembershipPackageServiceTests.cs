@@ -2,6 +2,7 @@
 using GymAppV3.Core.Commands;
 using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.Models;
+using GymAppV3.Core.Queries.MembershipPackages;
 using GymAppV3.Infrastructure.Services;
 using Xunit;
 
@@ -27,7 +28,7 @@ public class MembershipPackageServiceTests : TestBase
         result.Price.Should().Be(49.99m);
 
         // And it is actually in the database.
-        var all = await sut.GetAllAsync();
+        var all = await sut.GetAllAsync(new GetAllMembershipPackagesQuery());
         all.Should().ContainSingle(p => p.Id == result.Id);
     }
 
@@ -36,7 +37,7 @@ public class MembershipPackageServiceTests : TestBase
     {
         var sut = CreateSut();
 
-        var result = await sut.GetByIdAsync(Guid.NewGuid());
+        var result = await sut.GetByIdAsync(new GetMembershipPackageByIdQuery(Guid.NewGuid()));
 
         result.Should().BeNull();
     }
@@ -48,7 +49,7 @@ public class MembershipPackageServiceTests : TestBase
         var categoryId = await SeedCategory();
         var created = await sut.CreateAsync(new CreateMembershipPackageCommand("Premium", 89m, 30, 12, categoryId));
 
-        var result = await sut.GetByIdAsync(created.Id);
+        var result = await sut.GetByIdAsync(new GetMembershipPackageByIdQuery(created.Id));
 
         result.Should().NotBeNull();
         result!.Name.Should().Be("Premium");
@@ -63,7 +64,7 @@ public class MembershipPackageServiceTests : TestBase
 
         await sut.UpdateAsync(created.Id, new UpdateMembershipPackageCommand("Basic Plus", 59m, 45, 10, categoryId));
 
-        var updated = await sut.GetByIdAsync(created.Id);
+        var updated = await sut.GetByIdAsync(new GetMembershipPackageByIdQuery(created.Id));
         updated!.Name.Should().Be("Basic Plus");
         updated.Price.Should().Be(59m);
         updated.DurationInDays.Should().Be(45);
@@ -92,7 +93,7 @@ public class MembershipPackageServiceTests : TestBase
         await sut.DeleteAsync(created.Id);
 
         // The global query filter hides the soft-deleted row.
-        var result = await sut.GetByIdAsync(created.Id);
+        var result = await sut.GetByIdAsync(new GetMembershipPackageByIdQuery(created.Id));
         result.Should().BeNull();
     }
 

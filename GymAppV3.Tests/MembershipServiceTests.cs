@@ -3,6 +3,7 @@ using GymAppV3.Core.Commands;
 using GymAppV3.Core.Enums;
 using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.Models;
+using GymAppV3.Core.Queries.Memberships;
 using GymAppV3.Infrastructure.Services;
 using Xunit;
 
@@ -92,7 +93,7 @@ public class MembershipServiceTests : TestBase
         await Context.SaveChangesAsync();
 
         // The membership still remembers what was actually paid.
-        var reloaded = await sut.GetByIdAsync(membership.Id);
+        var reloaded = await sut.GetByIdAsync(new GetMembershipByIdQuery(membership.Id));
         reloaded!.PricePaid.Should().Be(50m);
     }
 
@@ -170,7 +171,7 @@ public class MembershipServiceTests : TestBase
         await sut.PurchaseAsync(new PurchaseMembershipCommand(memberId, pilatesId));
         await sut.PurchaseAsync(new PurchaseMembershipCommand(memberId, yogaId));
 
-        var result = await sut.GetByMemberAsync(memberId);
+        var result = await sut.GetByMemberAsync(new GetMembershipsByMemberQuery(memberId));
 
         result.Should().HaveCount(2);
     }

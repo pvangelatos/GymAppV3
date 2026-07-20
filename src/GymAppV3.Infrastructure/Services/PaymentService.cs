@@ -17,7 +17,7 @@ namespace GymAppV3.Infrastructure.Services
     /// Service for managing payment transactions reporting.
     /// Handles payment validation, VAT calculation snapshots, and transaction persistence.
     /// </summary>
-    public class PaymentService : IPaymentService
+    public class PaymentService : IPaymentCommandService
 
     {
         private readonly ApplicationDbContext _context;

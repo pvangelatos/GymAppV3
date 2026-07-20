@@ -7,6 +7,7 @@
     <Project Path="src/GymAppV3.Core/GymAppV3.Core.csproj" />
     <Project Path="src/GymAppV3.Infrastructure/GymAppV3.Infrastructure.csproj" />
   </Folder>
-  <Folder Name="/test/" />
-  <Project Path="GymAppV3.Tests/GymAppV3.Tests.csproj" />
+  <Folder Name="/test/">
+    <Project Path="GymAppV3.Tests/GymAppV3.Tests.csproj" />
+  </Folder>
 </Solution>

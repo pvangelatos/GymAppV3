@@ -5,12 +5,13 @@ using GymAppV3.Core.DTOs;
 using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Models;
+using GymAppV3.Core.Queries.ClassRooms;
 using GymAppV3.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace GymAppV3.Infrastructure.Services;
 
-public class ClassRoomService : IClassRoomService
+public class ClassRoomService : IClassRoomCommandService, IClassRoomQueryService
 {
     private readonly ApplicationDbContext _context;
 
@@ -20,7 +21,7 @@ public class ClassRoomService : IClassRoomService
     }
 
     public async Task<IReadOnlyList<ClassRoomDto>> GetAllAsync(
-        CancellationToken cancellationToken = default)
+        GetAllClassRoomsQuery query, CancellationToken cancellationToken = default)
     {
         return await _context.ClassRooms
             .Select(ObjectMapper.ClassRoom.ToDto)
@@ -28,10 +29,10 @@ public class ClassRoomService : IClassRoomService
     }
 
     public async Task<ClassRoomDto?> GetByIdAsync(
-        Guid id, CancellationToken cancellationToken = default)
+        GetClassRoomByIdQuery query, CancellationToken cancellationToken = default)
     {
         return await _context.ClassRooms
-            .Where(r => r.Id == id)
+            .Where(r => r.Id == query.Id)
             .Select(ObjectMapper.ClassRoom.ToDto)
             .FirstOrDefaultAsync(cancellationToken);
     }

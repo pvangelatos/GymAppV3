@@ -3,6 +3,7 @@ using GymAppV3.Core.DTOs;
 using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Models;
+using GymAppV3.Core.Queries.ClassCategories;
 using GymAppV3.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,7 +11,7 @@ namespace GymAppV3.Infrastructure.Services
 {
     // CRUD implementation for class categories. The soft-delete global query filter
     // hides deleted rows automatically, so no method checks IsDeleted by hand.
-    public class ClassCategoryService : IClassCategoryService
+    public class ClassCategoryService : IClassCategoryCommandService, IClassCategoryQueryService
     {
         private readonly ApplicationDbContext _context;
 
@@ -41,7 +42,7 @@ namespace GymAppV3.Infrastructure.Services
             await _context.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task<IReadOnlyList<ClassCategoryDto>> GetAllAsync(CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<ClassCategoryDto>> GetAllAsync(GetAllClassCategoriesQuery query, CancellationToken cancellationToken = default)
         {
             // Project straight to the DTO so EF selects only the needed columns and
             // never materialises the full entity.
@@ -50,12 +51,12 @@ namespace GymAppV3.Infrastructure.Services
                 .ToListAsync(cancellationToken);
         }
 
-        public async Task<ClassCategoryDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<ClassCategoryDto?> GetByIdAsync(GetClassCategoryByIdQuery query, CancellationToken cancellationToken = default)
         {
             // FirstOrDefaultAsync (not FindAsync) so the soft-delete query filter is
             // respected — FindAsync would bypass it and could return a deleted row.
             return await _context.ClassCategories
-                .Where(c => c.Id == id)
+                .Where(c => c.Id == query.Id)
                 .Select(ObjectMapper.ClassCategory.ToDto)
                 .FirstOrDefaultAsync(cancellationToken);
         }

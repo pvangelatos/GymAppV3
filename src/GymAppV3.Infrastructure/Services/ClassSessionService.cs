@@ -4,12 +4,13 @@ using GymAppV3.Core.DTOs;
 using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Models;
+using GymAppV3.Core.Queries.ClassSessions;
 using GymAppV3.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace GymAppV3.Infrastructure.Services
 {
-    public class ClassSessionService : IClassSessionService
+    public class ClassSessionService : IClassSessionCommandService, IClassSessionQueryService
     {
         private readonly ApplicationDbContext _context;
         private readonly IDateTimeProvider _clock;
@@ -19,15 +20,15 @@ namespace GymAppV3.Infrastructure.Services
             _context = context;
             _clock = clock;
         }
-        public async Task<ClassSessionDto?> GetClassSessionByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<ClassSessionDto?> GetClassSessionByIdAsync(GetClassSessionByIdQuery query, CancellationToken cancellationToken = default)
         {
             return await _context.ClassSessions
-                .Where(s => s.Id == id)
+                .Where(s => s.Id == query.Id)
                 .Select(ObjectMapper.ClassSession.ToDto)
                 .FirstOrDefaultAsync(cancellationToken);
         }
 
-        public async Task<IReadOnlyList<ClassSessionDto>> GetUpcomingAsync(CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<ClassSessionDto>> GetUpcomingAsync(GetUpcomingClassSessionsQuery query, CancellationToken cancellationToken = default)
         {
             var now = _clock.UtcNow;
 

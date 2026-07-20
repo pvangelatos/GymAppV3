@@ -2,13 +2,14 @@
 using GymAppV3.Core.DTOs;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Models;
+using GymAppV3.Core.Queries.GymBuildings;
 using GymAppV3.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using GymAppV3.Core.Commands;
 
 namespace GymAppV3.Infrastructure.Services;
 
-public class GymBuildingService : IGymBuildingService
+public class GymBuildingService : IGymBuildingCommandService, IGymBuildingQueryService
 {
     private readonly ApplicationDbContext _context;
 
@@ -18,7 +19,7 @@ public class GymBuildingService : IGymBuildingService
     }
 
     public async Task<IReadOnlyList<GymBuildingDto>> GetAllAsync(
-        CancellationToken cancellationToken = default)
+        GetAllGymBuildingsQuery query, CancellationToken cancellationToken = default)
     {
         return await _context.GymBuildings
             .Select(ObjectMapper.GymBuilding.ToDto)
@@ -26,10 +27,10 @@ public class GymBuildingService : IGymBuildingService
     }
 
     public async Task<GymBuildingDto?> GetByIdAsync(
-        Guid id, CancellationToken cancellationToken = default)
+        GetGymBuildingByIdQuery query, CancellationToken cancellationToken = default)
     {
         return await _context.GymBuildings
-            .Where(b => b.Id == id)
+            .Where(b => b.Id == query.Id)
             .Select(ObjectMapper.GymBuilding.ToDto)
             .FirstOrDefaultAsync(cancellationToken);
     }
