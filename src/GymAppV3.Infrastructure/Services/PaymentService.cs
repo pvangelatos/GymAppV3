@@ -8,16 +8,19 @@ using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Models;
 using GymAppV3.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
-using Microsoft.Identity.Client;
+
 
 
 namespace GymAppV3.Infrastructure.Services
 {
+    /// <summary>
+    /// Service for managing payment transactions and financial reporting
+    /// Handles payment recording, VAT calculation, and monthly reports
+    /// </summary>
     public class PaymentService : IPaymentService
 
     {
-        public readonly ApplicationDbContext _context;
+        private readonly ApplicationDbContext _context;
         private readonly IDateTimeProvider _clock;
         private readonly IVatRateProvider _vatRates;
 
@@ -33,13 +36,13 @@ namespace GymAppV3.Infrastructure.Services
             
             var payments = await _context.Payments
                 .Where(p => p.MemberId == memberId)
+                .OrderByDescending(p => p.PaidAt)
+                .Select(ObjectMapper.Payment.ToDto)
                 .ToListAsync(cancellationToken);
 
             // Compute derived figures and order in memory.
-            return payments
-                .OrderByDescending(p => p.PaidAt)
-                .Select(ToDto)
-                .ToList();
+            return payments;
+                
         }
 
         public async Task<MonthlyFinancialReportDto> GetMonthlyReportAsync(int year, int month, CancellationToken cancellationToken = default)

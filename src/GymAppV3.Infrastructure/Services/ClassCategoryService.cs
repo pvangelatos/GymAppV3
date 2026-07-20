@@ -5,9 +5,6 @@ using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Models;
 using GymAppV3.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace GymAppV3.Infrastructure.Services
 {

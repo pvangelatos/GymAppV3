@@ -27,8 +27,8 @@ namespace GymAppV3.Infrastructure.Services
 
             // --- The member must exist ---
             var member = await _context.Members
-                .FirstOrDefaultAsync(m => m.Id == request.MemberId, cancellationToken) ??
-                throw new NotFoundException(nameof(Member), request.MemberId);
+                .FirstOrDefaultAsync(m => m.Id == request.MemberId, cancellationToken)
+                ?? throw new NotFoundException(nameof(Member), request.MemberId);
 
             // --- The session must exist ---
             var session = await _context.ClassSessions
@@ -91,10 +91,7 @@ namespace GymAppV3.Infrastructure.Services
             // bookings both decrementing the same values.
             await _context.SaveChangesAsync(cancellationToken);
 
-            return new BookingDto(
-            booking.Id, booking.MemberId, booking.ClassSessionId,
-            session.Title, session.StartsAt,
-            booking.Status.ToString(), booking.BookedAt, booking.CancelledAt);
+            return ObjectMapper.Booking.ToDtoCompiled(booking);
         }
 
         public async Task CancelAsync(Guid bookingId, CancellationToken cancellationToken = default)
@@ -139,11 +136,7 @@ namespace GymAppV3.Infrastructure.Services
         public async Task<IReadOnlyList<BookingDto>> GetByMemberAsync(Guid memberId, CancellationToken cancellationToken = default) =>
                     await _context.Bookings
                             .Where(b => b.MemberId == memberId)
-                            .Select(b => new BookingDto(
-                                b.Id, b.MemberId, b.ClassSessionId,
-                                b.ClassSession.Title, b.ClassSession.StartsAt,
-                                b.Status.ToString(), b.BookedAt, b.CancelledAt))
-                            .OrderByDescending(b => b.BookedAt)
+                            .Select(ObjectMapper.Booking.ToDto)
                             .ToListAsync(cancellationToken);
 
         // Finds an active membership of the given category to refund a session credit to.
