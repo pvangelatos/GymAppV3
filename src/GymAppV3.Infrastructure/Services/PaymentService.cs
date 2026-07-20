@@ -14,8 +14,8 @@ using Microsoft.EntityFrameworkCore;
 namespace GymAppV3.Infrastructure.Services
 {
     /// <summary>
-    /// Service for managing payment transactions and financial reporting
-    /// Handles payment recording, VAT calculation, and monthly reports
+    /// Service for managing payment transactions reporting.
+    /// Handles payment validation, VAT calculation snapshots, and transaction persistence.
     /// </summary>
     public class PaymentService : IPaymentService
 
@@ -31,54 +31,18 @@ namespace GymAppV3.Infrastructure.Services
             _vatRates = vatRates;
         }
 
-        public async Task<IReadOnlyList<PaymentDto>> GetPaymentsByMemberAsync(Guid memberId, CancellationToken cancellationToken = default)
-        {
-            
-            var payments = await _context.Payments
-                .Where(p => p.MemberId == memberId)
-                .OrderByDescending(p => p.PaidAt)
-                .Select(ObjectMapper.Payment.ToDto)
-                .ToListAsync(cancellationToken);
-
-            // Compute derived figures and order in memory.
-            return payments;
-                
-        }
-
-        public async Task<MonthlyFinancialReportDto> GetMonthlyReportAsync(int year, int month, CancellationToken cancellationToken = default)
-        {
-            var totals = await _context.Payments
-                .Where(p => p.Status == PaymentStatus.Completed
-                    && p.PaidAt.Year == year
-                    && p.PaidAt.Month == month)
-                .GroupBy(_ => 1)
-                .Select(g => new {
-                                    Count = g.Count(),
-                                    Gross = g.Sum(p => p.Amount),
-                                    Net = g.Sum(p => p.NetAmount)
-                                 })
-                .FirstOrDefaultAsync(cancellationToken);
-
-            return new MonthlyFinancialReportDto(
-                year, month,
-                totals?.Count ?? 0,
-                totals?.Gross ?? 0m,
-                totals?.Net ?? 0m,
-                (totals?.Gross ?? 0m) - (totals?.Net ?? 0m));
-        }
-
         public async Task<PaymentDto> RecordAsync(RecordPaymentCommand command, CancellationToken cancellationToken = default)
         {
             var vatCategory = VatCategory.Services; // default for payments without membership
 
-            // --- The member must exist ---
+            // --- Member existence check ---
             var memberExists = await _context.Members
                 .AnyAsync(m => m.Id == command.MemberId, cancellationToken);
 
             if (!memberExists) 
                 throw new NotFoundException(nameof(Member), command.MemberId);
 
-            // --- If a membership is referenced, it must exist and belong to this member ---
+            // --- Membership verification & VAT category retrieval ---
             if (command.MembershipId is not null)
             {
                 var membership = await _context.Memberships
@@ -90,6 +54,7 @@ namespace GymAppV3.Infrastructure.Services
                 vatCategory = membership.VatCategory;
             }
 
+            // --- VAT Snapshot Calculation ---
             var rate = _vatRates.GetVatRate(vatCategory);
             var (net, _) = VatCalculator.Split(command.Amount, rate);
 
@@ -108,12 +73,8 @@ namespace GymAppV3.Infrastructure.Services
             _context.Payments.Add(payment);
             await _context.SaveChangesAsync(cancellationToken);
 
-            return ToDto(payment);
+            return ObjectMapper.Payment.ToDtoCompiled(payment);
         }
 
-        private static PaymentDto ToDto(Payment p) => new(
-            p.Id, p.MemberId, p.MembershipId,
-            p.Amount, p.NetAmount, p.Amount - p.NetAmount, p.VatRate,
-            p.Method.ToString(), p.Status.ToString(), p.PaidAt);
     }
 }
