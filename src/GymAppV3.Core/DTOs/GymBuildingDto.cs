@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
+﻿
 namespace GymAppV3.Core.DTOs
 {
     // Read model returned to clients. The owned Address is exposed as a nested DTO.

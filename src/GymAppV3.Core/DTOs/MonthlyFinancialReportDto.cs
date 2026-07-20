@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
+﻿
 namespace GymAppV3.Core.DTOs
 {
     // Aggregated financials for a single month.Totals are split into gross, net, and

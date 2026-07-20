@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
+﻿
 namespace GymAppV3.Core.DTOs
 {
     // Read model for a membership. Includes the package name so clients can display

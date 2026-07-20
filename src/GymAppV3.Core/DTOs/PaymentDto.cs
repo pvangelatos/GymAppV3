@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
+﻿
 namespace GymAppV3.Core.DTOs
 {
     // Read model for a payment. Exposes the gross amount plus the derived net and VAT
