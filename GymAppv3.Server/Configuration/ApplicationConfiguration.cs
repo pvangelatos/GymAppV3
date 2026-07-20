@@ -1,9 +1,7 @@
-﻿using GymAppv3.Server.Data;
-using GymAppV3.Core.Interfaces;
+﻿using GymAppV3.Core.Interfaces;
 using GymAppV3.Infrastructure.Data;
 using GymAppV3.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.SqlServer; // For UseSqlServer
 
 namespace GymAppv3.Server.Configuration;
 
