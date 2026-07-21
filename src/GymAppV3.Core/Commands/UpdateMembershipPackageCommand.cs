@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
+﻿
 namespace GymAppV3.Core.Commands
 {
     // Input for updating a package. Id comes from the route, not the body.

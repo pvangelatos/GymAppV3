@@ -1,7 +1,4 @@
 ﻿using GymAppV3.Core.DTOs;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace GymAppV3.Core.Commands
 {

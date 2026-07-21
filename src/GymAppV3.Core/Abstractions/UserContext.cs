@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
+﻿
 namespace GymAppV3.Core.Abstractions
 {
     // Temporary implementation — returns null until authentication is wired up.

@@ -1,5 +1,4 @@
 ﻿
-
 namespace GymAppV3.Core.Common
 {
     public class VatCalculator

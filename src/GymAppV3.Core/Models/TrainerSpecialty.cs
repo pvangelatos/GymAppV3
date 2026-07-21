@@ -1,8 +1,4 @@
-﻿using GymAppV3.Core.Enums;
-using System;
-using System.Collections.Generic;
-using System.Text;
-
+﻿
 namespace GymAppV3.Core.Models
 {
     public class TrainerSpecialty
