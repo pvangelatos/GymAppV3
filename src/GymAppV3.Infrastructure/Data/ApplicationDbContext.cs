@@ -1,5 +1,7 @@
 ﻿using System.Linq.Expressions;
 using GymAppV3.Core.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace GymAppV3.Infrastructure.Data;
@@ -8,7 +10,7 @@ namespace GymAppV3.Infrastructure.Data;
 /// The EF Core database context. Registered in DI and injected directly into
 /// application services.
 /// </summary>
-public class ApplicationDbContext : DbContext
+public class ApplicationDbContext : IdentityDbContext<IdentityUser>
 {
     // Options (connection string, provider, interceptors) are injected from the
     // outside via DI, keeping this context free of hard-coded configuration.

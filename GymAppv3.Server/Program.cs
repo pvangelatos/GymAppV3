@@ -1,4 +1,5 @@
 using GymAppv3.Server.Configuration;
+using GymAppv3.Server.Endpoints.Auth;
 using GymAppv3.Server.Endpoints.ClassCategory;
 using GymAppv3.Server.Endpoints.ClassRoom;
 using GymAppv3.Server.Endpoints.GymBuilding;
@@ -11,6 +12,12 @@ builder.ConfigureApplication();
 
 var app = builder.Build();
 
+// Seed roles on application startup
+if (app.Environment.IsDevelopment())
+{
+    await SeedData.InitializeRolesAsync(app.Services);
+}
+
 app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
@@ -19,8 +26,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapAuthEndpoints();
 app.MapGymBuildingEndpoints();
 app.MapClassCategoryEndpoints();
 app.MapClassRoomEndpoints();

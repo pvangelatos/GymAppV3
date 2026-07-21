@@ -1,6 +1,8 @@
-﻿using GymAppV3.Core.Interfaces;
+﻿using GymAppV3.Core.Abstractions;
+using GymAppV3.Core.Interfaces;
 using GymAppV3.Infrastructure.Data;
 using GymAppV3.Infrastructure.Handlers;
+using GymAppV3.Infrastructure.Identity;
 using GymAppV3.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,8 +16,21 @@ public static class ApplicationConfiguration
         builder.Services.AddOpenApi();
         builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
         builder.Services.AddProblemDetails();
+
+        // Database
         builder.Services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+        // Configure Identity and Authentication
+        builder.ConfigureIdentity();
+
+        // HTTP Context Accessor (required for UserContext)
+        builder.Services.AddHttpContextAccessor();
+
+        // User Context
+        builder.Services.AddScoped<IUserContext, UserContext>();
+
+        // Business services
         builder.Services.AddScoped<IGymBuildingCommandService, GymBuildingService>();
         builder.Services.AddScoped<IGymBuildingQueryService, GymBuildingService>();
         builder.Services.AddScoped<IClassCategoryCommandService, ClassCategoryService>();

@@ -12,26 +12,31 @@ public static class ClassCategoryEndpoints
 
         group.MapGet("/", ClassCategoryHandlers.GetAllAsync)
             .WithName("GetClassCategories")
+            .RequireAuthorization()
             .Produces<IReadOnlyList<ClassCategoryDto>>(StatusCodes.Status200OK);
 
         group.MapGet("/{id:guid}", ClassCategoryHandlers.GetByIdAsync)
         .WithName("GetClassCategoryById")
+        .RequireAuthorization()
         .Produces<ClassCategoryDto>(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status404NotFound);
 
         group.MapPost("/", ClassCategoryHandlers.CreateAsync)
             .WithName("CreateClassCategory")
+            .RequireAuthorization("AdminOnly")
             .Accepts<CreateClassCategoryCommand>("application/json")
             .Produces<ClassCategoryDto>(StatusCodes.Status201Created);
 
         group.MapPut("/{id:guid}", ClassCategoryHandlers.UpdateAsync)
             .WithName("UpdateClassCategory")
+            .RequireAuthorization("AdminOnly")
             .Accepts<UpdateClassCategoryCommand>("application/json")
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status404NotFound);
 
         group.MapDelete("/{id:guid}", ClassCategoryHandlers.DeleteAsync)
             .WithName("DeleteClassCategory")
+            .RequireAuthorization("AdminOnly")
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status404NotFound);
 
