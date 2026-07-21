@@ -2,9 +2,6 @@
 using GymAppV3.Core.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace GymAppV3.Infrastructure.Data.Interceptors
 {

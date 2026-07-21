@@ -1,6 +1,5 @@
 ﻿using GymAppV3.Core.DTOs;
 using Models = GymAppV3.Core.Models;
-using System;
 using System.Linq.Expressions;
 
 namespace GymAppV3.Infrastructure

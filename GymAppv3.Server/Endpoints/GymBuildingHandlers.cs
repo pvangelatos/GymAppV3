@@ -1,6 +1,5 @@
 using GymAppV3.Core.Commands;
 using GymAppV3.Core.DTOs;
-using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Queries.GymBuildings;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -35,36 +34,26 @@ public static class GymBuildingHandlers
         return TypedResults.Created($"/api/gym-buildings/{created.Id}", created);
     }
 
-    public static async Task<Results<NoContent, NotFound>> UpdateAsync(
+    public static async Task<NoContent> UpdateAsync(
         Guid id,
         UpdateGymBuildingCommand command,
         IGymBuildingCommandService commandService,
         CancellationToken cancellationToken)
     {
-        try
-        {
+       
             await commandService.UpdateAsync(id, command, cancellationToken);
             return TypedResults.NoContent();
-        }
-        catch (NotFoundException)
-        {
-            return TypedResults.NotFound();
-        }
+       
     }
 
-    public static async Task<Results<NoContent, NotFound>> DeleteAsync(
+    public static async Task<NoContent> DeleteAsync(
         Guid id,
         IGymBuildingCommandService commandService,
         CancellationToken cancellationToken)
     {
-        try
-        {
+        
             await commandService.DeleteAsync(id, cancellationToken);
             return TypedResults.NoContent();
-        }
-        catch (NotFoundException)
-        {
-            return TypedResults.NotFound();
-        }
+        
     }
 }

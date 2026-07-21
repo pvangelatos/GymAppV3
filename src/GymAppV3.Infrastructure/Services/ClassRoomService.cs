@@ -1,5 +1,4 @@
 ﻿
-using System.Linq.Expressions;
 using GymAppV3.Core.Commands;
 using GymAppV3.Core.DTOs;
 using GymAppV3.Core.Exceptions;

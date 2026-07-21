@@ -17,5 +17,7 @@
   <ItemGroup>
 	  <ProjectReference Include="..\GymAppV3.Core\GymAppV3.Core.csproj" />
   </ItemGroup>
-
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
 </Project>
