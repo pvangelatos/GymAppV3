@@ -1,16 +1,15 @@
 ﻿
-namespace GymAppV3.Core.Models
+namespace GymAppV3.Core.Models;
+
+public class TrainerSpecialty
 {
-    public class TrainerSpecialty
-    {
-        // Reference to the trainer holding this specialty
-        public Guid TrainerId { get; set; }
+    // Reference to the trainer holding this specialty
+    public Guid TrainerId { get; set; }
 
-        // Navigation property to the Trainer entity
-        public Trainer Trainer { get; set; } = null!;
+    // Navigation property to the Trainer entity
+    public Trainer Trainer { get; set; } = null!;
 
-        // The category the trainer is qualified in (replaces the old Specialty enum).
-        public Guid ClassCategoryId { get; set; }
-        public ClassCategory ClassCategory { get; set; } = null!;
-    }
+    // The category the trainer is qualified in (replaces the old Specialty enum).
+    public Guid ClassCategoryId { get; set; }
+    public ClassCategory ClassCategory { get; set; } = null!;
 }

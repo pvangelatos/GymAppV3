@@ -1,14 +1,12 @@
 ﻿using GymAppV3.Core.Enums;
 
 
-namespace GymAppV3.Core.Commands
-{
-    public record RecordPaymentCommand(
-        // Input for recording a payment. Amount is the gross figure (VAT included).
-        // VatRate is captured at payment time (e.g. 0.24) so the record is self-contained.
-        Guid MemberId,
-        Guid? MembershipId,         // optional - a payment may not tie to a specific membership
-        decimal Amount,             // gross (VAT included)
-        PaymentMethod Method);
+namespace GymAppV3.Core.Commands;
 
-}
+public record RecordPaymentCommand(
+    // Input for recording a payment. Amount is the gross figure (VAT included).
+    // VatRate is captured at payment time (e.g. 0.24) so the record is self-contained.
+    Guid MemberId,
+    Guid? MembershipId,         // optional - a payment may not tie to a specific membership
+    decimal Amount,             // gross (VAT included)
+    PaymentMethod Method);

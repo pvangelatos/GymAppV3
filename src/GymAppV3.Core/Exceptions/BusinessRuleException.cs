@@ -1,11 +1,10 @@
 ﻿
 
-namespace GymAppV3.Core.Exceptions
+namespace GymAppV3.Core.Exceptions;
+
+public class BusinessRuleException : Exception
 {
-    public class BusinessRuleException : Exception
+    public BusinessRuleException(string message) : base(message) 
     {
-        public BusinessRuleException(string message) : base(message) 
-        {
-        }
     }
 }

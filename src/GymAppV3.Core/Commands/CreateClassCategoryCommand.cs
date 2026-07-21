@@ -1,6 +1,5 @@
 ﻿
 
-namespace GymAppV3.Core.Commands
-{
-    public record CreateClassCategoryCommand(string Name);
-}
+namespace GymAppV3.Core.Commands;
+
+public record CreateClassCategoryCommand(string Name);

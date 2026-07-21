@@ -9,152 +9,151 @@ using GymAppV3.Core.Queries.Bookings;
 using GymAppV3.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace GymAppV3.Infrastructure.Services
+namespace GymAppV3.Infrastructure.Services;
+
+public class BookingService : IBookingCommandService, IBookingQueryService
 {
-    public class BookingService : IBookingCommandService, IBookingQueryService
+    private readonly ApplicationDbContext _context;
+    private readonly IDateTimeProvider _clock;
+
+    public BookingService(ApplicationDbContext context, IDateTimeProvider clock)
     {
-        private readonly ApplicationDbContext _context;
-        private readonly IDateTimeProvider _clock;
+        _context = context;
+        _clock = clock;
+    }
 
-        public BookingService(ApplicationDbContext context, IDateTimeProvider clock)
+    public async Task<BookingDto> BookAsync(CreateBookingCommand request, CancellationToken cancellationToken = default)
+    {
+        var now = _clock.UtcNow;
+
+        // --- Member and Session existence checks ---
+        var member = await _context.Members
+            .FirstOrDefaultAsync(m => m.Id == request.MemberId, cancellationToken)
+            ?? throw new NotFoundException(nameof(Member), request.MemberId);
+
+       
+        var session = await _context.ClassSessions
+            .FirstOrDefaultAsync(s => s.Id == request.ClassSessionId, cancellationToken)
+            ?? throw new NotFoundException(nameof(ClassSession), request.ClassSessionId);
+
+        // --- Business Rule: Session timing ---
+        if (session.StartsAt <= now)
+            throw new BusinessRuleException("Cannot book a session that has already started.");
+
+        // --- Business Rule: Available seats check ---
+        if (session.AvailableSeats <= 0)
+            throw new BusinessRuleException("The session is fully booked.");
+
+        // --- Business Rule: Prevent duplicate active booking ---
+        var alreadyBooked = await _context.Bookings
+            .AnyAsync(b => b.ClassSessionId == session.Id
+                        && b.MemberId == member.Id
+                        && b.Status == BookingStatus.Confirmed,
+                      cancellationToken);
+        if (alreadyBooked)
+            throw new BusinessRuleException("You already have a booking for this session.");
+
+        // --- Find active membership with remaining balance for this class category ---
+        var candidateMemberships = await _context.Memberships
+            .Where(m => m.MemberId == member.Id
+                     && m.Status == MembershipStatus.Active
+                     && m.RemainingSessions > 0
+                     && m.MembershipPackage.ClassCategoryId == session.ClassCategoryId)
+            .ToListAsync(cancellationToken);
+
+        // Pick active membership that expires earliest to consume expiring credits first
+        var membership = candidateMemberships
+            .Where(m => m.StartDate <= now && m.EndDate >= now)
+            .OrderBy(m => m.EndDate)
+            .FirstOrDefault() ??
+            throw new BusinessRuleException("No active membership with remaining sessions covers this class category.");
+
+        // --- Execute mutations ---
+        var booking = new Booking
         {
-            _context = context;
-            _clock = clock;
+            MemberId = member.Id,
+            Member = member,
+            ClassSessionId = session.Id,
+            ClassSession = session,
+            Status = BookingStatus.Confirmed,
+            BookedAt = now
+        };
+
+        session.AvailableSeats--;        // one fewer seat
+        membership.RemainingSessions--;  // one fewer credit
+
+        _context.Bookings.Add(booking);
+
+        // SaveChanges executes atomically. Optimistic Concurrency (RowVersion) prevents race conditions.
+        await _context.SaveChangesAsync(cancellationToken);
+
+        // Fetch clean DTO via ObjectMapper projection
+        return await _context.Bookings
+            .Where(b => b.Id == booking.Id)
+            .Select(ObjectMapper.Booking.ToDto)
+            .FirstAsync(cancellationToken);
+    }
+
+    public async Task CancelAsync(Guid bookingId, CancellationToken cancellationToken = default)
+    {
+        var now = _clock.UtcNow;
+
+        var booking = await _context.Bookings
+            .Include(b => b.ClassSession)
+            .FirstOrDefaultAsync(b => b.Id == bookingId, cancellationToken)
+            ?? throw new NotFoundException(nameof(Booking), bookingId);
+
+        // Only confirmed bookings can be cancelled.
+        if (booking.Status != BookingStatus.Confirmed)
+            throw new BusinessRuleException("Only a confirmed booking can be cancelled.");
+
+        var session = booking.ClassSession;
+
+        // Mark the booking cancelled either way.
+        booking.Status = BookingStatus.Cancelled;
+        booking.CancelledAt = now;
+
+        // The seat is always freed — the spot becomes available again.
+        session.AvailableSeats++;
+
+        // --- 24-Hour Policy Rule ---
+        // Session credit is refunded ONLY if cancelled >= 24h ahead of class start time.
+        var hoursUntilStart = (session.StartsAt - now).TotalHours;
+        if (hoursUntilStart >= 24)
+        {
+            // Find the membership this booking was charged from: same member, same
+            // category as the session. Return one credit to it.
+            var membership = await FindMembershipToRefund(
+                booking.MemberId, session.ClassCategoryId, cancellationToken);
+
+            if (membership is not null)
+                membership.RemainingSessions++;
         }
 
-        public async Task<BookingDto> BookAsync(CreateBookingCommand request, CancellationToken cancellationToken = default)
-        {
-            var now = _clock.UtcNow;
+        await _context.SaveChangesAsync(cancellationToken);
+    }
 
-            // --- Member and Session existence checks ---
-            var member = await _context.Members
-                .FirstOrDefaultAsync(m => m.Id == request.MemberId, cancellationToken)
-                ?? throw new NotFoundException(nameof(Member), request.MemberId);
+    public async Task<IReadOnlyList<BookingDto>> GetByMemberAsync(GetBookingsByMemberQuery query, CancellationToken cancellationToken = default) =>
+                await _context.Bookings
+                        .Where(b => b.MemberId == query.MemberId)
+                        .Select(ObjectMapper.Booking.ToDto)
+                        .ToListAsync(cancellationToken);
 
-           
-            var session = await _context.ClassSessions
-                .FirstOrDefaultAsync(s => s.Id == request.ClassSessionId, cancellationToken)
-                ?? throw new NotFoundException(nameof(ClassSession), request.ClassSessionId);
+    // Finds an active membership of the given category to refund a session credit to.
+    // Prefers the one ending soonest, mirroring how BookAsync chooses which to spend.
+    private async Task<Membership?> FindMembershipToRefund(
+        Guid memberId, Guid categoryId, CancellationToken cancellationToken)
+    {
+        var candidates = await _context.Memberships
+            .Where(m => m.MemberId == memberId
+                     && m.Status == MembershipStatus.Active
+                     && m.MembershipPackage.ClassCategoryId == categoryId)
+            .ToListAsync(cancellationToken);
 
-            // --- Business Rule: Session timing ---
-            if (session.StartsAt <= now)
-                throw new BusinessRuleException("Cannot book a session that has already started.");
-
-            // --- Business Rule: Available seats check ---
-            if (session.AvailableSeats <= 0)
-                throw new BusinessRuleException("The session is fully booked.");
-
-            // --- Business Rule: Prevent duplicate active booking ---
-            var alreadyBooked = await _context.Bookings
-                .AnyAsync(b => b.ClassSessionId == session.Id
-                            && b.MemberId == member.Id
-                            && b.Status == BookingStatus.Confirmed,
-                          cancellationToken);
-            if (alreadyBooked)
-                throw new BusinessRuleException("You already have a booking for this session.");
-
-            // --- Find active membership with remaining balance for this class category ---
-            var candidateMemberships = await _context.Memberships
-                .Where(m => m.MemberId == member.Id
-                         && m.Status == MembershipStatus.Active
-                         && m.RemainingSessions > 0
-                         && m.MembershipPackage.ClassCategoryId == session.ClassCategoryId)
-                .ToListAsync(cancellationToken);
-
-            // Pick active membership that expires earliest to consume expiring credits first
-            var membership = candidateMemberships
-                .Where(m => m.StartDate <= now && m.EndDate >= now)
-                .OrderBy(m => m.EndDate)
-                .FirstOrDefault() ??
-                throw new BusinessRuleException("No active membership with remaining sessions covers this class category.");
-
-            // --- Execute mutations ---
-            var booking = new Booking
-            {
-                MemberId = member.Id,
-                Member = member,
-                ClassSessionId = session.Id,
-                ClassSession = session,
-                Status = BookingStatus.Confirmed,
-                BookedAt = now
-            };
-
-            session.AvailableSeats--;        // one fewer seat
-            membership.RemainingSessions--;  // one fewer credit
-
-            _context.Bookings.Add(booking);
-
-            // SaveChanges executes atomically. Optimistic Concurrency (RowVersion) prevents race conditions.
-            await _context.SaveChangesAsync(cancellationToken);
-
-            // Fetch clean DTO via ObjectMapper projection
-            return await _context.Bookings
-                .Where(b => b.Id == booking.Id)
-                .Select(ObjectMapper.Booking.ToDto)
-                .FirstAsync(cancellationToken);
-        }
-
-        public async Task CancelAsync(Guid bookingId, CancellationToken cancellationToken = default)
-        {
-            var now = _clock.UtcNow;
-
-            var booking = await _context.Bookings
-                .Include(b => b.ClassSession)
-                .FirstOrDefaultAsync(b => b.Id == bookingId, cancellationToken)
-                ?? throw new NotFoundException(nameof(Booking), bookingId);
-
-            // Only confirmed bookings can be cancelled.
-            if (booking.Status != BookingStatus.Confirmed)
-                throw new BusinessRuleException("Only a confirmed booking can be cancelled.");
-
-            var session = booking.ClassSession;
-
-            // Mark the booking cancelled either way.
-            booking.Status = BookingStatus.Cancelled;
-            booking.CancelledAt = now;
-
-            // The seat is always freed — the spot becomes available again.
-            session.AvailableSeats++;
-
-            // --- 24-Hour Policy Rule ---
-            // Session credit is refunded ONLY if cancelled >= 24h ahead of class start time.
-            var hoursUntilStart = (session.StartsAt - now).TotalHours;
-            if (hoursUntilStart >= 24)
-            {
-                // Find the membership this booking was charged from: same member, same
-                // category as the session. Return one credit to it.
-                var membership = await FindMembershipToRefund(
-                    booking.MemberId, session.ClassCategoryId, cancellationToken);
-
-                if (membership is not null)
-                    membership.RemainingSessions++;
-            }
-
-            await _context.SaveChangesAsync(cancellationToken);
-        }
-
-        public async Task<IReadOnlyList<BookingDto>> GetByMemberAsync(GetBookingsByMemberQuery query, CancellationToken cancellationToken = default) =>
-                    await _context.Bookings
-                            .Where(b => b.MemberId == query.MemberId)
-                            .Select(ObjectMapper.Booking.ToDto)
-                            .ToListAsync(cancellationToken);
-
-        // Finds an active membership of the given category to refund a session credit to.
-        // Prefers the one ending soonest, mirroring how BookAsync chooses which to spend.
-        private async Task<Membership?> FindMembershipToRefund(
-            Guid memberId, Guid categoryId, CancellationToken cancellationToken)
-        {
-            var candidates = await _context.Memberships
-                .Where(m => m.MemberId == memberId
-                         && m.Status == MembershipStatus.Active
-                         && m.MembershipPackage.ClassCategoryId == categoryId)
-                .ToListAsync(cancellationToken);
-
-            var now = _clock.UtcNow;
-            return candidates
-                .Where(m => m.StartDate <= now && m.EndDate >= now)
-                .OrderBy(m => m.EndDate)
-                .FirstOrDefault();
-        }
+        var now = _clock.UtcNow;
+        return candidates
+            .Where(m => m.StartDate <= now && m.EndDate >= now)
+            .OrderBy(m => m.EndDate)
+            .FirstOrDefault();
     }
 }

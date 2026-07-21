@@ -5,15 +5,14 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace GymAppV3.Core.Interfaces
+namespace GymAppV3.Core.Interfaces;
+
+public interface IPaymentQueryService
 {
-    public interface IPaymentQueryService
-    {
-        Task<IReadOnlyList<PaymentDto>> GetPaymentsByMemberIdAsync(GetPaymentsByMemberQuery query,
-        CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<PaymentDto>> GetPaymentsByMemberIdAsync(GetPaymentsByMemberQuery query,
+    CancellationToken cancellationToken = default);
 
-        Task<MonthlyFinancialReportDto> GetMonthlyFinancialReportAsync(GetMonthlyFinancialReportQuery query,
-        CancellationToken cancellationToken = default);
+    Task<MonthlyFinancialReportDto> GetMonthlyFinancialReportAsync(GetMonthlyFinancialReportQuery query,
+    CancellationToken cancellationToken = default);
 
-    }
 }

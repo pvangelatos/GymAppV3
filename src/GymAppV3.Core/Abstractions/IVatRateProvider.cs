@@ -1,10 +1,9 @@
 ﻿using GymAppV3.Core.Enums;
 
 
-namespace GymAppV3.Core.Abstractions
+namespace GymAppV3.Core.Abstractions;
+
+public interface IVatRateProvider
 {
-    public interface IVatRateProvider
-    {
-        decimal GetVatRate(VatCategory category);
-    }
+    decimal GetVatRate(VatCategory category);
 }
