@@ -4,7 +4,7 @@ using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Queries.GymBuildings;
 using Microsoft.AspNetCore.Http.HttpResults;
 
-namespace GymAppv3.Server.Endpoints;
+namespace GymAppv3.Server.Endpoints.GymBuilding;
 
 public static class GymBuildingHandlers
 {

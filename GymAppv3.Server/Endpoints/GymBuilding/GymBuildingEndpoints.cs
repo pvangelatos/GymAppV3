@@ -1,7 +1,7 @@
 using GymAppV3.Core.Commands;
 using GymAppV3.Core.DTOs;
 
-namespace GymAppv3.Server.Endpoints;
+namespace GymAppv3.Server.Endpoints.GymBuilding;
 
 public static class GymBuildingEndpoints
 {

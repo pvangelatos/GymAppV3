@@ -18,5 +18,11 @@ public static class ApplicationConfiguration
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
         builder.Services.AddScoped<IGymBuildingCommandService, GymBuildingService>();
         builder.Services.AddScoped<IGymBuildingQueryService, GymBuildingService>();
+        builder.Services.AddScoped<IClassCategoryCommandService, ClassCategoryService>();
+        builder.Services.AddScoped<IClassCategoryQueryService, ClassCategoryService>();
+        builder.Services.AddScoped<IClassRoomCommandService, ClassRoomService>();
+        builder.Services.AddScoped<IClassRoomQueryService, ClassRoomService>();
+        builder.Services.AddScoped<IMembershipPackageCommandService, MembershipPackageService>();
+        builder.Services.AddScoped<IMembershipPackageQueryService, MembershipPackageService>();
     }
 }

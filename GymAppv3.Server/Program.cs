@@ -1,5 +1,8 @@
-using GymAppv3.Server.Endpoints;
-using GymAppv3.Server.Configuration;  
+using GymAppv3.Server.Configuration;
+using GymAppv3.Server.Endpoints.ClassCategory;
+using GymAppv3.Server.Endpoints.ClassRoom;
+using GymAppv3.Server.Endpoints.GymBuilding;
+using GymAppv3.Server.Endpoints.MembershipPackage;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,5 +22,8 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapGymBuildingEndpoints();
+app.MapClassCategoryEndpoints();
+app.MapClassRoomEndpoints();
+app.MapMembershipPackageEndpoints();
 
 app.Run();
