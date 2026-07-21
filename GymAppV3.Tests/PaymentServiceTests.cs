@@ -3,7 +3,6 @@ using FluentAssertions;
 using GymAppV3.Core.Abstractions;
 using GymAppV3.Core.Enums;
 using GymAppV3.Core.Exceptions;
-using GymAppV3.Infrastructure.Handlers.Queries.Payments;
 using GymAppV3.Infrastructure.Services;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Models;
@@ -103,8 +102,7 @@ public class PaymentServiceTests : TestBase
         await sut.RecordAsync(new RecordPaymentCommand(
             member.Id, null, 62m, PaymentMethod.Cash));
 
-        var reportHandler = new GetMonthlyFinancialReportQueryHandler(Context);
-        var report = await reportHandler.HandleAsync(new GetMonthlyFinancialReportQuery(2026, 1));
+        var report = await sut.GetMonthlyFinancialReportAsync(new GetMonthlyFinancialReportQuery(2026,1));
 
         report.PaymentCount.Should().Be(2);
         report.TotalGross.Should().Be(186m);          // 124 + 62
@@ -119,8 +117,8 @@ public class PaymentServiceTests : TestBase
         var sut = CreateSut();
 
         // A month far in the past with no payments.
-        var reportHandler = new GetMonthlyFinancialReportQueryHandler(Context);
-        var report = await reportHandler.HandleAsync(new GetMonthlyFinancialReportQuery(2000, 1));
+        
+        var report = await sut.GetMonthlyFinancialReportAsync(new GetMonthlyFinancialReportQuery(2000, 1));
 
         report.PaymentCount.Should().Be(0);
         report.TotalGross.Should().Be(0m);
@@ -141,8 +139,7 @@ public class PaymentServiceTests : TestBase
         await sut.RecordAsync(new RecordPaymentCommand(
             member.Id, null, 50m, PaymentMethod.Cash));
 
-        var historyHandler = new GetPaymentsByMemberQueryHandler(Context);
-        var result = await historyHandler.HandleAsync(new GetPaymentsByMemberQuery(member.Id));
+        var result = await sut.GetPaymentsByMemberIdAsync(new GetPaymentsByMemberQuery(member.Id));
 
         result.Should().HaveCount(2);
     }
