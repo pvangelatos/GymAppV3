@@ -1,6 +1,8 @@
 ﻿using GymAppV3.Core.Abstractions;
 using GymAppV3.Infrastructure.Data;
 using GymAppV3.Infrastructure.Data.Interceptors;
+using GymAppV3.Infrastructure.Identity;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
 namespace GymAppV3.Tests;
@@ -10,14 +12,14 @@ namespace GymAppV3.Tests;
 // without the translation restrictions of relational database engines.
 public abstract class TestBase : IDisposable
 {
-    
+
     protected readonly ApplicationDbContext Context;
 
     protected TestBase()
     {
         var interceptor = new AuditableEntityInterceptor(
             new DateTimeProvider(),
-            new UserContext());
+            new UserContext(new HttpContextAccessor()));
 
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
