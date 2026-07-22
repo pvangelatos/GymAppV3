@@ -4,9 +4,7 @@
     <File Path="Plan-Implment-Authentication-Authorizations.md" />
   </Folder>
   <Folder Name="/src/">
-    <Project Path="GymAppv3.Server/GymAppv3.Server.csproj" Id="30225981-ab90-4057-b061-9442a0065597">
-      <Build Solution="Debug|*" Project="false" />
-    </Project>
+    <Project Path="GymAppv3.Server/GymAppv3.Server.csproj" Id="30225981-ab90-4057-b061-9442a0065597" />
     <Project Path="src/GymAppV3.Core/GymAppV3.Core.csproj" />
     <Project Path="src/GymAppV3.Infrastructure/GymAppV3.Infrastructure.csproj" />
   </Folder>
