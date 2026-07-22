@@ -10,19 +10,22 @@ public static class BookingEndpoints
         var group = app.MapGroup("/api/bookings")
             .WithTags("Bookings");
 
+        var memberBookings = app.MapGroup("/api/members/{memberId:guid}/bookings")
+            .WithTags("Bookings");
+
         group.MapPost("/", BookingHandlers.BookAsync)
             .WithName("CreateBooking")
             .RequireAuthorization()
             .Accepts<CreateBookingCommand>("application/json")
             .Produces<BookingDto>(StatusCodes.Status201Created);
 
-        group.MapDelete("/{id:guid}", BookingHandlers.CancelAsync)
+        group.MapPost("/{id:guid}/cancel", BookingHandlers.CancelAsync)
             .WithName("CancelBooking")
             .RequireAuthorization()
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status404NotFound);
 
-        group.MapGet("/member/{memberId:guid}", BookingHandlers.GetByMemberAsync)
+        memberBookings.MapGet("/", BookingHandlers.GetByMemberAsync)
             .WithName("GetBookingsByMember")
             .RequireAuthorization()
             .Produces<IReadOnlyList<BookingDto>>(StatusCodes.Status200OK);

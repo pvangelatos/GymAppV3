@@ -22,7 +22,7 @@ public static class PaymentHandlers
         IPaymentQueryService queryService,
         CancellationToken cancellationToken)
     {
-        var result = await queryService.GetByMemberAsync(new GetPaymentsByMemberQuery(memberId), cancellationToken);
+        var result = await queryService.GetPaymentsByMemberIdAsync(new GetPaymentsByMemberQuery(memberId), cancellationToken);
         return TypedResults.Ok(result);
     }
 
@@ -32,7 +32,7 @@ public static class PaymentHandlers
         IPaymentQueryService queryService,
         CancellationToken cancellationToken)
     {
-        var result = await queryService.GetMonthlyReportAsync(new GetMonthlyFinancialReportQuery(year, month), cancellationToken);
+        var result = await queryService.GetMonthlyFinancialReportAsync(new GetMonthlyFinancialReportQuery(year, month), cancellationToken);
         return TypedResults.Ok(result);
     }
 }

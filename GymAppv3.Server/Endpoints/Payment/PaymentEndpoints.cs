@@ -7,21 +7,24 @@ public static class PaymentEndpoints
 {
     public static IEndpointRouteBuilder MapPaymentEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/payments")
+        var payments = app.MapGroup("/api/payments")
             .WithTags("Payments");
 
-        group.MapPost("/", PaymentHandlers.RecordAsync)
+        var memberPayments = app.MapGroup("/api/members/{memberId:guid}/payments")
+            .WithTags("Payments");
+
+        payments.MapPost("/", PaymentHandlers.RecordAsync)
             .WithName("RecordPayment")
             .RequireAuthorization()
             .Accepts<RecordPaymentCommand>("application/json")
             .Produces<PaymentDto>(StatusCodes.Status201Created);
 
-        group.MapGet("/member/{memberId:guid}", PaymentHandlers.GetByMemberAsync)
+        memberPayments.MapGet("/", PaymentHandlers.GetByMemberAsync)
             .WithName("GetPaymentsByMember")
             .RequireAuthorization()
             .Produces<IReadOnlyList<PaymentDto>>(StatusCodes.Status200OK);
 
-        group.MapGet("/reports/monthly", PaymentHandlers.GetMonthlyReportAsync)
+        payments.MapGet("/reports/monthly", PaymentHandlers.GetMonthlyReportAsync)
             .WithName("GetMonthlyFinancialReport")
             .RequireAuthorization("AdminOnly")
             .Produces<MonthlyFinancialReportDto>(StatusCodes.Status200OK);

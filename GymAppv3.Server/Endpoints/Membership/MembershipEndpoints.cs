@@ -10,22 +10,25 @@ public static class MembershipEndpoints
         var group = app.MapGroup("/api/memberships")
             .WithTags("Memberships");
 
+        var memberMemberships = app.MapGroup("/api/members/{memberId:guid}/memberships")
+            .WithTags("Memberships");
+
+        group.MapPost("/", MembershipHandlers.PurchaseAsync)
+            .WithName("PurchaseMembership")
+            .RequireAuthorization()
+            .Accepts<PurchaseMembershipCommand>("application/json")
+            .Produces<MembershipDto>(StatusCodes.Status201Created);
+
         group.MapGet("/{id:guid}", MembershipHandlers.GetByIdAsync)
             .WithName("GetMembershipById")
             .RequireAuthorization()
             .Produces<MembershipDto>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound);
 
-        group.MapGet("/member/{memberId:guid}", MembershipHandlers.GetByMemberAsync)
+        memberMemberships.MapGet("/", MembershipHandlers.GetByMemberAsync)
             .WithName("GetMembershipsByMember")
             .RequireAuthorization()
             .Produces<IReadOnlyList<MembershipDto>>(StatusCodes.Status200OK);
-
-        group.MapPost("/purchase", MembershipHandlers.PurchaseAsync)
-            .WithName("PurchaseMembership")
-            .RequireAuthorization()
-            .Accepts<PurchaseMembershipCommand>("application/json")
-            .Produces<MembershipDto>(StatusCodes.Status201Created);
 
         return app;
     }
