@@ -1,9 +1,13 @@
 using GymAppv3.Server.Configuration;
 using GymAppv3.Server.Endpoints.Auth;
+using GymAppv3.Server.Endpoints.Booking;
 using GymAppv3.Server.Endpoints.ClassCategory;
 using GymAppv3.Server.Endpoints.ClassRoom;
+using GymAppv3.Server.Endpoints.ClassSession;
 using GymAppv3.Server.Endpoints.GymBuilding;
+using GymAppv3.Server.Endpoints.Membership;
 using GymAppv3.Server.Endpoints.MembershipPackage;
+using GymAppv3.Server.Endpoints.Payment;
 using GymAppV3.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -47,6 +51,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+app.UseCors("AllowFrontend");
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -55,6 +60,10 @@ app.MapAuthEndpoints();
 app.MapGymBuildingEndpoints();
 app.MapClassCategoryEndpoints();
 app.MapClassRoomEndpoints();
+app.MapClassSessionEndpoints();
 app.MapMembershipPackageEndpoints();
+app.MapMembershipEndpoints();
+app.MapBookingEndpoints();
+app.MapPaymentEndpoints();
 
 app.Run();
