@@ -27,17 +27,41 @@ public static class ApplicationConfiguration
         // HTTP Context Accessor (required for UserContext)
         builder.Services.AddHttpContextAccessor();
 
-        // User Context
+        // Infrastructure services
         builder.Services.AddScoped<IUserContext, UserContext>();
+        builder.Services.AddScoped<IDateTimeProvider, DateTimeProvider>();
+        builder.Services.AddScoped<IVatRateProvider, VatRateProvider>();
 
-        // Business services
+        // Business services - Gym Building
         builder.Services.AddScoped<IGymBuildingCommandService, GymBuildingService>();
         builder.Services.AddScoped<IGymBuildingQueryService, GymBuildingService>();
+
+        // Business services - Class Category
         builder.Services.AddScoped<IClassCategoryCommandService, ClassCategoryService>();
         builder.Services.AddScoped<IClassCategoryQueryService, ClassCategoryService>();
+
+        // Business services - Class Room
         builder.Services.AddScoped<IClassRoomCommandService, ClassRoomService>();
         builder.Services.AddScoped<IClassRoomQueryService, ClassRoomService>();
+
+        // Business services - Class Session
+        builder.Services.AddScoped<IClassSessionCommandService, ClassSessionService>();
+        builder.Services.AddScoped<IClassSessionQueryService, ClassSessionService>();
+
+        // Business services - Membership Package
         builder.Services.AddScoped<IMembershipPackageCommandService, MembershipPackageService>();
         builder.Services.AddScoped<IMembershipPackageQueryService, MembershipPackageService>();
+
+        // Business services - Membership
+        builder.Services.AddScoped<IMembershipCommandService, MembershipService>();
+        builder.Services.AddScoped<IMembershipQueryService, MembershipService>();
+
+        // Business services - Booking
+        builder.Services.AddScoped<IBookingCommandService, BookingService>();
+        builder.Services.AddScoped<IBookingQueryService, BookingService>();
+
+        // Business services - Payment
+        builder.Services.AddScoped<IPaymentCommandService, PaymentService>();
+        builder.Services.AddScoped<IPaymentQueryService, PaymentService>();
     }
 }
