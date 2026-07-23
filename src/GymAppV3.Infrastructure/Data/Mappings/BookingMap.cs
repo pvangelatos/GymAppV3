@@ -37,8 +37,9 @@ public class BookingMap : IEntityTypeConfiguration<Booking>
         builder.Property(x => x.CancelledAt);
 
         // Relationship to Member - required, cascade delete prevented to maintain referential integrity
+        // Note: The inverse navigation (Member.Bookings) is configured in MemberMap
         builder.HasOne(x => x.Member)
-            .WithMany()
+            .WithMany(m => m.Bookings)
             .HasForeignKey(x => x.MemberId)
             .OnDelete(DeleteBehavior.Restrict);
 

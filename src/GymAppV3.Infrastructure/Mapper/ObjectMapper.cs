@@ -135,4 +135,29 @@ public static class ObjectMapper
 
         public static readonly Func<Models.ClassSession, ClassSessionDto> ToDtoCompiled = ToDto.Compile();
     }
+
+    public static class Member
+    {
+        // Address is a required owned type - build the DTO inline, stays a single SELECT (no second query)
+        // MedicalNotes doesn't get here - it's managed separately in the ToMedicalDto from the admin.
+        public static readonly Expression<Func<Models.Member, MemberDto>> ToDto =
+            m => new MemberDto(
+                m.Id,
+                m.UserId,
+                m.Firstname,
+                m.Lastname,
+                m.Email,
+                m.Phone,
+                new AddressDto(m.Address.Street, m.Address.City, m.Address.State, m.Address.ZipCode, m.Address.Country),
+                m.BirthDate,
+                m.HasMedicalConditions);
+
+        public static readonly Func<Models.Member, MemberDto> ToDtoCompiled = ToDto.Compile();
+
+        // Admin-only projection for sensitive medical data.
+        public static readonly Expression<Func<Models.Member, MemberMedicalDto>> ToMedicalDto =
+            m => new MemberMedicalDto(m.Id, m.HasMedicalConditions, m.MedicalNotes);
+
+        public static readonly Func<Models.Member, MemberMedicalDto> ToMedicalDtoCompiled = ToMedicalDto.Compile();
+    }
 }

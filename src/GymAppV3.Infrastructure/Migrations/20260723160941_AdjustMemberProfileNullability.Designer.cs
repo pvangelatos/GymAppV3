@@ -4,6 +4,7 @@ using GymAppV3.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GymAppV3.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260723160941_AdjustMemberProfileNullability")]
+    partial class AdjustMemberProfileNullability
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -867,7 +870,7 @@ namespace GymAppV3.Infrastructure.Migrations
                         .IsRequired();
 
                     b.HasOne("GymAppV3.Core.Models.Member", "Member")
-                        .WithMany("Bookings")
+                        .WithMany()
                         .HasForeignKey("MemberId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -1016,7 +1019,7 @@ namespace GymAppV3.Infrastructure.Migrations
             modelBuilder.Entity("GymAppV3.Core.Models.Membership", b =>
                 {
                     b.HasOne("GymAppV3.Core.Models.Member", "Member")
-                        .WithMany("Memberships")
+                        .WithMany()
                         .HasForeignKey("MemberId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -1129,13 +1132,6 @@ namespace GymAppV3.Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("GymAppV3.Core.Models.Member", b =>
-                {
-                    b.Navigation("Bookings");
-
-                    b.Navigation("Memberships");
                 });
 
             modelBuilder.Entity("GymAppV3.Core.Models.Trainer", b =>

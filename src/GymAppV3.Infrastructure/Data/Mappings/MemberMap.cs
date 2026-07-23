@@ -23,9 +23,8 @@ public class MemberMap : IEntityTypeConfiguration<Member>
         builder.Property(x => x.Id)
             .ValueGeneratedNever();
 
-        // User ID reference (links to authentication system) - required with max 64 characters
+        // User ID reference (links to authentication system) - optional with max 64 characters
         builder.Property(x => x.UserId)
-            .IsRequired()
             .HasMaxLength(TextSizePresets.S64);
 
         // Member's first name - required with max 512 characters
@@ -48,6 +47,12 @@ public class MemberMap : IEntityTypeConfiguration<Member>
         builder.HasIndex(x => x.Email)
             .IsUnique()
             .HasFilter("[IsDeleted] = 0");
+
+        // One member profile per user account. UserId is unique among non-null values.
+        // A null UserId means the member is not linked to a user account.
+        builder.HasIndex(x => x.UserId)
+            .IsUnique()
+            .HasFilter("[UserId] IS NOT NULL");
 
         // Phone number is optional with max 64 characters
         builder.Property(x => x.Phone)
@@ -94,6 +99,10 @@ public class MemberMap : IEntityTypeConfiguration<Member>
         // when HasMedicalConditions is true. Sensitive data (GDPR Art. 9).
         builder.Property(x => x.MedicalNotes)
             .HasMaxLength(TextSizePresets.L1024);
+
+        // Navigation properties are configured from the foreign key side:
+        // - Membership.Member relationship is configured in MembershipMap
+        // - Booking.Member relationship is configured in BookingMap
 
     }
 }

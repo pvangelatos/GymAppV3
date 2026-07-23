@@ -5,7 +5,6 @@ using GymAppV3.Core.Models;
 using GymAppV3.Infrastructure.Data;
 using GymAppV3.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 
 namespace GymAppv3.Server.Endpoints.Auth;
@@ -65,16 +64,25 @@ public static class AuthHandlers
         // Assign Member role
         await userManager.AddToRoleAsync(user, RoleConstants.Member);
 
-        // Create Member profile
-        var member = new Member
+        // Create Member profile with required address
+        var member = new GymAppV3.Core.Models.Member
         {
             UserId = user.Id,
             Firstname = request.Firstname,
             Lastname = request.Lastname,
             Email = request.Email,
-            Address = null,
-            BirthDate = DateOnly.FromDateTime(DateTime.UtcNow.AddYears(-18)), // Default to 18 years ago
-            HasMedicalConditions = false,
+            Phone = request.Phone,
+            Address = new Address
+            {
+                Street = request.Address.Street,
+                City = request.Address.City,
+                State = request.Address.State,
+                ZipCode = request.Address.ZipCode,
+                Country = request.Address.Country
+            },
+            BirthDate = request.BirthDate,
+            HasMedicalConditions = request.HasMedicalConditions,
+            MedicalNotes = request.MedicalNotes,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = user.Id
         };

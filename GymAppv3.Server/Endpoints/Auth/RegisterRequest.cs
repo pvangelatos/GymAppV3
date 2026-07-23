@@ -1,3 +1,5 @@
+using GymAppV3.Core.DTOs;
+
 namespace GymAppv3.Server.Endpoints.Auth;
 
 /// <summary>
@@ -29,4 +31,30 @@ public record RegisterRequest
     /// User's last name
     /// </summary>
     public required string Lastname { get; init; }
+
+    /// <summary>
+    /// User's address (required for all members)
+    /// </summary>
+    public required AddressDto Address { get; init; }
+
+    /// <summary>
+    /// User's phone number (optional)
+    /// </summary>
+    public string? Phone { get; init; }
+
+    /// <summary>
+    /// User's birth date
+    /// </summary>
+    public required DateOnly BirthDate { get; init; }
+
+    /// <summary>
+    /// Whether the member has medical conditions
+    /// </summary>
+    public required bool HasMedicalConditions { get; init; }
+
+    /// <summary>
+    /// Medical notes (optional, only if HasMedicalConditions is true)
+    /// </summary>
+    public string? MedicalNotes { get; init; }
 }
+

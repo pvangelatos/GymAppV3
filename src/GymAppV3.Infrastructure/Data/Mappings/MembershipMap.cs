@@ -50,8 +50,9 @@ public class MembershipMap : IEntityTypeConfiguration<Membership>
             .HasMaxLength(TextSizePresets.XS32);
 
         // Relationship to Member - required, cascade delete prevented
+        // Note: The inverse navigation (Member.Memberships) is configured in MemberMap
         builder.HasOne(x => x.Member)
-            .WithMany()
+            .WithMany(m => m.Memberships)
             .HasForeignKey(x => x.MemberId)
             .OnDelete(DeleteBehavior.Restrict);
 

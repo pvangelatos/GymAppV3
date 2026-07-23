@@ -51,6 +51,10 @@ public static class ApplicationConfiguration
         builder.Services.AddScoped<IMembershipPackageCommandService, MembershipPackageService>();
         builder.Services.AddScoped<IMembershipPackageQueryService, MembershipPackageService>();
 
+        // Business services - Member
+        builder.Services.AddScoped<IMemberCommandService, MemberService>();
+        builder.Services.AddScoped<IMemberQueryService, MemberService>();
+
         // Business services - Membership
         builder.Services.AddScoped<IMembershipCommandService, MembershipService>();
         builder.Services.AddScoped<IMembershipQueryService, MembershipService>();
