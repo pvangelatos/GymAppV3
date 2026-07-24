@@ -25,6 +25,8 @@ public class GlobalExceptionHandler : IExceptionHandler
         {
             NotFoundException => (StatusCodes.Status404NotFound, "Resource not found"),
             BusinessRuleException => (StatusCodes.Status422UnprocessableEntity, "Business rule violated"),
+            ForbiddenException => (StatusCodes.Status403Forbidden, "Forbidden"),
+            UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, "Unauthorized"),
             _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred")
         };
 

@@ -17,6 +17,12 @@ public interface IMemberQueryService
     Task<MemberDetailDto?> GetByIdAsync(GetMemberByIdQuery query, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Gets the member profile bound to a user account. Used by GET /api/members/me.
+    /// Returns null when the user has registered but not yet completed step 2.
+    /// </summary>
+    Task<MemberDto?> GetByUserIdAsync(GetMemberByUserIdQuery query, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Gets all members with optional filtering and pagination.
     /// </summary>
     Task<ResultSet<MemberDto>> GetAllAsync(GetAllMembersQuery query, CancellationToken cancellationToken = default);

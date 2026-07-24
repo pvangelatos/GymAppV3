@@ -14,6 +14,7 @@ using GymAppV3.Infrastructure.Mapper;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using System.Transactions;
 
 namespace GymAppV3.Infrastructure.Services;
 
@@ -48,25 +49,51 @@ public class MemberService : IMemberCommandService, IMemberQueryService
 
     public async Task<MemberDto> CreateAsync(CreateMemberCommand command, CancellationToken cancellationToken = default)
     {
-        // Validate age
-        var age = CalculateAge(command.BirthDate);
-        if (age < _minimumAge)
-        {
-            throw new BusinessRuleException($"Member must be at least {_minimumAge} years old.");
-        }
+        // Offline ledger entries are staff-only
+        EnsureIsAdminOrTrainer();
 
-        // Check if email already exists
-        var existingMember = await _context.Members
-            .AnyAsync(m => m.Email == command.Email, cancellationToken);
+        EnsureMinimumAge(command.BirthDate);
 
-        if (existingMember)
-        {
-            throw new BusinessRuleException($"A member with email '{command.Email}' already exists.");
-        }
+        await EnsureEmailIsFreeAsync(command.Email, null, cancellationToken);
 
         var member = new Member
         {
-            UserId = command.UserId,
+            UserId = null,          // oofline member - never bound to an account at creation time
+            Firstname = command.Firstname,
+            Lastname = command.Lastname,
+            Email = command.Email,
+            Phone = command.Phone,
+            Address = command.Address.ToEntity(),
+            BirthDate = command.BirthDate,
+            HasMedicalConditions = command.HasMedicalConditions,
+            MedicalNotes = command.MedicalNotes
+        };
+
+        _context.Members.Add(member);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return member.ToDto();
+    }
+
+    public async Task<MemberDto> CompleteProfileAsync(CompleteMemberProfileCommand command, CancellationToken cancellationToken = default)
+    {
+        var userId = _userContext.UserId ??
+            throw new UnauthorizedAccessException("User is not authenticated.");
+
+        // One profile per account — the filtered unique index enforces this at the DB
+        // level too, but we want a clean 422 instead of a DbUpdateException.
+        var alreadyHasProfile = await _context.Members
+            .AnyAsync(m => m.UserId == userId, cancellationToken);
+
+        if (alreadyHasProfile)
+            throw new BusinessRuleException("A member profile already exists for this account.");
+
+        EnsureMinimumAge(command.BirthDate);
+        await EnsureEmailIsFreeAsync(command.Email, null, cancellationToken);
+
+        var member = new Member
+        {
+            UserId = userId,   // from the token, not the body
             Firstname = command.Firstname,
             Lastname = command.Lastname,
             Email = command.Email,
@@ -90,38 +117,36 @@ public class MemberService : IMemberCommandService, IMemberQueryService
             ?? throw new NotFoundException(nameof(Member), command.Id);
 
         // Authorization check: Member can only update their own profile, Admin can update any
-        await EnsureCanModifyMemberAsync(member.Id, cancellationToken);
+        EnsureCanModify(member);
 
         // Validate age
-        var age = CalculateAge(command.BirthDate);
-        if (age < _minimumAge)
+        EnsureMinimumAge(command.BirthDate);
+
+        // Check if email is free (excluding the current member)
+        var emailChanged = member.Email != command.Email;
+        if (emailChanged)
+            await EnsureEmailIsFreeAsync(command.Email, member.Id, cancellationToken);
+
+        // UserManager and this service share the same scoped DbContext, so an explicit
+        // transaction makes the Identity write and the Member write commit or roll back together.
+        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+
+        if (emailChanged && member.UserId is not null)
         {
-            throw new BusinessRuleException($"Member must be at least {_minimumAge} years old.");
-        }
-
-        // Check if email change conflicts with another member
-        if (member.Email != command.Email)
-        {
-            var emailExists = await _context.Members
-                .AnyAsync(m => m.Email == command.Email && m.Id != member.Id, cancellationToken);
-
-            if (emailExists)
+            var user = await _userManager.FindByIdAsync(member.UserId);
+            if (user is not null)
             {
-                throw new BusinessRuleException($"A member with email '{command.Email}' already exists.");
-            }
+                // These handle normalization through the configured ILookupNormalizer
+                // and refresh the security stamp — don't set the Normalized* fields by hand.
+                var emailResult = await _userManager.SetEmailAsync(user, command.Email);
+                if (!emailResult.Succeeded)
+                    throw new BusinessRuleException(
+                        $"Could not update the login email: {string.Join("; ", emailResult.Errors.Select(e => e.Description))}");
 
-            // Sync email to IdentityUser if member has a user account
-            if (member.UserId != null)
-            {
-                var user = await _userManager.FindByIdAsync(member.UserId);
-                if (user != null)
-                {
-                    user.Email = command.Email;
-                    user.UserName = command.Email;
-                    user.NormalizedEmail = command.Email.ToUpperInvariant();
-                    user.NormalizedUserName = command.Email.ToUpperInvariant();
-                    await _userManager.UpdateAsync(user);
-                }
+                var nameResult = await _userManager.SetUserNameAsync(user, command.Email);
+                if (!nameResult.Succeeded)
+                    throw new BusinessRuleException(
+                        $"Could not update the username: {string.Join("; ", nameResult.Errors.Select(e => e.Description))}");
             }
         }
 
@@ -136,20 +161,21 @@ public class MemberService : IMemberCommandService, IMemberQueryService
         member.MedicalNotes = command.MedicalNotes;
 
         await _context.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
         return member.ToDto();
     }
 
     public async Task DeleteAsync(DeleteMemberCommand command, CancellationToken cancellationToken = default)
     {
+        // Check permission before doing the expensive load.
+        EnsureIsAdmin();
+
         var member = await _context.Members
             .Include(m => m.Memberships)
             .Include(m => m.Bookings)
             .FirstOrDefaultAsync(m => m.Id == command.MemberId, cancellationToken)
             ?? throw new NotFoundException(nameof(Member), command.MemberId);
-
-        // Authorization check: Only Admin can delete members
-        await EnsureIsAdminAsync();
 
         var now = _clock.UtcNow;
         var currentUserId = _userContext.UserId!;
@@ -191,40 +217,33 @@ public class MemberService : IMemberCommandService, IMemberQueryService
         if (member == null)
             return null;
 
-        // Check if current user can see medical notes
-        var canSeeMedicalNotes = await CanSeeMedicalNotesAsync(member.Id, cancellationToken);
+        var dto = member.ToDetailDto();
 
-        // Always return DetailDto (with or without medical notes based on authorization)
-        if (!canSeeMedicalNotes)
-        {
-            // Return DetailDto but with null medical notes
-            return new MemberDetailDto(
-                Id: member.Id,
-                UserId: member.UserId,
-                Firstname: member.Firstname,
-                Lastname: member.Lastname,
-                Email: member.Email,
-                Phone: member.Phone,
-                Address: member.Address.ToDto(),
-                BirthDate: member.BirthDate,
-                HasMedicalConditions: member.HasMedicalConditions,
-                MedicalNotes: null);
-        }
+        // Everyone sees HasMedicalConditions, but MedicalNotes is restricted.
+        return await CanSeeMedicalNotesAsync(member, cancellationToken)
+            ? dto
+            : dto with { MedicalNotes = null };
+    }
 
-        return member.ToDetailDto();
+    public async Task<MemberDto?> GetByUserIdAsync(GetMemberByUserIdQuery query, CancellationToken cancellationToken = default)
+    {
+        return await _context.Members
+            .Where(m => m.UserId == query.UserId)
+            .Select(ObjectMapper.Member.ToDto)
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<ResultSet<MemberDto>> GetAllAsync(GetAllMembersQuery query, CancellationToken cancellationToken = default)
     {
         // Authorization check: Only Admin/Trainer can view all members
-        await EnsureIsAdminOrTrainerAsync();
+        EnsureIsAdminOrTrainer();
 
         var membersQuery = _context.Members.AsQueryable();
 
         // Apply search filter
         if (!string.IsNullOrWhiteSpace(query.SearchTerm))
         {
-            var search = query.SearchTerm.ToLower();
+            var search = query.SearchTerm;
             membersQuery = membersQuery.Where(m =>
                 m.Firstname.ToLower().Contains(search) ||
                 m.Lastname.ToLower().Contains(search) ||
@@ -234,178 +253,141 @@ public class MemberService : IMemberCommandService, IMemberQueryService
         // Apply active membership filter
         if (query.HasActiveMembership.HasValue)
         {
-            if (query.HasActiveMembership.Value)
-            {
-                var now = _clock.UtcNow;
-                membersQuery = membersQuery.Where(m =>
-                    m.Memberships.Any(ms =>
-                        ms.Status == MembershipStatus.Active &&
-                        ms.StartDate <= now &&
-                        ms.EndDate >= now));
-            }
-            else
-            {
-                var now = _clock.UtcNow;
-                membersQuery = membersQuery.Where(m =>
-                    !m.Memberships.Any(ms =>
-                        ms.Status == MembershipStatus.Active &&
-                        ms.StartDate <= now &&
-                        ms.EndDate >= now));
-            }
+            var now = _clock.UtcNow;
+            var hasAtive = query.HasActiveMembership.Value;
+
+            membersQuery = membersQuery.Where(m =>
+               m.Memberships.Any(ms =>
+                    ms.Status == MembershipStatus.Active &&
+                    ms.StartDate <= now &&
+                    ms.EndDate >= now) == hasAtive);
         }
 
-        // Apply pagination
-        var resultSet = await membersQuery.ToResultSetAsync(query.Options, cancellationToken);
-
-        // Map to DTOs
-        var dtos = resultSet.Items.Select(m => m.ToDto()).ToList();
-
-        return new ResultSet<MemberDto>(dtos, resultSet.Count, query.Options?.Size ?? 50);
+        // Project before paging: MedicalNotes never leaves the database.
+        return await membersQuery
+            .Select(ObjectMapper.Member.ToDto)
+            .ToResultSetAsync(query.Options, cancellationToken);
     }
 
     public async Task<ResultSet<MemberDto>> GetByActiveBookingsAsync(GetMembersByActiveBookingsQuery query, CancellationToken cancellationToken = default)
     {
         // Authorization check: Only Admin/Trainer can view
-        await EnsureIsAdminOrTrainerAsync();
+        EnsureIsAdminOrTrainer();
 
         var now = _clock.UtcNow;
 
-        var membersQuery = _context.Members
+        return await _context.Members
             .Where(m => m.Bookings.Any(b =>
                 b.Status != BookingStatus.Cancelled &&
                 b.ClassSession.StartsAt > now))
-            .Distinct();
-
-        var resultSet = await membersQuery.ToResultSetAsync(query.Options, cancellationToken);
-
-        var dtos = resultSet.Items.Select(m => m.ToDto()).ToList();
-
-        return new ResultSet<MemberDto>(dtos, resultSet.Count, query.Options?.Size ?? 50);
+            .Select(ObjectMapper.Member.ToDto)
+            .ToResultSetAsync(query.Options, cancellationToken);
     }
 
     public async Task<ResultSet<MemberDto>> GetByActiveMembershipAsync(GetMembersByActiveMembershipQuery query, CancellationToken cancellationToken = default)
     {
         // Authorization check: Only Admin/Trainer can view
-        await EnsureIsAdminOrTrainerAsync();
+        EnsureIsAdminOrTrainer();
 
         var now = _clock.UtcNow;
 
-        var membersQuery = _context.Members
+        return await _context.Members
             .Where(m => m.Memberships.Any(ms =>
                 ms.Status == MembershipStatus.Active &&
                 ms.StartDate <= now &&
-                ms.EndDate >= now));
-
-        var resultSet = await membersQuery.ToResultSetAsync(query.Options, cancellationToken);
-
-        var dtos = resultSet.Items.Select(m => m.ToDto()).ToList();
-
-        return new ResultSet<MemberDto>(dtos, resultSet.Count, query.Options?.Size ?? 50);
+                ms.EndDate >= now))
+            .Select(ObjectMapper.Member.ToDto)
+            .ToResultSetAsync(query.Options, cancellationToken);
     }
 
     #endregion
 
     #region Authorization Helpers
 
-    private async Task<bool> CanSeeMedicalNotesAsync(Guid memberId, CancellationToken cancellationToken)
+    // Roles come from the token, so these are pure in-memory checks.
+    private string RequireAuthenticatedUserId() =>
+        _userContext.UserId
+            ?? throw new UnauthorizedAccessException("User is not authenticated.");
+
+    private void EnsureIsAdmin()
+    {
+        RequireAuthenticatedUserId();
+
+        if (!_userContext.IsInRole(RoleConstants.Admin))
+            throw new ForbiddenException("Only administrators can perform this operation.");
+    }
+
+    private void EnsureIsAdminOrTrainer()
+    {
+        RequireAuthenticatedUserId();
+
+        if (!_userContext.IsInRole(RoleConstants.Admin) &&
+            !_userContext.IsInRole(RoleConstants.Trainer) &&
+            !_userContext.IsInRole(RoleConstants.TrainerAdmin))
+            throw new ForbiddenException("Only administrators or trainers can perform this operation.");
+    }
+
+    // Takes the already-loaded member so we don't hit the database a second time.
+    private void EnsureCanModify(Member member)
+    {
+        var currentUserId = RequireAuthenticatedUserId();
+
+        if (_userContext.IsInRole(RoleConstants.Admin))
+            return;
+
+        if (member.UserId != currentUserId)
+            throw new ForbiddenException("You are not authorized to modify this member profile.");
+    }
+
+
+    // Also takes the loaded member. Only the trainer branch still needs a query,
+    // because "is this member booked into one of my sessions" is contextual.
+    private async Task<bool> CanSeeMedicalNotesAsync(Member member, CancellationToken cancellationToken)
     {
         var currentUserId = _userContext.UserId;
         if (string.IsNullOrEmpty(currentUserId))
             return false;
 
-        // Get current user's roles
-        var user = await _userManager.FindByIdAsync(currentUserId);
-        if (user == null)
-            return false;
-
-        var roles = await _userManager.GetRolesAsync(user);
-
-        // Admin can see all medical notes
-        if (roles.Contains(RoleConstants.Admin))
+        if (_userContext.IsInRole(RoleConstants.Admin))
             return true;
 
-        // Member can see their own medical notes
-        var member = await _context.Members
-            .FirstOrDefaultAsync(m => m.Id == memberId, cancellationToken);
-
-        if (member != null && member.UserId == currentUserId)
+        // The member's own notes.
+        if (member.UserId == currentUserId)
             return true;
 
-        // Trainer can see medical notes for members with active bookings in their sessions
-        if (roles.Contains(RoleConstants.Trainer))
+        if (_userContext.IsInRole(RoleConstants.Trainer) ||
+            _userContext.IsInRole(RoleConstants.TrainerAdmin))
         {
-            var hasBookingWithTrainer = await _context.Bookings
-                .AnyAsync(b =>
-                    b.MemberId == memberId &&
-                    b.Status != BookingStatus.Cancelled &&
-                    b.ClassSession.Trainer.UserId == currentUserId,
-                    cancellationToken);
-
-            return hasBookingWithTrainer;
+            return await _context.Bookings.AnyAsync(b =>
+                b.MemberId == member.Id &&
+                b.Status != BookingStatus.Cancelled &&
+                b.ClassSession.Trainer.UserId == currentUserId,
+                cancellationToken);
         }
 
         return false;
     }
 
-    private async Task EnsureCanModifyMemberAsync(Guid memberId, CancellationToken cancellationToken)
-    {
-        var currentUserId = _userContext.UserId;
-        if (string.IsNullOrEmpty(currentUserId))
-            throw new UnauthorizedAccessException("User is not authenticated.");
-
-        var user = await _userManager.FindByIdAsync(currentUserId);
-        if (user == null)
-            throw new UnauthorizedAccessException("User not found.");
-
-        var roles = await _userManager.GetRolesAsync(user);
-
-        // Admin can modify any member
-        if (roles.Contains(RoleConstants.Admin))
-            return;
-
-        // Member can only modify their own profile
-        var member = await _context.Members
-            .FirstOrDefaultAsync(m => m.Id == memberId, cancellationToken);
-
-        if (member == null || member.UserId != currentUserId)
-            throw new UnauthorizedAccessException("You are not authorized to modify this member profile.");
-    }
-
-    private async Task EnsureIsAdminAsync()
-    {
-        var currentUserId = _userContext.UserId;
-        if (string.IsNullOrEmpty(currentUserId))
-            throw new UnauthorizedAccessException("User is not authenticated.");
-
-        var user = await _userManager.FindByIdAsync(currentUserId);
-        if (user == null)
-            throw new UnauthorizedAccessException("User not found.");
-
-        var roles = await _userManager.GetRolesAsync(user);
-
-        if (!roles.Contains(RoleConstants.Admin))
-            throw new UnauthorizedAccessException("Only administrators can perform this operation.");
-    }
-
-    private async Task EnsureIsAdminOrTrainerAsync()
-    {
-        var currentUserId = _userContext.UserId;
-        if (string.IsNullOrEmpty(currentUserId))
-            throw new UnauthorizedAccessException("User is not authenticated.");
-
-        var user = await _userManager.FindByIdAsync(currentUserId);
-        if (user == null)
-            throw new UnauthorizedAccessException("User not found.");
-
-        var roles = await _userManager.GetRolesAsync(user);
-
-        if (!roles.Contains(RoleConstants.Admin) && !roles.Contains(RoleConstants.Trainer))
-            throw new UnauthorizedAccessException("Only administrators or trainers can perform this operation.");
-    }
-
     #endregion
 
     #region Helpers
+
+    private void EnsureMinimumAge(DateOnly birthDate)
+    {
+        if (CalculateAge(birthDate) < _minimumAge)
+            throw new BusinessRuleException($"Member must be at least {_minimumAge} years old.");
+    }
+
+    // excludeMemberId is passed on update so a member doesn't collide with itself.
+    private async Task EnsureEmailIsFreeAsync(
+        string email, Guid? excludeMemberId, CancellationToken cancellationToken)
+    {
+        var taken = await _context.Members
+            .AnyAsync(m => m.Email == email && (excludeMemberId == null || m.Id != excludeMemberId), cancellationToken);
+
+        if (taken)
+            throw new BusinessRuleException($"A member with email '{email}' already exists.");
+    }
 
     private int CalculateAge(DateOnly birthDate)
     {

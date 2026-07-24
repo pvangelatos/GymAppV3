@@ -84,6 +84,9 @@ public static class IdentityConfiguration
             options.AddPolicy("TrainerAdminOnly", policy =>
                 policy.RequireRole(RoleConstants.TrainerAdmin));
 
+            options.AddPolicy("StaffOnly", policy =>
+                policy.RequireRole(RoleConstants.Admin, RoleConstants.Trainer, RoleConstants.TrainerAdmin));
+
             options.AddPolicy("AnyAuthenticated", policy =>
                 policy.RequireAuthenticatedUser());
         });

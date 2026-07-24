@@ -3,11 +3,11 @@
 namespace GymAppV3.Core.Commands;
 
 /// <summary>
-/// Command to create a new member profile.
-/// Can be used by Admin/Trainer to create members without user accounts (UserId = null).
+/// Command for Admin/Trainer to create an offline member profile — a ledger entry
+/// with no login account. UserId is always null; self-service profiles are created
+/// through CompleteMemberProfileCommand instead.
 /// </summary>
 public record CreateMemberCommand(
-    string? UserId,
     string Firstname,
     string Lastname,
     string Email,

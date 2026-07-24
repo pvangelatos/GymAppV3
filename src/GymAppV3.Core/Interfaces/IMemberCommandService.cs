@@ -15,6 +15,12 @@ public interface IMemberCommandService
     Task<MemberDto> CreateAsync(CreateMemberCommand command, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Step 2 of self-service registration: the authenticated user fills in their own
+    /// member profile. UserId is taken from the token, never from the request body.
+    /// </summary>
+    Task<MemberDto> CompleteProfileAsync(CompleteMemberProfileCommand command, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Updates an existing member profile.
     /// Also syncs email changes to IdentityUser if UserId is present.
     /// </summary>

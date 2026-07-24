@@ -16,62 +16,61 @@ public static class MemberEndpoints
         var group = app.MapGroup("/api/members")
             .WithTags("Members");
 
-        // Query endpoints
-        group.MapGet("/{id:guid}", MemberHandlers.GetByIdAsync)
-            .WithName("GetMemberById")
-            .WithSummary("Get member by ID")
-            .WithDescription("Returns member details. Medical notes visibility depends on authorization.")
-            .Produces<MemberDetailDto>()
-            .Produces(404)
-            .RequireAuthorization();
+        // Literal segments first. The {id:guid} constraint would reject "me" anyway,
+        // but keeping the specific routes above the generic one reads better.
 
-        group.MapGet("/", MemberHandlers.GetAllAsync)
-            .WithName("GetAllMembers")
-            .WithSummary("Get all members with filtering and pagination")
-            .WithDescription("Admin/Trainer only. Supports search by name/email and active membership filter.")
-            .Produces<ResultSet<MemberDto>>()
-            .RequireAuthorization("AdminOrTrainer");
+        group.MapPost("/me", MemberHandlers.CompleteProfileAsync)
+            .WithName("CompleteMemberProfile")
+            .RequireAuthorization()
+            .Accepts<CompleteMemberProfileCommand>("application/json")
+            .Produces<MemberDto>(StatusCodes.Status201Created)
+            .Produces(StatusCodes.Status422UnprocessableEntity);
+
+        group.MapGet("/me", MemberHandlers.GetMyProfileAsync)
+            .WithName("GetMyMemberProfile")
+            .RequireAuthorization()
+            .Produces<MemberDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound);
 
         group.MapGet("/active-bookings", MemberHandlers.GetByActiveBookingsAsync)
             .WithName("GetMembersByActiveBookings")
-            .WithSummary("Get members with active bookings")
-            .WithDescription("Admin/Trainer only. Returns paginated list of members with future bookings.")
-            .Produces<ResultSet<MemberDto>>()
-            .RequireAuthorization("AdminOrTrainer");
+            .RequireAuthorization("StaffOnly")
+            .Produces<ResultSet<MemberDto>>(StatusCodes.Status200OK);
 
-        group.MapGet("/active-memberships", MemberHandlers.GetByActiveMembershipAsync)
-            .WithName("GetMembersByActiveMemberships")
-            .WithSummary("Get members with active memberships")
-            .WithDescription("Admin/Trainer only. Returns paginated list of members with currently active memberships.")
-            .Produces<ResultSet<MemberDto>>()
-            .RequireAuthorization("AdminOrTrainer");
+        group.MapGet("/", MemberHandlers.GetAllAsync)
+           .WithName("GetMembers")
+           .RequireAuthorization("StaffOnly")
+           .Produces<ResultSet<MemberDto>>(StatusCodes.Status200OK);
 
         // Command endpoints
         group.MapPost("/", MemberHandlers.CreateAsync)
             .WithName("CreateMember")
-            .WithSummary("Create a new member profile")
-            .WithDescription("Admin/Trainer can create members without user accounts. Validates minimum age and email uniqueness.")
-            .Produces<MemberDto>(201)
-            .Produces(400)
-            .RequireAuthorization("AdminOrTrainer");
+            .RequireAuthorization("StaffOnly")
+            .Accepts<CreateMemberCommand>("application/json")
+            .Produces<MemberDto>(StatusCodes.Status201Created)
+            .Produces(StatusCodes.Status422UnprocessableEntity);
+
+        group.MapGet("/{id:guid}", MemberHandlers.GetByIdAsync)
+            .WithName("GetMemberById")
+            .RequireAuthorization()
+            .Produces<MemberDetailDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound);
 
         group.MapPut("/{id:guid}", MemberHandlers.UpdateAsync)
             .WithName("UpdateMember")
-            .WithSummary("Update member profile")
-            .WithDescription("Member can update own profile, Admin can update any. Email changes sync to IdentityUser.")
-            .Produces<MemberDto>()
-            .Produces(400)
-            .Produces(404)
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .Accepts<UpdateMemberCommand>("application/json")
+            .Produces<MemberDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status403Forbidden)
+            .Produces(StatusCodes.Status404NotFound);
 
         group.MapDelete("/{id:guid}", MemberHandlers.DeleteAsync)
             .WithName("DeleteMember")
-            .WithSummary("Soft-delete a member")
-            .WithDescription("Admin only. Cascades soft-delete to memberships, cancels bookings, preserves payments.")
-            .Produces(204)
-            .Produces(404)
-            .RequireAuthorization("AdminOnly");
+            .RequireAuthorization("AdminOnly")
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status404NotFound);
 
         return app;
+
     }
 }
