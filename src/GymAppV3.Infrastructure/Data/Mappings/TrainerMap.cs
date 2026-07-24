@@ -28,6 +28,11 @@ public class TrainerMap : IEntityTypeConfiguration<Trainer>
             .IsRequired()
             .HasMaxLength(TextSizePresets.S64);
 
+        // User ID is unique among active trainers only.
+        builder.HasIndex(x => x.UserId)
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0");
+
         // Trainer's first name - required with max 512 characters
         builder.Property(x => x.Firstname)
             .IsRequired()

@@ -13,6 +13,7 @@ namespace GymAppV3.Infrastructure;
 /// </summary>
 public static class ObjectMapper
 {
+    // Mapper for the ClassRoom entity to ClassRoomDto.
     public static class ClassRoom
     {
         public static readonly Expression<Func<Models.ClassRoom, ClassRoomDto>> ToDto =
@@ -21,6 +22,7 @@ public static class ObjectMapper
         public static readonly Func<Models.ClassRoom, ClassRoomDto> ToDtoCompiled = ToDto.Compile();
     }
 
+    // Mapper for the ClassCategory entity to ClassCategoryDto.
     public static class ClassCategory
     {
         // VERIFY the fields/order against your own ClassCategoryDto
@@ -30,6 +32,7 @@ public static class ObjectMapper
         public static readonly Func<Models.ClassCategory, ClassCategoryDto> ToDtoCompiled = ToDto.Compile();
     }
 
+    // Mapper for the GymBuilding entity to GymBuildingDto, including Address (owned type).
     public static class GymBuilding
     {
         // Address is an owned type -> built inline, stays a single SELECT (no second query)
@@ -45,6 +48,7 @@ public static class ObjectMapper
         public static readonly Func<Models.GymBuilding, GymBuildingDto> ToDtoCompiled = ToDto.Compile();
     }
 
+    // Mapper for the MembershipPackage entity to MembershipPackageDto, including navigations.
     public static class MembershipPackage
     {
         // VERIFY the fields/order against your own MembershipPackageDto
@@ -61,6 +65,7 @@ public static class ObjectMapper
         public static readonly Func<Models.MembershipPackage, MembershipPackageDto> ToDtoCompiled = ToDto.Compile();
     }
 
+    // Mapper for the Membership entity to MembershipDto, including navigations and enum conversion.
     public static class Membership
     {
         // Status: enum -> string inside the expression tree (EF Core translates it to SQL)
@@ -78,7 +83,8 @@ public static class ObjectMapper
 
         public static readonly Func<Models.Membership, MembershipDto> ToDtoCompiled = ToDto.Compile();
     }
-
+    
+    // Mapper for the Payment entity to PaymentDto, including computed fields.
     public static class Payment
     {
         public static readonly Expression<Func<Models.Payment, PaymentDto>> ToDto =
@@ -97,6 +103,7 @@ public static class ObjectMapper
         public static readonly Func<Models.Payment, PaymentDto> ToDtoCompiled = ToDto.Compile();
     }
 
+    // Mapper for the Booking entity to BookingDto, including navigations.
     public static class Booking
     {
         // Status: enum -> string inside the expression tree
@@ -113,7 +120,8 @@ public static class ObjectMapper
 
         public static readonly Func<Models.Booking, BookingDto> ToDtoCompiled = ToDto.Compile();
     }
-
+    
+    // Mapper for the ClassSession entity to ClassSessionDto, including navigations.
     public static class ClassSession
     {
         // The heavy one: 3 navigations (Trainer, ClassRoom, ClassCategory).
@@ -136,6 +144,7 @@ public static class ObjectMapper
         public static readonly Func<Models.ClassSession, ClassSessionDto> ToDtoCompiled = ToDto.Compile();
     }
 
+    // Mapper for the Member entity to MemberDto, including Address (owned type) and medical info.
     public static class Member
     {
         // Address is a required owned type - build the DTO inline, stays a single SELECT (no second query)
@@ -160,4 +169,24 @@ public static class ObjectMapper
 
         public static readonly Func<Models.Member, MemberMedicalDto> ToMedicalDtoCompiled = ToMedicalDto.Compile();
     }
+
+    // Mapper for the Trainer entity to TrainerDto, including specialties.
+    public static class Trainer
+    {
+        public static readonly Expression<Func<Models.Trainer, TrainerDto>> ToDto =
+            t => new TrainerDto(
+                t.Id,
+                t.UserId,
+                t.Firstname,
+                t.Lastname,
+                t.Email,
+                t.Phone,
+                t.Bio,
+                t.Specialties
+                    .Select(s => new SpecialtyDto(s.ClassCategoryId, s.ClassCategory.Name))
+                    .ToList());
+
+        public static readonly Func<Models.Trainer, TrainerDto> ToDtoCompiled = ToDto.Compile();
+    }
+
 }
