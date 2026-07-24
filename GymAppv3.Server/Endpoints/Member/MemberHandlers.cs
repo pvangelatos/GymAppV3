@@ -5,7 +5,6 @@ using GymAppV3.Core.DTOs;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Queries.Members;
 using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc;
 
 namespace GymAppv3.Server.Endpoints.Member;
 
@@ -202,10 +201,5 @@ public record GetAllMembersRequest(
     string? SearchTerm = null,
     bool? HasActiveMembership = null);
 
-/// <summary>
-/// Request model for basic pagination.
-/// </summary>
-public record PaginationRequest(
-    int Page = 1,
-    int Size = 50,
-    string? Sort = null);
+
+

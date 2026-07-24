@@ -66,5 +66,9 @@ public static class ApplicationConfiguration
         // Business services - Payment
         builder.Services.AddScoped<IPaymentCommandService, PaymentService>();
         builder.Services.AddScoped<IPaymentQueryService, PaymentService>();
+
+        // Business services - Trainer
+        builder.Services.AddScoped<ITrainerCommandService, TrainerService>();
+        builder.Services.AddScoped<ITrainerQueryService, TrainerService>();
     }
 }

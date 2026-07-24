@@ -1,4 +1,5 @@
 using GymAppV3.Core.Commands;
+using GymAppV3.Core.Common;
 using GymAppV3.Core.DTOs;
 
 namespace GymAppv3.Server.Endpoints.Booking;
@@ -28,7 +29,7 @@ public static class BookingEndpoints
         memberBookings.MapGet("/", BookingHandlers.GetByMemberAsync)
             .WithName("GetBookingsByMember")
             .RequireAuthorization()
-            .Produces<IReadOnlyList<BookingDto>>(StatusCodes.Status200OK);
+            .Produces<ResultSet<BookingDto>>(StatusCodes.Status200OK);
 
         return app;
     }

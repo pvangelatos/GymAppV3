@@ -1,4 +1,6 @@
+using GymAppv3.Server.Endpoints.Common;
 using GymAppV3.Core.Commands;
+using GymAppV3.Core.Common;
 using GymAppV3.Core.DTOs;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Queries.Bookings;
@@ -26,12 +28,17 @@ public static class BookingHandlers
         return TypedResults.NoContent();
     }
 
-    public static async Task<Ok<IReadOnlyList<BookingDto>>> GetByMemberAsync(
+    public static async Task<Ok<ResultSet<BookingDto>>> GetByMemberAsync(
         Guid memberId,
+        [AsParameters] PaginationRequest request,
         IBookingQueryService queryService,
         CancellationToken cancellationToken)
     {
-        var result = await queryService.GetByMemberAsync(new GetBookingsByMemberQuery(memberId), cancellationToken);
+        var options = new ListOptions(request.Page, request.Size) { Sort = request.Sort };
+
+        var result = await queryService.GetByMemberAsync(
+            new GetBookingsByMemberQuery(memberId, options), cancellationToken);
+
         return TypedResults.Ok(result);
     }
 }

@@ -7,7 +7,9 @@ using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Models;
 using GymAppV3.Core.Queries.Bookings;
 using GymAppV3.Infrastructure.Data;
+using GymAppV3.Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
+using GymAppV3.Core.Common;
 
 namespace GymAppV3.Infrastructure.Services;
 
@@ -133,11 +135,16 @@ public class BookingService : IBookingCommandService, IBookingQueryService
         await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<BookingDto>> GetByMemberAsync(GetBookingsByMemberQuery query, CancellationToken cancellationToken = default) =>
-                await _context.Bookings
-                        .Where(b => b.MemberId == query.MemberId)
-                        .Select(ObjectMapper.Booking.ToDto)
-                        .ToListAsync(cancellationToken);
+    public async Task<ResultSet<BookingDto>> GetByMemberAsync(GetBookingsByMemberQuery query, CancellationToken cancellationToken)
+    {
+        return await _context.Bookings
+            .Where(b => b.MemberId == query.MemberId)
+            // A stable ordering matters once Skip/Take is involved — without it the
+            // same row can show up on two different pages.
+            .OrderByDescending(b => b.BookedAt)
+            .Select(ObjectMapper.Booking.ToDto)
+            .ToResultSetAsync(query.Options, cancellationToken);
+    }
 
     // Finds an active membership of the given category to refund a session credit to.
     // Prefers the one ending soonest, mirroring how BookAsync chooses which to spend.

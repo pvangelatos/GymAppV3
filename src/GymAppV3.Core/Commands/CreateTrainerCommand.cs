@@ -10,4 +10,4 @@ public record CreateTrainerCommand(
     string Email,
     string? Phone,
     string? Bio,
-    IReadOnlyList<Guid> SpecialtyIds);
+    IReadOnlyList<Guid> SpecialtyCategoryIds);

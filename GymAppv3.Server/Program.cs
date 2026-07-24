@@ -9,6 +9,7 @@ using GymAppv3.Server.Endpoints.Member;
 using GymAppv3.Server.Endpoints.Membership;
 using GymAppv3.Server.Endpoints.MembershipPackage;
 using GymAppv3.Server.Endpoints.Payment;
+using GymAppv3.Server.Endpoints.Trainer;
 using GymAppV3.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
@@ -106,5 +107,6 @@ app.MapMemberEndpoints();
 app.MapMembershipEndpoints();
 app.MapBookingEndpoints();
 app.MapPaymentEndpoints();
+app.MapTrainerEndpoints();
 
 app.Run();
