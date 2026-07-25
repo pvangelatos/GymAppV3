@@ -1,4 +1,5 @@
-﻿using GymAppV3.Core.Abstractions;
+﻿using FluentValidation;
+using GymAppV3.Core.Abstractions;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Infrastructure.Data;
 using GymAppV3.Infrastructure.Data.Interceptors;
@@ -70,5 +71,9 @@ public static class ApplicationConfiguration
 
         // Business services - Trainer
         builder.Services.AddScopedShared<TrainerService, ITrainerCommandService, ITrainerQueryService>();
+
+        // Auto-discover all AbstractValidator<T> in the Core assembly.
+        // New validators added under Core/Validators/ are picked up without touching this line.
+        builder.Services.AddValidatorsFromAssemblyContaining<GymAppV3.Core.Commands.ScheduleClassSessionCommand>();
     }
 }

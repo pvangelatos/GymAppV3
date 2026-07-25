@@ -1,4 +1,5 @@
-﻿using GymAppV3.Core.Commands;
+﻿using GymAppv3.Server.Endpoints.Common;
+using GymAppV3.Core.Commands;
 using GymAppV3.Core.DTOs;
 
 namespace GymAppv3.Server.Endpoints.ClassSession;
@@ -24,8 +25,10 @@ public static class ClassSessionEndpoints
         group.MapPost("/", ClassSessionHandlers.ScheduleAsync)
             .WithName("ScheduleClassSession")
             .RequireAuthorization("AdminOnly")
+            .AddEndpointFilter<ValidationFilter<ScheduleClassSessionCommand>>()
             .Accepts<ScheduleClassSessionCommand>("application/json")
-            .Produces<ClassSessionDto>(StatusCodes.Status201Created);
+            .Produces<ClassSessionDto>(StatusCodes.Status201Created)
+            .Produces(StatusCodes.Status400BadRequest);
 
         return app;
     }

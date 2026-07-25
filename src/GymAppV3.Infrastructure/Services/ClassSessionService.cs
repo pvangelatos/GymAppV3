@@ -58,10 +58,6 @@ public class ClassSessionService : IClassSessionCommandService, IClassSessionQue
         if (request.StartsAt <= _clock.UtcNow)
             throw new BusinessRuleException("A session cannot be scheduled in the past.");
 
-        // ---Business Rule: Capacity validation ---
-        if (request.Capacity <= 0)
-            throw new BusinessRuleException("Capacity must be greater than zero.");
-
         // --- Business Rule: Trainer existence check ---
         // Global query filters automatically exclude soft-deleted trainers
         var trainer = await _context.Trainers
