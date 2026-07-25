@@ -75,6 +75,21 @@ public class ClassRoomService : IClassRoomCommandService, IClassRoomQueryService
 
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
+        // Check if the classroom exists
+        var exists = await _context.ClassRooms
+            .AnyAsync(r => r.Id == id, cancellationToken);
+
+        if (!exists)
+            throw new NotFoundException(nameof(ClassRoom), id);
+
+        // Check if there are any scheduled sessions for this classroom
+        var hasSessions = await _context.ClassSessions
+            .AnyAsync(s => s.ClassRoomId == id, cancellationToken);
+
+        if(hasSessions)
+            throw new BusinessRuleException("Cannot delete a classroom that has scheduled sessions.");
+
+        // Perform a hard delete of the classroom
         await _context.ClassRooms
             .Where(r => r.Id == id)
             .ExecuteDeleteAsync(cancellationToken);
