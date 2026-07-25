@@ -14,6 +14,8 @@ public class ClassSessionService : IClassSessionCommandService, IClassSessionQue
 {
     private readonly ApplicationDbContext _context;
     private readonly IDateTimeProvider _clock;
+    private const int MaxRangeDays = 90; // The maximum range in days for fetching upcoming sessions.
+    private static readonly TimeSpan DefaultWindow = TimeSpan.FromDays(7);  // Default window for upcoming sessions if no range is specified.
 
     public ClassSessionService(ApplicationDbContext context, IDateTimeProvider clock)
     {
@@ -28,13 +30,22 @@ public class ClassSessionService : IClassSessionCommandService, IClassSessionQue
             .FirstOrDefaultAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<ClassSessionDto>> GetUpcomingAsync(GetUpcomingClassSessionsQuery query, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<ClassSessionDto>> GetUpcomingAsync(
+        GetUpcomingClassSessionsQuery query,
+        CancellationToken cancellationToken = default)
     {
-        var now = _clock.UtcNow;
+        var from = query.From ?? _clock.UtcNow;
+        var to = query.To ?? from.Add(DefaultWindow);
+       
+        if (to <= from)
+            throw new BusinessRuleException("The 'To' date must be after the 'From' date.");
+
+        if ((to - from).TotalDays > MaxRangeDays)
+            throw new BusinessRuleException($"The date range between cannot exceed {MaxRangeDays} days.");
 
         // Fetch upcoming sessions starting in the future, projected straight to DTOs via ObjectMapper
         return await _context.ClassSessions
-            .Where(s => s.StartsAt > now)
+            .Where(s => s.StartsAt >= from && s.StartsAt < to)  // Only sessions starting within the specified range
             .OrderBy(s => s.StartsAt)
             .Select(ObjectMapper.ClassSession.ToDto)
             .ToListAsync(cancellationToken);

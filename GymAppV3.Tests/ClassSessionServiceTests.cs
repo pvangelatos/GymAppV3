@@ -181,7 +181,7 @@ public class ClassSessionServiceTests : TestBase
     // --- GetUpcoming --------------------------------------------------------
 
     [Fact]
-    public async Task GetUpcomingAsync_returns_only_future_sessions_ordered()
+    public async Task GetUpcomingAsync_returns_sessions_ordered_by_start_time()
     {
         var (trainerId, roomId, categoryId) = await SeedTrainerAndRoom();
         var sut = CreateSut();
@@ -195,4 +195,78 @@ public class ClassSessionServiceTests : TestBase
         // Ordered by start time ascending.
         result[0].StartsAt.Should().BeBefore(result[1].StartsAt);
     }
+
+    [Fact]
+    public async Task GetUpcomingAsync_default_window_returns_only_next_seven_days()
+    {
+        var (trainerId, roomId, categoryId) = await SeedTrainerAndRoom();
+        var sut = CreateSut();
+
+        // Inside default 7-day window.
+        await sut.ScheduleAsync(Request(trainerId, roomId, categoryId, startsAt: Now.AddDays(3)));
+        // Outside — should not appear.
+        await sut.ScheduleAsync(Request(trainerId, roomId, categoryId, startsAt: Now.AddDays(10)));
+
+        var result = await sut.GetUpcomingAsync(new GetUpcomingClassSessionsQuery());
+
+        result.Should().HaveCount(1);
+        result[0].StartsAt.Should().Be(Now.AddDays(3));
+    }
+
+    [Fact]
+    public async Task GetUpcomingAsync_explicit_range_filters_both_bounds()
+    {
+        var (trainerId, roomId, categoryId) = await SeedTrainerAndRoom();
+        var sut = CreateSut();
+
+        // Before window, inside window, after window.
+        await sut.ScheduleAsync(Request(trainerId, roomId, categoryId, startsAt: Now.AddDays(1)));
+        await sut.ScheduleAsync(Request(trainerId, roomId, categoryId, startsAt: Now.AddDays(5)));
+        await sut.ScheduleAsync(Request(trainerId, roomId, categoryId, startsAt: Now.AddDays(15)));
+
+        var result = await sut.GetUpcomingAsync(
+            new GetUpcomingClassSessionsQuery(Now.AddDays(3), Now.AddDays(10)));
+
+        result.Should().HaveCount(1);
+        result[0].StartsAt.Should().Be(Now.AddDays(5));
+    }
+
+    [Fact]
+    public async Task GetUpcomingAsync_uses_half_open_interval_and_excludes_upper_bound()
+    {
+        var (trainerId, roomId, categoryId) = await SeedTrainerAndRoom();
+        var sut = CreateSut();
+
+        var to = Now.AddDays(7);
+        await sut.ScheduleAsync(Request(trainerId, roomId, categoryId, startsAt: Now.AddDays(3))); // included
+        await sut.ScheduleAsync(Request(trainerId, roomId, categoryId, startsAt: to));             // exactly at To → excluded
+
+        var result = await sut.GetUpcomingAsync(new GetUpcomingClassSessionsQuery(Now, to));
+
+        result.Should().HaveCount(1);
+        result[0].StartsAt.Should().Be(Now.AddDays(3));
+    }
+
+    [Fact]
+    public async Task GetUpcomingAsync_throws_when_To_is_not_after_From()
+    {
+        var sut = CreateSut();
+
+        var act = () => sut.GetUpcomingAsync(
+            new GetUpcomingClassSessionsQuery(Now.AddDays(5), Now.AddDays(5)));
+
+        await act.Should().ThrowAsync<BusinessRuleException>();
+    }
+
+    [Fact]
+    public async Task GetUpcomingAsync_throws_when_range_exceeds_max_days()
+    {
+        var sut = CreateSut();
+
+        var act = () => sut.GetUpcomingAsync(
+            new GetUpcomingClassSessionsQuery(Now, Now.AddDays(91)));
+
+        await act.Should().ThrowAsync<BusinessRuleException>();
+    }
+
 }

@@ -1,4 +1,5 @@
-﻿using GymAppV3.Core.Commands;
+﻿using GymAppv3.Server.Endpoints.Common;
+using GymAppV3.Core.Commands;
 using GymAppV3.Core.DTOs;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Queries.ClassSessions;
@@ -9,10 +10,13 @@ namespace GymAppv3.Server.Endpoints.ClassSession;
 public static class ClassSessionHandlers
 {
     public static async Task<Ok<IReadOnlyList<ClassSessionDto>>> GetUpcomingAsync(
+        [AsParameters] DateRangeRequest request,
         IClassSessionQueryService queryService,
         CancellationToken cancellationToken)
     {
-        var result = await queryService.GetUpcomingAsync(new GetUpcomingClassSessionsQuery(), cancellationToken);
+        var result = await queryService.GetUpcomingAsync(
+            new GetUpcomingClassSessionsQuery(request.From, request.To),
+            cancellationToken);
         return TypedResults.Ok(result);
     }
 
