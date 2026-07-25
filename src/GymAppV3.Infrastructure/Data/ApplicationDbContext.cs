@@ -94,8 +94,6 @@ public class ApplicationDbContext : IdentityDbContext<IdentityUser>
                     .Property("RowVersion")
                     .IsRowVersion();
 
-                modelBuilder.Entity<Payment>().Property(p => p.Amount).HasConversion<double>();
-                modelBuilder.Entity<Payment>().Property(p => p.NetAmount).HasConversion<double>();
             }
             else
             {
