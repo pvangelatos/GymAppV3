@@ -1,4 +1,5 @@
 using GymAppV3.Core.Commands;
+using GymAppV3.Core.Common;
 using GymAppV3.Core.DTOs;
 
 namespace GymAppv3.Server.Endpoints.Payment;
@@ -22,7 +23,7 @@ public static class PaymentEndpoints
         memberPayments.MapGet("/", PaymentHandlers.GetByMemberAsync)
             .WithName("GetPaymentsByMember")
             .RequireAuthorization()
-            .Produces<IReadOnlyList<PaymentDto>>(StatusCodes.Status200OK);
+            .Produces<ResultSet<PaymentDto>>(StatusCodes.Status200OK);
 
         payments.MapGet("/reports/monthly", PaymentHandlers.GetMonthlyReportAsync)
             .WithName("GetMonthlyFinancialReport")

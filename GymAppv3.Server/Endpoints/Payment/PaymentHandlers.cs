@@ -1,4 +1,6 @@
+using GymAppv3.Server.Endpoints.Common;
 using GymAppV3.Core.Commands;
+using GymAppV3.Core.Common;
 using GymAppV3.Core.DTOs;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Queries.Payments;
@@ -17,12 +19,17 @@ public static class PaymentHandlers
         return TypedResults.Created($"/api/payments/{created.Id}", created);
     }
 
-    public static async Task<Ok<IReadOnlyList<PaymentDto>>> GetByMemberAsync(
+    public static async Task<Ok<ResultSet<PaymentDto>>> GetByMemberAsync(
         Guid memberId,
+        [AsParameters] PaginationRequest request,
         IPaymentQueryService queryService,
         CancellationToken cancellationToken)
     {
-        var result = await queryService.GetPaymentsByMemberIdAsync(new GetPaymentsByMemberQuery(memberId), cancellationToken);
+        var options = new ListOptions(request.Page, request.Size) { Sort = request.Sort };
+
+        var result = await queryService.GetPaymentsByMemberIdAsync(
+            new GetPaymentsByMemberQuery(memberId, options), cancellationToken);
+
         return TypedResults.Ok(result);
     }
 

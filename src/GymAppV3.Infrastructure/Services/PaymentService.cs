@@ -8,6 +8,7 @@ using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Models;
 using GymAppV3.Core.Queries.Payments;
 using GymAppV3.Infrastructure.Data;
+using GymAppV3.Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -64,13 +65,13 @@ public class PaymentService : IPaymentCommandService, IPaymentQueryService
             (totals?.Gross ?? 0m) - (totals?.Net ?? 0m));
     }
 
-    public async Task<IReadOnlyList<PaymentDto>> GetPaymentsByMemberIdAsync(GetPaymentsByMemberQuery query, CancellationToken cancellationToken = default)
+    public async Task<ResultSet<PaymentDto>> GetPaymentsByMemberIdAsync(GetPaymentsByMemberQuery query, CancellationToken cancellationToken = default)
     {
         return await _context.Payments
            .Where(p => p.MemberId == query.MemberId)
            .OrderByDescending(p => p.PaidAt)
            .Select(ObjectMapper.Payment.ToDto)
-           .ToListAsync(cancellationToken);
+           .ToResultSetAsync(query.Options, cancellationToken);
     }
 
     public async Task<PaymentDto> RecordAsync(RecordPaymentCommand command, CancellationToken cancellationToken = default)
