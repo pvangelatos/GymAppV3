@@ -38,44 +38,37 @@ public static class ApplicationConfiguration
         builder.Services.AddScoped<IDateTimeProvider, DateTimeProvider>();
         builder.Services.AddScoped<IVatRateProvider, VatRateProvider>();
 
+        // Business services — register each concrete once, share the instance across its interfaces.
+        // Without this, each interface registration creates its own instance per request.
+
         // Business services - Gym Building
-        builder.Services.AddScoped<IGymBuildingCommandService, GymBuildingService>();
-        builder.Services.AddScoped<IGymBuildingQueryService, GymBuildingService>();
+        builder.Services.AddScopedShared<GymBuildingService, IGymBuildingCommandService, IGymBuildingQueryService>();
 
         // Business services - Class Category
-        builder.Services.AddScoped<IClassCategoryCommandService, ClassCategoryService>();
-        builder.Services.AddScoped<IClassCategoryQueryService, ClassCategoryService>();
+        builder.Services.AddScopedShared<ClassCategoryService, IClassCategoryCommandService, IClassCategoryQueryService>();
 
         // Business services - Class Room
-        builder.Services.AddScoped<IClassRoomCommandService, ClassRoomService>();
-        builder.Services.AddScoped<IClassRoomQueryService, ClassRoomService>();
+        builder.Services.AddScopedShared<ClassRoomService, IClassRoomCommandService, IClassRoomQueryService>();
 
         // Business services - Class Session
-        builder.Services.AddScoped<IClassSessionCommandService, ClassSessionService>();
-        builder.Services.AddScoped<IClassSessionQueryService, ClassSessionService>();
+        builder.Services.AddScopedShared<ClassSessionService, IClassSessionCommandService, IClassSessionQueryService>();
 
         // Business services - Membership Package
-        builder.Services.AddScoped<IMembershipPackageCommandService, MembershipPackageService>();
-        builder.Services.AddScoped<IMembershipPackageQueryService, MembershipPackageService>();
+        builder.Services.AddScopedShared<MembershipPackageService, IMembershipPackageCommandService, IMembershipPackageQueryService>();
 
         // Business services - Member
-        builder.Services.AddScoped<IMemberCommandService, MemberService>();
-        builder.Services.AddScoped<IMemberQueryService, MemberService>();
+        builder.Services.AddScopedShared<MemberService, IMemberCommandService, IMemberQueryService>();
 
         // Business services - Membership
-        builder.Services.AddScoped<IMembershipCommandService, MembershipService>();
-        builder.Services.AddScoped<IMembershipQueryService, MembershipService>();
+        builder.Services.AddScopedShared<MembershipService, IMembershipCommandService, IMembershipQueryService>();
 
         // Business services - Booking
-        builder.Services.AddScoped<IBookingCommandService, BookingService>();
-        builder.Services.AddScoped<IBookingQueryService, BookingService>();
+        builder.Services.AddScopedShared<BookingService, IBookingCommandService, IBookingQueryService>();
 
         // Business services - Payment
-        builder.Services.AddScoped<IPaymentCommandService, PaymentService>();
-        builder.Services.AddScoped<IPaymentQueryService, PaymentService>();
+        builder.Services.AddScopedShared<PaymentService, IPaymentCommandService, IPaymentQueryService>();
 
         // Business services - Trainer
-        builder.Services.AddScoped<ITrainerCommandService, TrainerService>();
-        builder.Services.AddScoped<ITrainerQueryService, TrainerService>();
+        builder.Services.AddScopedShared<TrainerService, ITrainerCommandService, ITrainerQueryService>();
     }
 }
