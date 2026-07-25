@@ -48,9 +48,14 @@ public static class IdentityConfiguration
         })
         .AddJwtBearer(options =>
         {
-            var jwtKey = builder.Configuration["Jwt:Key"] ?? "your-super-secret-key-change-this-in-production-min-32-chars!";
-            var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "GymAppV3";
-            var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "GymAppV3";
+            var jwtKey = builder.Configuration["Jwt:Key"] ??
+                throw new InvalidOperationException("Jwt:Key is not configured.");
+
+            var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? 
+                throw new InvalidOperationException("Jwt:Issuer is not configured.");
+
+            var jwtAudience = builder.Configuration["Jwt:Audience"] ?? 
+                throw new InvalidOperationException("Jwt:Audience is not configured.");
 
             options.TokenValidationParameters = new TokenValidationParameters
             {

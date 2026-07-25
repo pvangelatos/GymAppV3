@@ -196,9 +196,15 @@ public static class AuthHandlers
 
     private static string GenerateJwtToken(IdentityUser user, IList<string> roles, IConfiguration configuration)
     {
-        var jwtKey = configuration["Jwt:Key"] ?? "your-super-secret-key-change-this-in-production-min-32-chars!";
-        var jwtIssuer = configuration["Jwt:Issuer"] ?? "GymAppV3";
-        var jwtAudience = configuration["Jwt:Audience"] ?? "GymAppV3";
+        var jwtKey = configuration["Jwt:Key"] ??
+            throw new InvalidOperationException("Jwt:Key is not configured.");
+        
+        var jwtIssuer = configuration["Jwt:Issuer"] ??
+            throw new InvalidOperationException("Jwt:Issuer is not configured.");
+        
+        var jwtAudience = configuration["Jwt:Audience"] ??
+            throw new InvalidOperationException("Jwt:Audience is not configured.");
+        
         var jwtExpiryMinutes = int.Parse(configuration["Jwt:ExpiryMinutes"] ?? "60");
 
         var claims = new List<Claim>
