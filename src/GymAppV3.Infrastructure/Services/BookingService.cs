@@ -56,19 +56,18 @@ public class BookingService : IBookingCommandService, IBookingQueryService
             throw new BusinessRuleException("You already have a booking for this session.");
 
         // --- Find active membership with remaining balance for this class category ---
-        var candidateMemberships = await _context.Memberships
+        // Pick the one expiring soonest so expiring credits are consumed first.
+        var membership = await _context.Memberships
             .Where(m => m.MemberId == member.Id
                      && m.Status == MembershipStatus.Active
                      && m.RemainingSessions > 0
-                     && m.MembershipPackage.ClassCategoryId == session.ClassCategoryId)
-            .ToListAsync(cancellationToken);
-
-        // Pick active membership that expires earliest to consume expiring credits first
-        var membership = candidateMemberships
-            .Where(m => m.StartDate <= now && m.EndDate >= now)
+                     && m.MembershipPackage.ClassCategoryId == session.ClassCategoryId
+                     && m.StartDate <= now
+                     && m.EndDate >= now)
             .OrderBy(m => m.EndDate)
-            .FirstOrDefault() ??
-            throw new BusinessRuleException("No active membership with remaining sessions covers this class category.");
+            .FirstOrDefaultAsync(cancellationToken) ??
+            throw new BusinessRuleException(
+                "No active membership with remaining sessions covers this class category.");
 
         // --- Execute mutations ---
         var booking = new Booking
@@ -151,16 +150,14 @@ public class BookingService : IBookingCommandService, IBookingQueryService
     private async Task<Membership?> FindMembershipToRefund(
         Guid memberId, Guid categoryId, CancellationToken cancellationToken)
     {
-        var candidates = await _context.Memberships
-            .Where(m => m.MemberId == memberId
-                     && m.Status == MembershipStatus.Active
-                     && m.MembershipPackage.ClassCategoryId == categoryId)
-            .ToListAsync(cancellationToken);
-
         var now = _clock.UtcNow;
-        return candidates
-            .Where(m => m.StartDate <= now && m.EndDate >= now)
-            .OrderBy(m => m.EndDate)
-            .FirstOrDefault();
+        return await _context.Memberships
+        .Where(m => m.MemberId == memberId
+                 && m.Status == MembershipStatus.Active
+                 && m.MembershipPackage.ClassCategoryId == categoryId
+                 && m.StartDate <= now
+                 && m.EndDate >= now)
+        .OrderBy(m => m.EndDate)
+        .FirstOrDefaultAsync(cancellationToken);
     }
 }

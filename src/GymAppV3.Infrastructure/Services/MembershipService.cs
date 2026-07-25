@@ -25,21 +25,18 @@ public class MembershipService : IMembershipCommandService, IMembershipQueryServ
     {
         return await _context.Memberships
             .Where(m => m.Id == query.Id)
-            .Select(m => new MembershipDto(
-                m.Id, m.MemberId, m.MembershipPackageId, m.MembershipPackage.Name,
-                m.PricePaid, m.StartDate, m.EndDate, m.RemainingSessions,
-                 m.Status.ToString()))
+            .Select(ObjectMapper.Membership.ToDto)
             .FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyList<MembershipDto>> GetByMemberAsync(GetMembershipsByMemberQuery query, CancellationToken cancellationToken = default)
     {
-        var memberships = await _context.Memberships
+       return await _context.Memberships
             .Where(m => m.MemberId == query.MemberId)
+            .OrderByDescending(m => m.StartDate)
             .Select(ObjectMapper.Membership.ToDto)
             .ToListAsync(cancellationToken);
 
-        return memberships.OrderByDescending(m => m.StartDate).ToList();
     }
 
     public async Task<MembershipDto> PurchaseAsync(PurchaseMembershipCommand request, CancellationToken cancellationToken = default)
@@ -57,20 +54,17 @@ public class MembershipService : IMembershipCommandService, IMembershipQueryServ
         var now = _clock.UtcNow;
 
         // --- Renewal Stacking ---
-        // If the member has an unexpired membership for the same package, the new package starts when the previous one ends.
-        var samePackageMemberships = await _context.Memberships
-            .Where(m => m.MemberId ==  request.MemberId
+        // Latest end-date of any active, non-expired membership for the same package.
+        // Cast to nullable so MaxAsync returns null on empty set instead of throwing.
+        var latestEnd = await _context.Memberships
+            .Where(m => m.MemberId == request.MemberId
                      && m.MembershipPackageId == request.MembershipPackageId
-                     && m.Status == MembershipStatus.Active)
-            .Select(m => m.EndDate)
-            .ToListAsync(cancellationToken);
+                     && m.Status == MembershipStatus.Active
+                     && m.EndDate > now)
+            .Select(m => (DateTimeOffset?)m.EndDate)
+            .MaxAsync(cancellationToken);
 
-        var latestEnd = samePackageMemberships
-            .Where(end => end > now)                // only memberships that haven't expired yet
-            .DefaultIfEmpty(now)                    // if none, fall back to "now"
-            .Max();
-
-        var startDate = latestEnd;
+        var startDate = latestEnd ?? now;
         var endDate = startDate.AddDays(package.DurationInDays);
 
         // --- Price snapshot ---
@@ -83,8 +77,7 @@ public class MembershipService : IMembershipCommandService, IMembershipQueryServ
             StartDate = startDate,
             EndDate = endDate,
             RemainingSessions = package.SessionsIncluded,
-            Status = MembershipStatus.Active,
-            RowVersion = Array.Empty<byte>()
+            Status = MembershipStatus.Active
         };
 
         _context.Memberships.Add(membership);
