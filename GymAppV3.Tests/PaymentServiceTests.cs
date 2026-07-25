@@ -1,5 +1,4 @@
-﻿
-using FluentAssertions;
+﻿using FluentAssertions;
 using GymAppV3.Core.Abstractions;
 using GymAppV3.Core.Enums;
 using GymAppV3.Core.Exceptions;
@@ -141,7 +140,7 @@ public class PaymentServiceTests : TestBase
 
         var result = await sut.GetPaymentsByMemberIdAsync(new GetPaymentsByMemberQuery(member.Id));
 
-        result.Should().HaveCount(2);
+        result.Items.Should().HaveCount(2);
     }
 
     /// <summary>
