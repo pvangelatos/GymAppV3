@@ -178,27 +178,17 @@ public class MemberService : IMemberCommandService, IMemberQueryService
             ?? throw new NotFoundException(nameof(Member), command.MemberId);
 
         var now = _clock.UtcNow;
-        var currentUserId = _userContext.UserId!;
 
-        // Soft-delete member
-        member.IsDeleted = true;
-        member.DeletedAt = now;
-        member.DeletedBy = currentUserId;
-
-        // Cascade soft-delete to Memberships
-        foreach (var membership in member.Memberships)
-        {
-            membership.IsDeleted = true;
-            membership.DeletedAt = now;
-            membership.DeletedBy = currentUserId;
-        }
-
-        // Cancel active Bookings (not soft-delete, just set status to Cancelled)
+        // Cancel active bookings — booking history stays as Cancelled, not soft-deleted.
         foreach (var booking in member.Bookings.Where(b => b.Status != BookingStatus.Cancelled))
         {
             booking.Status = BookingStatus.Cancelled;
             booking.CancelledAt = now;
         }
+
+        // Member + Memberships soft-delete via the interceptor. Payments stay untouched.
+        _context.Memberships.RemoveRange(member.Memberships);
+        _context.Members.Remove(member);
 
         // Payments are preserved (no changes)
 

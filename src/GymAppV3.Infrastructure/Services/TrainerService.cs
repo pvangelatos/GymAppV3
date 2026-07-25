@@ -151,10 +151,8 @@ public class TrainerService : ITrainerCommandService, ITrainerQueryService
             .FirstOrDefaultAsync(t => t.Id == id, cancellationToken)
             ?? throw new NotFoundException(nameof(Trainer), id);
 
-        trainer.IsDeleted = true;
-        trainer.DeletedAt = _clock.UtcNow;
-        trainer.DeletedBy = _userContext.UserId;
-
+        // Remove() marks Deleted; the interceptor converts it to soft-delete + audit fields.
+        _context.Trainers.Remove(trainer);
         await _context.SaveChangesAsync(cancellationToken);
     }
 
