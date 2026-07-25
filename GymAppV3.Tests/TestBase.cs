@@ -23,6 +23,7 @@ public abstract class TestBase : IDisposable
 
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .AddInterceptors(interceptor)
             .Options;
 
         Context = new ApplicationDbContext(options);

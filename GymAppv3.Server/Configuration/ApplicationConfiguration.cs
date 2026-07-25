@@ -1,6 +1,7 @@
 ﻿using GymAppV3.Core.Abstractions;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Infrastructure.Data;
+using GymAppV3.Infrastructure.Data.Interceptors;
 using GymAppV3.Infrastructure.Handlers;
 using GymAppV3.Infrastructure.Identity;
 using GymAppV3.Infrastructure.Services;
@@ -16,9 +17,15 @@ public static class ApplicationConfiguration
         builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
         builder.Services.AddProblemDetails();
 
-        // Database
-        builder.Services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+        // Register the interceptor as scoped - it depends on IUserContext which is scoped
+        builder.Services.AddScoped<AuditableEntityInterceptor>();
+
+        // Database - resolve interceptor from DI so IDateTimeProvider / IUserContext get wired
+        builder.Services.AddDbContext<ApplicationDbContext>((sp, options) =>
+        {
+            options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+            options.AddInterceptors(sp.GetRequiredService<AuditableEntityInterceptor>());
+        });
 
         // Configure Identity and Authentication
         builder.ConfigureIdentity();
