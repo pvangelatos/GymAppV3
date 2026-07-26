@@ -4,11 +4,12 @@
     <File Path="Plan-Implment-Authentication-Authorizations.md" />
   </Folder>
   <Folder Name="/src/">
-    <Project Path="GymAppv3.Server/GymAppv3.Server.csproj" Id="30225981-ab90-4057-b061-9442a0065597" />
     <Project Path="src/GymAppV3.Core/GymAppV3.Core.csproj" />
     <Project Path="src/GymAppV3.Infrastructure/GymAppV3.Infrastructure.csproj" />
+    <Project Path="src/GymAppv3.Server/GymAppv3.Server.csproj" Id="30225981-ab90-4057-b061-9442a0065597" />
+    <Project Path="src/GymWebApp/GymWebApp.csproj" Id="2b9b33a8-02bf-4ae3-9b9b-64d0ef2c8a1e" />
   </Folder>
   <Folder Name="/test/">
-    <Project Path="GymAppV3.Tests/GymAppV3.Tests.csproj" />
+    <Project Path="test/GymAppV3.Tests/GymAppV3.Tests.csproj" />
   </Folder>
 </Solution>
