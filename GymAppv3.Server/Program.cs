@@ -18,6 +18,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Configure application services
 builder.ConfigureApplication();
+builder.ConfigureRateLimiting();
 
 // Configure Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
@@ -96,6 +97,7 @@ app.UseExceptionHandler();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapAuthEndpoints();
 app.MapGymBuildingEndpoints();

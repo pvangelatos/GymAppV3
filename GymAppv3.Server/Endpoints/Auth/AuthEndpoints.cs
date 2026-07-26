@@ -1,3 +1,4 @@
+using GymAppv3.Server.Configuration;
 using GymAppv3.Server.Endpoints.Common;
 
 namespace GymAppv3.Server.Endpoints.Auth;
@@ -11,19 +12,23 @@ public static class AuthEndpoints
         group.MapPost("/register", AuthHandlers.RegisterAsync)
             .WithName("Register")
             .AllowAnonymous()
+            .RequireRateLimiting(RateLimitingConfiguration.AuthRegisterPolicy)
             .AddEndpointFilter<ValidationFilter<RegisterRequest>>()
             .Accepts<RegisterRequest>("application/json")
             .Produces<AuthResponse>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status400BadRequest);
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status429TooManyRequests);
 
         group.MapPost("/login", AuthHandlers.LoginAsync)
             .WithName("Login")
             .AllowAnonymous()
+            .RequireRateLimiting(RateLimitingConfiguration.AuthLoginPolicy)
             .AddEndpointFilter<ValidationFilter<LoginRequest>>()
             .Accepts<LoginRequest>("application/json")
             .Produces<AuthResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status429TooManyRequests);
 
         group.MapPost("/logout", AuthHandlers.LogoutAsync)
             .WithName("Logout")
