@@ -1,3 +1,4 @@
+using GymAppv3.Server.Endpoints.Common;
 using GymAppV3.Core.Commands;
 using GymAppV3.Core.Common;
 using GymAppV3.Core.DTOs;
@@ -17,7 +18,9 @@ public static class BookingEndpoints
         group.MapPost("/", BookingHandlers.BookAsync)
             .WithName("CreateBooking")
             .RequireAuthorization()
+            .AddEndpointFilter<ValidationFilter<CreateBookingCommand>>()
             .Accepts<CreateBookingCommand>("application/json")
+            .Produces(StatusCodes.Status400BadRequest)
             .Produces<BookingDto>(StatusCodes.Status201Created);
 
         group.MapPost("/{id:guid}/cancel", BookingHandlers.CancelAsync)

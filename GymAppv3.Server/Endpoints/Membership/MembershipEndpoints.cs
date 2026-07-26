@@ -1,3 +1,4 @@
+using GymAppv3.Server.Endpoints.Common;
 using GymAppV3.Core.Commands;
 using GymAppV3.Core.DTOs;
 
@@ -16,7 +17,9 @@ public static class MembershipEndpoints
         group.MapPost("/", MembershipHandlers.PurchaseAsync)
             .WithName("PurchaseMembership")
             .RequireAuthorization()
+            .AddEndpointFilter<ValidationFilter<PurchaseMembershipCommand>>()
             .Accepts<PurchaseMembershipCommand>("application/json")
+            .Produces(StatusCodes.Status400BadRequest)
             .Produces<MembershipDto>(StatusCodes.Status201Created);
 
         group.MapGet("/{id:guid}", MembershipHandlers.GetByIdAsync)

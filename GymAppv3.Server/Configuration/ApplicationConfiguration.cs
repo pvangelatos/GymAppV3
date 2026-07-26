@@ -7,6 +7,7 @@ using GymAppV3.Infrastructure.Handlers;
 using GymAppV3.Infrastructure.Identity;
 using GymAppV3.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace GymAppv3.Server.Configuration;
 
@@ -71,6 +72,9 @@ public static class ApplicationConfiguration
 
         // Business services - Trainer
         builder.Services.AddScopedShared<TrainerService, ITrainerCommandService, ITrainerQueryService>();
+
+        // All FluentValidation default messages switches to Greek.
+        ValidatorOptions.Global.LanguageManager.Culture = new CultureInfo("el-GR");
 
         // Auto-discover all AbstractValidator<T> in the Core assembly.
         // New validators added under Core/Validators/ are picked up without touching this line.

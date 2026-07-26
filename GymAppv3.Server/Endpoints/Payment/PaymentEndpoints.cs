@@ -1,3 +1,4 @@
+using GymAppv3.Server.Endpoints.Common;
 using GymAppV3.Core.Commands;
 using GymAppV3.Core.Common;
 using GymAppV3.Core.DTOs;
@@ -17,7 +18,9 @@ public static class PaymentEndpoints
         payments.MapPost("/", PaymentHandlers.RecordAsync)
             .WithName("RecordPayment")
             .RequireAuthorization()
+            .AddEndpointFilter<ValidationFilter<RecordPaymentCommand>>()
             .Accepts<RecordPaymentCommand>("application/json")
+            .Produces(StatusCodes.Status400BadRequest)
             .Produces<PaymentDto>(StatusCodes.Status201Created);
 
         memberPayments.MapGet("/", PaymentHandlers.GetByMemberAsync)

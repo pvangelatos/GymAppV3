@@ -1,3 +1,4 @@
+using GymAppv3.Server.Endpoints.Common;
 using GymAppv3.Server.Endpoints.Member;
 using GymAppV3.Core.Commands;
 using GymAppV3.Core.Common;
@@ -22,7 +23,9 @@ public static class MemberEndpoints
         group.MapPost("/me", MemberHandlers.CompleteProfileAsync)
             .WithName("CompleteMemberProfile")
             .RequireAuthorization()
+            .AddEndpointFilter<ValidationFilter<CompleteMemberProfileCommand>>()
             .Accepts<CompleteMemberProfileCommand>("application/json")
+            .Produces(StatusCodes.Status400BadRequest)
             .Produces<MemberDto>(StatusCodes.Status201Created)
             .Produces(StatusCodes.Status422UnprocessableEntity);
 
@@ -46,7 +49,9 @@ public static class MemberEndpoints
         group.MapPost("/", MemberHandlers.CreateAsync)
             .WithName("CreateMember")
             .RequireAuthorization("StaffOnly")
+            .AddEndpointFilter<ValidationFilter<CreateMemberCommand>>()
             .Accepts<CreateMemberCommand>("application/json")
+            .Produces(StatusCodes.Status400BadRequest)
             .Produces<MemberDto>(StatusCodes.Status201Created)
             .Produces(StatusCodes.Status422UnprocessableEntity);
 
@@ -59,7 +64,9 @@ public static class MemberEndpoints
         group.MapPut("/{id:guid}", MemberHandlers.UpdateAsync)
             .WithName("UpdateMember")
             .RequireAuthorization()
+            .AddEndpointFilter<ValidationFilter<UpdateMemberCommand>>()
             .Accepts<UpdateMemberCommand>("application/json")
+            .Produces(StatusCodes.Status400BadRequest)
             .Produces<MemberDto>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status403Forbidden)
             .Produces(StatusCodes.Status404NotFound);

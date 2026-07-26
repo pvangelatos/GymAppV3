@@ -1,4 +1,5 @@
-﻿using GymAppV3.Core.Commands;
+﻿using GymAppv3.Server.Endpoints.Common;
+using GymAppV3.Core.Commands;
 using GymAppV3.Core.DTOs;
 
 namespace GymAppv3.Server.Endpoints.Trainer;
@@ -24,7 +25,9 @@ public static class TrainerEndpoints
         group.MapPost("/", TrainerHandlers.CreateAsync)
             .WithName("CreateTrainer")
             .RequireAuthorization("AdminOnly")
+            .AddEndpointFilter<ValidationFilter<CreateTrainerCommand>>()
             .Accepts<CreateTrainerCommand>("application/json")
+            .Produces(StatusCodes.Status400BadRequest)
             .Produces<TrainerCreatedDto>(StatusCodes.Status201Created)
             .Produces(StatusCodes.Status422UnprocessableEntity);
 
@@ -37,7 +40,9 @@ public static class TrainerEndpoints
         group.MapPut("/{id:guid}", TrainerHandlers.UpdateAsync)
             .WithName("UpdateTrainer")
             .RequireAuthorization()
+            .AddEndpointFilter<ValidationFilter<UpdateTrainerCommand>>()
             .Accepts<UpdateTrainerCommand>("application/json")
+            .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status403Forbidden)
             .Produces(StatusCodes.Status404NotFound);

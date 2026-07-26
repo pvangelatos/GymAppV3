@@ -1,4 +1,5 @@
-﻿using GymAppV3.Core.Commands;
+﻿using GymAppv3.Server.Endpoints.Common;
+using GymAppV3.Core.Commands;
 using GymAppV3.Core.DTOs;
 
 namespace GymAppv3.Server.Endpoints.MembershipPackage;
@@ -24,13 +25,17 @@ public static class MembershipPackageEndpoints
         group.MapPost("/", MembershipPackageHandlers.CreateAsync)
             .WithName("CreateMembershipPackage")
             .RequireAuthorization("AdminOnly")
+            .AddEndpointFilter<ValidationFilter<CreateMembershipPackageCommand>>()
             .Accepts<CreateMembershipPackageCommand>("application/json")
+            .Produces(StatusCodes.Status400BadRequest)
             .Produces<MembershipPackageDto>(StatusCodes.Status201Created);
 
         group.MapPut("/{id:guid}", MembershipPackageHandlers.UpdateAsync)
             .WithName("UpdateMembershipPackage")
             .RequireAuthorization("AdminOnly")
+            .AddEndpointFilter<ValidationFilter<UpdateMembershipPackageCommand>>()
             .Accepts<UpdateMembershipPackageCommand>("application/json")
+            .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status404NotFound);
 

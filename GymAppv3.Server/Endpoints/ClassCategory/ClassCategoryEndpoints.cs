@@ -1,4 +1,5 @@
-﻿using GymAppV3.Core.Commands;
+﻿using GymAppv3.Server.Endpoints.Common;
+using GymAppV3.Core.Commands;
 using GymAppV3.Core.DTOs;
 
 namespace GymAppv3.Server.Endpoints.ClassCategory;
@@ -24,13 +25,17 @@ public static class ClassCategoryEndpoints
         group.MapPost("/", ClassCategoryHandlers.CreateAsync)
             .WithName("CreateClassCategory")
             .RequireAuthorization("AdminOnly")
+            .AddEndpointFilter<ValidationFilter<CreateClassCategoryCommand>>()
             .Accepts<CreateClassCategoryCommand>("application/json")
+            .Produces(StatusCodes.Status400BadRequest)
             .Produces<ClassCategoryDto>(StatusCodes.Status201Created);
 
         group.MapPut("/{id:guid}", ClassCategoryHandlers.UpdateAsync)
             .WithName("UpdateClassCategory")
             .RequireAuthorization("AdminOnly")
+            .AddEndpointFilter<ValidationFilter<UpdateClassCategoryCommand>>()
             .Accepts<UpdateClassCategoryCommand>("application/json")
+            .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status404NotFound);
 

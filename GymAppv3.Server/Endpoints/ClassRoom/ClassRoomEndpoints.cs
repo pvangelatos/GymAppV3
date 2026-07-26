@@ -1,4 +1,5 @@
-﻿using GymAppV3.Core.Commands;
+﻿using GymAppv3.Server.Endpoints.Common;
+using GymAppV3.Core.Commands;
 using GymAppV3.Core.DTOs;
 
 namespace GymAppv3.Server.Endpoints.ClassRoom;
@@ -24,13 +25,17 @@ public static class ClassRoomEndpoints
         group.MapPost("/", ClassRoomHandlers.CreateAsync)
             .WithName("CreateClassRoom")
             .RequireAuthorization("AdminOnly")
+            .AddEndpointFilter<ValidationFilter<CreateClassRoomCommand>>()
             .Accepts<CreateClassRoomCommand>("application/json")
+            .Produces(StatusCodes.Status400BadRequest)
             .Produces<ClassRoomDto>(StatusCodes.Status201Created);
 
         group.MapPut("/{id:guid}", ClassRoomHandlers.UpdateAsync)
             .WithName("UpdateClassRoom")
             .RequireAuthorization("AdminOnly")
+            .AddEndpointFilter<ValidationFilter<UpdateClassRoomCommand>>()
             .Accepts<UpdateClassRoomCommand>("application/json")
+            .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status404NotFound);
 

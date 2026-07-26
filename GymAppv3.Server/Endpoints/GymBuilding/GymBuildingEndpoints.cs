@@ -1,3 +1,4 @@
+using GymAppv3.Server.Endpoints.Common;
 using GymAppV3.Core.Commands;
 using GymAppV3.Core.DTOs;
 
@@ -24,13 +25,17 @@ public static class GymBuildingEndpoints
         group.MapPost("/", GymBuildingHandlers.CreateAsync)
             .WithName("CreateGymBuilding")
             .RequireAuthorization("AdminOnly")
+            .AddEndpointFilter<ValidationFilter<CreateGymBuildingCommand>>()
             .Accepts<CreateGymBuildingCommand>("application/json")
+            .Produces(StatusCodes.Status400BadRequest)
             .Produces<GymBuildingDto>(StatusCodes.Status201Created);
 
         group.MapPut("/{id:guid}", GymBuildingHandlers.UpdateAsync)
             .WithName("UpdateGymBuilding")
             .RequireAuthorization("AdminOnly")
+            .AddEndpointFilter<ValidationFilter<UpdateGymBuildingCommand>>()
             .Accepts<UpdateGymBuildingCommand>("application/json")
+            .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status404NotFound);
 
