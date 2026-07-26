@@ -73,11 +73,17 @@ public static class ApplicationConfiguration
         // Business services - Trainer
         builder.Services.AddScopedShared<TrainerService, ITrainerCommandService, ITrainerQueryService>();
 
+        // Business services - Auth
+        builder.Services.AddScoped<IAuthService, AuthService>();
+
         // All FluentValidation default messages switches to Greek.
         ValidatorOptions.Global.LanguageManager.Culture = new CultureInfo("el-GR");
 
-        // Auto-discover all AbstractValidator<T> in the Core assembly.
-        // New validators added under Core/Validators/ are picked up without touching this line.
-        builder.Services.AddValidatorsFromAssemblyContaining<GymAppV3.Core.Commands.ScheduleClassSessionCommand>();
+        // Scan both Core (for command validators) and Server (for wire-request validators).
+        builder.Services.AddValidatorsFromAssemblies(new[]
+        {
+            typeof(GymAppV3.Core.Commands.ScheduleClassSessionCommand).Assembly,
+            typeof(Program).Assembly
+        });
     }
 }

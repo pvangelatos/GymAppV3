@@ -32,43 +32,29 @@ public static class IdentityConfiguration
         .AddEntityFrameworkStores<ApplicationDbContext>()
         .AddDefaultTokenProviders();
 
-        // Configure Authentication with dual scheme (Cookie + JWT Bearer)
-        builder.Services.AddAuthentication(options =>
-        {
-            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        })
-        .AddCookie(options =>
-        {
-            options.Cookie.HttpOnly = true;
-            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-            options.Cookie.SameSite = SameSiteMode.Strict;
-            options.ExpireTimeSpan = TimeSpan.FromDays(7);
-            options.SlidingExpiration = true;
-        })
-        .AddJwtBearer(options =>
-        {
-            var jwtKey = builder.Configuration["Jwt:Key"] ??
-                throw new InvalidOperationException("Jwt:Key is not configured.");
-
-            var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? 
-                throw new InvalidOperationException("Jwt:Issuer is not configured.");
-
-            var jwtAudience = builder.Configuration["Jwt:Audience"] ?? 
-                throw new InvalidOperationException("Jwt:Audience is not configured.");
-
-            options.TokenValidationParameters = new TokenValidationParameters
+        // JWT-only authentication. No cookie scheme — the client stores the token itself.
+        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
             {
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidateLifetime = true,
-                ValidateIssuerSigningKey = true,
-                ValidIssuer = jwtIssuer,
-                ValidAudience = jwtAudience,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-                ClockSkew = TimeSpan.Zero // Remove default 5 minute clock skew
-            };
-        });
+                var jwtKey = builder.Configuration["Jwt:Key"]
+                    ?? throw new InvalidOperationException("Jwt:Key is not configured.");
+                var jwtIssuer = builder.Configuration["Jwt:Issuer"]
+                    ?? throw new InvalidOperationException("Jwt:Issuer is not configured.");
+                var jwtAudience = builder.Configuration["Jwt:Audience"]
+                    ?? throw new InvalidOperationException("Jwt:Audience is not configured.");
+
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = jwtIssuer,
+                    ValidAudience = jwtAudience,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+                    ClockSkew = TimeSpan.Zero
+                };
+            });
 
         // Configure Authorization Policies
         builder.Services.AddAuthorization(options =>

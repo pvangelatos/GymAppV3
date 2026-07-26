@@ -1,236 +1,102 @@
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text;
-using GymAppV3.Core.Models;
-using GymAppV3.Infrastructure.Data;
-using GymAppV3.Infrastructure.Identity;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.IdentityModel.Tokens;
+using GymAppV3.Core.Commands;
+using GymAppV3.Core.Interfaces;
 
 namespace GymAppv3.Server.Endpoints.Auth;
 
 public static class AuthHandlers
 {
-    /// <summary>
-    /// Registers a new user with Member role and creates a Member profile
-    /// </summary>
     public static async Task<IResult> RegisterAsync(
         RegisterRequest request,
-        UserManager<IdentityUser> userManager,
-        ApplicationDbContext dbContext,
-        IConfiguration configuration)
+        IAuthService authService,
+        CancellationToken cancellationToken)
     {
-        // Validate password confirmation
-        if (request.Password != request.ConfirmPassword)
+        var command = new RegisterCommand(
+            request.Email, request.Password,
+            request.Firstname, request.Lastname, request.Phone,
+            request.Address, request.BirthDate,
+            request.HasMedicalConditions, request.MedicalNotes);
+
+        var result = await authService.RegisterAsync(command, cancellationToken);
+
+        // Both RegisterSuccess and RegisterEmailInUse return the same generic
+        // response — the client cannot tell if the email was already taken.
+        return result switch
         {
-            return Results.BadRequest(new AuthResponse
+            RegisterSuccess or RegisterEmailInUse => Results.Ok(new AuthResponse
+            {
+                Success = true,
+                Message = "Η αίτηση εγγραφής παραλήφθηκε."
+            }),
+            RegisterFailed failed => Results.BadRequest(new AuthResponse
             {
                 Success = false,
-                Message = "Password and confirmation password do not match."
-            });
-        }
-
-        // Check if user already exists
-        var existingUser = await userManager.FindByEmailAsync(request.Email);
-        if (existingUser != null)
-        {
-            return Results.BadRequest(new AuthResponse
-            {
-                Success = false,
-                Message = "User with this email already exists."
-            });
-        }
-
-        // Create Identity user
-        var user = new IdentityUser
-        {
-            UserName = request.Email,
-            Email = request.Email,
-            EmailConfirmed = true // Set to false if you want email verification
+                Message = string.Join(" ", failed.Errors)
+            }),
+            _ => Results.StatusCode(StatusCodes.Status500InternalServerError)
         };
-
-        var result = await userManager.CreateAsync(user, request.Password);
-
-        if (!result.Succeeded)
-        {
-            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-            return Results.BadRequest(new AuthResponse
-            {
-                Success = false,
-                Message = $"Failed to create user: {errors}"
-            });
-        }
-
-        // Assign Member role
-        await userManager.AddToRoleAsync(user, RoleConstants.Member);
-
-        // Create Member profile with required address
-        var member = new GymAppV3.Core.Models.Member
-        {
-            UserId = user.Id,
-            Firstname = request.Firstname,
-            Lastname = request.Lastname,
-            Email = request.Email,
-            Phone = request.Phone,
-            Address = new Address
-            {
-                Street = request.Address.Street,
-                City = request.Address.City,
-                State = request.Address.State,
-                ZipCode = request.Address.ZipCode,
-                Country = request.Address.Country
-            },
-            BirthDate = request.BirthDate,
-            HasMedicalConditions = request.HasMedicalConditions,
-            MedicalNotes = request.MedicalNotes,
-            CreatedAt = DateTime.UtcNow,
-            CreatedBy = user.Id
-        };
-
-        dbContext.Members.Add(member);
-        await dbContext.SaveChangesAsync();
-
-        return Results.Ok(new AuthResponse
-        {
-            Success = true,
-            Message = "User registered successfully.",
-            UserId = user.Id,
-            Email = user.Email
-        });
     }
 
-    /// <summary>
-    /// Authenticates a user and returns a JWT token
-    /// </summary>
     public static async Task<IResult> LoginAsync(
         LoginRequest request,
-        UserManager<IdentityUser> userManager,
-        SignInManager<IdentityUser> signInManager,
-        IConfiguration configuration)
+        IAuthService authService,
+        CancellationToken cancellationToken)
     {
-        var user = await userManager.FindByEmailAsync(request.Email);
-        if (user == null)
-        {
-            return Results.Unauthorized();
-        }
+        var result = await authService.LoginAsync(
+            new LoginCommand(request.Email, request.Password),
+            cancellationToken);
 
-        var result = await signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: true);
-
-        if (!result.Succeeded)
+        return result switch
         {
-            if (result.IsLockedOut)
+            LoginSuccess ok => Results.Ok(new AuthResponse
             {
-                return Results.BadRequest(new AuthResponse
-                {
-                    Success = false,
-                    Message = "Account is locked due to multiple failed login attempts."
-                });
-            }
-
-            return Results.Unauthorized();
-        }
-
-        // Get user roles
-        var roles = await userManager.GetRolesAsync(user);
-
-        // Generate JWT token
-        var token = GenerateJwtToken(user, roles, configuration);
-
-        // Sign in with cookie (for browser-based clients)
-        await signInManager.SignInAsync(user, isPersistent: true);
-
-        return Results.Ok(new AuthResponse
-        {
-            Success = true,
-            Message = "Login successful.",
-            Token = token,
-            UserId = user.Id,
-            Email = user.Email,
-            Roles = roles.ToList()
-        });
+                Success = true,
+                Message = "Επιτυχής είσοδος.",
+                Token = ok.Token,
+                UserId = ok.UserId,
+                Email = ok.Email,
+                Roles = ok.Roles.ToList()
+            }),
+            LoginLockedOut => Results.BadRequest(new AuthResponse
+            {
+                Success = false,
+                Message = "Ο λογαριασμός είναι προσωρινά κλειδωμένος."
+            }),
+            // Same response for wrong-password AND user-not-found — no enumeration.
+            _ => Results.Unauthorized()
+        };
     }
 
-    /// <summary>
-    /// Logs out the current user
-    /// </summary>
-    public static async Task<IResult> LogoutAsync(SignInManager<IdentityUser> signInManager)
+    public static IResult LogoutAsync()
     {
-        await signInManager.SignOutAsync();
+        // JWT is stateless — client-side token disposal is the "logout".
+        // For server-side revocation, a refresh-token store is the standard mechanism (out of scope for now).
         return Results.Ok(new AuthResponse
         {
             Success = true,
-            Message = "Logged out successfully."
+            Message = "Αποσυνδεθήκατε."
         });
     }
 
-    /// <summary>
-    /// Gets the current authenticated user's information
-    /// </summary>
     public static async Task<IResult> GetCurrentUserAsync(
         HttpContext httpContext,
-        UserManager<IdentityUser> userManager)
+        IAuthService authService,
+        CancellationToken cancellationToken)
     {
         var userId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
-        {
             return Results.Unauthorized();
-        }
 
-        var user = await userManager.FindByIdAsync(userId);
-        if (user == null)
-        {
-            return Results.NotFound();
-        }
-
-        var roles = await userManager.GetRolesAsync(user);
+        var info = await authService.GetCurrentUserAsync(userId, cancellationToken);
+        if (info is null) return Results.NotFound();
 
         return Results.Ok(new AuthResponse
         {
             Success = true,
-            Message = "User retrieved successfully.",
-            UserId = user.Id,
-            Email = user.Email,
-            Roles = roles.ToList()
+            Message = "OK.",
+            UserId = info.UserId,
+            Email = info.Email,
+            Roles = info.Roles.ToList()
         });
-    }
-
-    private static string GenerateJwtToken(IdentityUser user, IList<string> roles, IConfiguration configuration)
-    {
-        var jwtKey = configuration["Jwt:Key"] ??
-            throw new InvalidOperationException("Jwt:Key is not configured.");
-        
-        var jwtIssuer = configuration["Jwt:Issuer"] ??
-            throw new InvalidOperationException("Jwt:Issuer is not configured.");
-        
-        var jwtAudience = configuration["Jwt:Audience"] ??
-            throw new InvalidOperationException("Jwt:Audience is not configured.");
-        
-        var jwtExpiryMinutes = int.Parse(configuration["Jwt:ExpiryMinutes"] ?? "60");
-
-        var claims = new List<Claim>
-        {
-            new(ClaimTypes.NameIdentifier, user.Id),
-            new(ClaimTypes.Email, user.Email!),
-            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-        };
-
-        // Add role claims
-        foreach (var role in roles)
-        {
-            claims.Add(new Claim(ClaimTypes.Role, role));
-        }
-
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
-        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-        var token = new JwtSecurityToken(
-            issuer: jwtIssuer,
-            audience: jwtAudience,
-            claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(jwtExpiryMinutes),
-            signingCredentials: credentials
-        );
-
-        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }
