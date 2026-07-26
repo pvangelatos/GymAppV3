@@ -1,0 +1,112 @@
+@page
+@model ScheduleModel
+@{
+    ViewData["Title"] = "Class Schedule";
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <h1>@ViewData["Title"]</h1>
+        <p class="lead">Browse and book upcoming fitness classes</p>
+        <hr />
+    </div>
+</div>
+
+<!-- Filter Form -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="categoryId" class="form-label">Category</label>
+                        <select asp-for="CategoryId" class="form-select" id="categoryId">
+                            <option value="">All Categories</option>
+                            @foreach (var category in Model.Categories)
+                            {
+                                <option value="@category.Id">@category.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="FromDate" class="form-label">From Date</label>
+                        <input asp-for="FromDate" class="form-control" type="date" />
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="ToDate" class="form-label">To Date</label>
+                        <input asp-for="ToDate" class="form-control" type="date" />
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">Filter</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Class Sessions List -->
+<div class="row">
+    @if (Model.ClassSessions.Count > 0)
+    {
+        @foreach (var session in Model.ClassSessions)
+        {
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-header @(session.AvailableSeats > 0 ? "bg-success" : "bg-danger") text-white">
+                        <h5 class="mb-0">@session.Title</h5>
+                        <small>@session.ClassCategoryName</small>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            <i class="bi bi-calendar"></i> <strong>When:</strong><br />
+                            @session.StartsAt.LocalDateTime.ToString("dddd, MMMM dd, yyyy")<br />
+                            @session.StartsAt.LocalDateTime.ToString("h:mm tt") - 
+                            @session.StartsAt.AddMinutes(session.DurationInMinutes).LocalDateTime.ToString("h:mm tt")
+                        </p>
+                        <p class="card-text">
+                            <i class="bi bi-person"></i> <strong>Trainer:</strong> @session.TrainerName<br />
+                            <i class="bi bi-geo-alt"></i> <strong>Room:</strong> @session.ClassRoomName
+                        </p>
+                        <p class="card-text">
+                            <span class="badge @(session.AvailableSeats > 5 ? "bg-success" : session.AvailableSeats > 0 ? "bg-warning" : "bg-danger")">
+                                @session.AvailableSeats / @session.Capacity seats available
+                            </span>
+                        </p>
+                    </div>
+                    <div class="card-footer">
+                        @if (session.AvailableSeats > 0)
+                        {
+                            <a asp-page="/Classes/Details" asp-route-id="@session.Id" class="btn btn-primary w-100">
+                                View Details & Book
+                            </a>
+                        }
+                        else
+                        {
+                            <button class="btn btn-secondary w-100" disabled>Fully Booked</button>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="col-md-12">
+            <div class="alert alert-info">
+                <strong>No classes found.</strong> Try adjusting your filters or check back later for new classes.
+            </div>
+        </div>
+    }
+</div>
+
+@if (Model.ClassSessions.Count > 0)
+{
+    <div class="row mt-3">
+        <div class="col-md-12">
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> Showing @Model.ClassSessions.Count class session(s)
+            </div>
+        </div>
+    </div>
+}

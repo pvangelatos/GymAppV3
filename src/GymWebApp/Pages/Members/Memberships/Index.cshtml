@@ -1,0 +1,172 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "My Memberships";
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <h1>@ViewData["Title"]</h1>
+        <p class="lead">View and manage your gym memberships</p>
+        <hr />
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="row mb-3">
+    <div class="col-md-12">
+        <a asp-page="/Memberships/Packages" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Purchase New Membership
+        </a>
+    </div>
+</div>
+
+<!-- Active Memberships -->
+@if (Model.ActiveMemberships.Count > 0)
+{
+    <div class="row">
+        <div class="col-md-12">
+            <h3 class="text-success"><i class="bi bi-check-circle"></i> Active Memberships</h3>
+            <hr />
+        </div>
+    </div>
+
+    <div class="row">
+        @foreach (var membership in Model.ActiveMemberships)
+        {
+            var daysRemaining = (membership.EndDate - DateTimeOffset.UtcNow).Days;
+            var isExpiringSoon = daysRemaining <= 7;
+
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card h-100 @(isExpiringSoon ? "border-warning" : "border-success")">
+                    <div class="card-header @(isExpiringSoon ? "bg-warning" : "bg-success") text-white">
+                        <h5 class="mb-0">@membership.PackageName</h5>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-6">Status:</dt>
+                            <dd class="col-sm-6">
+                                <span class="badge bg-success">@membership.Status</span>
+                            </dd>
+
+                            <dt class="col-sm-6">Start Date:</dt>
+                            <dd class="col-sm-6">@membership.StartDate.LocalDateTime.ToString("MMM dd, yyyy")</dd>
+
+                            <dt class="col-sm-6">End Date:</dt>
+                            <dd class="col-sm-6">@membership.EndDate.LocalDateTime.ToString("MMM dd, yyyy")</dd>
+
+                            <dt class="col-sm-6">Days Left:</dt>
+                            <dd class="col-sm-6">
+                                <strong class="@(isExpiringSoon ? "text-warning" : "text-success")">
+                                    @daysRemaining days
+                                </strong>
+                            </dd>
+
+                            <dt class="col-sm-6">Sessions Left:</dt>
+                            <dd class="col-sm-6">
+                                <strong>@membership.RemainingSessions</strong>
+                            </dd>
+
+                            <dt class="col-sm-6">Price Paid:</dt>
+                            <dd class="col-sm-6">€@membership.PricePaid.ToString("N2")</dd>
+                        </dl>
+
+                        @if (isExpiringSoon)
+                        {
+                            <div class="alert alert-warning mt-2 small mb-0">
+                                <i class="bi bi-exclamation-triangle"></i> Expiring soon!
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<!-- Expired Memberships -->
+@if (Model.ExpiredMemberships.Count > 0)
+{
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <h3 class="text-muted"><i class="bi bi-archive"></i> Expired Memberships</h3>
+            <hr />
+        </div>
+    </div>
+
+    <div class="row">
+        @foreach (var membership in Model.ExpiredMemberships.Take(6))
+        {
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card h-100 border-secondary">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">@membership.PackageName</h5>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-6">Status:</dt>
+                            <dd class="col-sm-6">
+                                <span class="badge bg-secondary">@membership.Status</span>
+                            </dd>
+
+                            <dt class="col-sm-6">Period:</dt>
+                            <dd class="col-sm-6 small">
+                                @membership.StartDate.LocalDateTime.ToString("MMM dd, yyyy")
+                                <br />
+                                to @membership.EndDate.LocalDateTime.ToString("MMM dd, yyyy")
+                            </dd>
+
+                            <dt class="col-sm-6">Price Paid:</dt>
+                            <dd class="col-sm-6">€@membership.PricePaid.ToString("N2")</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (Model.ExpiredMemberships.Count > 6)
+    {
+        <div class="row">
+            <div class="col-md-12">
+                <p class="text-muted">+@(Model.ExpiredMemberships.Count - 6) more expired membership(s)</p>
+            </div>
+        </div>
+    }
+}
+
+<!-- No Memberships -->
+@if (Model.Memberships.Count == 0)
+{
+    <div class="row">
+        <div class="col-md-12">
+            <div class="alert alert-info">
+                <h4 class="alert-heading">No memberships yet</h4>
+                <p>You don't have any memberships. Browse our membership packages to get started.</p>
+                <hr />
+                <a asp-page="/Memberships/Packages" class="btn btn-primary">View Membership Packages</a>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Summary -->
+@if (Model.Memberships.Count > 0)
+{
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="alert alert-secondary">
+                <strong>Summary:</strong> 
+                @Model.ActiveMemberships.Count active membership(s), 
+                @Model.ExpiredMemberships.Count expired membership(s)
+            </div>
+        </div>
+    </div>
+}

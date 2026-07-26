@@ -1,0 +1,124 @@
+@page
+@model ProfileModel
+@{
+    ViewData["Title"] = "My Profile";
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h1>@ViewData["Title"]</h1>
+            <a asp-page="/Members/EditProfile" class="btn btn-primary">Edit Profile</a>
+        </div>
+        <hr />
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (Model.Member != null)
+{
+    <div class="row">
+        <!-- Personal Information Card -->
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-person"></i> Personal Information</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Name:</dt>
+                        <dd class="col-sm-8">@Model.Member.Firstname @Model.Member.Lastname</dd>
+
+                        <dt class="col-sm-4">Email:</dt>
+                        <dd class="col-sm-8">@Model.Member.Email</dd>
+
+                        <dt class="col-sm-4">Phone:</dt>
+                        <dd class="col-sm-8">@(Model.Member.Phone ?? "Not provided")</dd>
+
+                        <dt class="col-sm-4">Birth Date:</dt>
+                        <dd class="col-sm-8">@Model.Member.BirthDate.ToString("MMMM dd, yyyy")</dd>
+
+                        <dt class="col-sm-4">Age:</dt>
+                        <dd class="col-sm-8">@((DateTime.Today.Year - Model.Member.BirthDate.Year)) years old</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <!-- Address Card -->
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-geo-alt"></i> Address</h5>
+                </div>
+                <div class="card-body">
+                    <address>
+                        @Model.Member.Address.Street<br />
+                        @Model.Member.Address.City, @Model.Member.Address.State @Model.Member.Address.ZipCode<br />
+                        @Model.Member.Address.Country
+                    </address>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Health Information Card -->
+        <div class="col-md-12 mb-3">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-heart-pulse"></i> Health Information</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-3">Medical Conditions:</dt>
+                        <dd class="col-sm-9">
+                            @if (Model.Member.HasMedicalConditions)
+                            {
+                                <span class="badge bg-warning">Yes</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success">None reported</span>
+                            }
+                        </dd>
+
+                        @if (Model.Member.HasMedicalConditions && !string.IsNullOrEmpty(Model.Member.MedicalNotes))
+                        {
+                            <dt class="col-sm-3">Details:</dt>
+                            <dd class="col-sm-9">@Model.Member.MedicalNotes</dd>
+                        }
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <a asp-page="/Members/Dashboard" class="btn btn-outline-primary">Back to Dashboard</a>
+                    <a asp-page="/Members/Bookings/Index" class="btn btn-outline-success">View My Bookings</a>
+                    <a asp-page="/Members/Memberships/Index" class="btn btn-outline-warning">View My Memberships</a>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-warning">
+        <strong>Profile not found.</strong> Please complete your profile to access this page.
+    </div>
+}

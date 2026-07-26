@@ -1,0 +1,136 @@
+@page
+@model DetailsModel
+@{
+    ViewData["Title"] = "Class Details";
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a asp-page="/Index">Home</a></li>
+                <li class="breadcrumb-item"><a asp-page="/Classes/Schedule">Schedule</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Class Details</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <strong>Error:</strong> @Model.ErrorMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (Model.ClassSession != null)
+{
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-3">
+                <div class="card-header @(Model.ClassSession.AvailableSeats > 0 ? "bg-success" : "bg-danger") text-white">
+                    <h2 class="mb-0">@Model.ClassSession.Title</h2>
+                    <p class="mb-0">@Model.ClassSession.ClassCategoryName</p>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h4>Schedule</h4>
+                            <dl class="row">
+                                <dt class="col-sm-4"><i class="bi bi-calendar"></i> Date:</dt>
+                                <dd class="col-sm-8">@Model.ClassSession.StartsAt.LocalDateTime.ToString("dddd, MMMM dd, yyyy")</dd>
+
+                                <dt class="col-sm-4"><i class="bi bi-clock"></i> Time:</dt>
+                                <dd class="col-sm-8">
+                                    @Model.ClassSession.StartsAt.LocalDateTime.ToString("h:mm tt") - 
+                                    @Model.ClassSession.StartsAt.AddMinutes(Model.ClassSession.DurationInMinutes).LocalDateTime.ToString("h:mm tt")
+                                </dd>
+
+                                <dt class="col-sm-4"><i class="bi bi-hourglass"></i> Duration:</dt>
+                                <dd class="col-sm-8">@Model.ClassSession.DurationInMinutes minutes</dd>
+                            </dl>
+                        </div>
+
+                        <div class="col-md-6">
+                            <h4>Details</h4>
+                            <dl class="row">
+                                <dt class="col-sm-4"><i class="bi bi-person"></i> Trainer:</dt>
+                                <dd class="col-sm-8">@Model.ClassSession.TrainerName</dd>
+
+                                <dt class="col-sm-4"><i class="bi bi-geo-alt"></i> Room:</dt>
+                                <dd class="col-sm-8">@Model.ClassSession.ClassRoomName</dd>
+
+                                <dt class="col-sm-4"><i class="bi bi-people"></i> Capacity:</dt>
+                                <dd class="col-sm-8">@Model.ClassSession.Capacity people</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Availability</h5>
+                </div>
+                <div class="card-body text-center">
+                    @if (Model.ClassSession.AvailableSeats > 0)
+                    {
+                        <h1 class="display-3 text-success">@Model.ClassSession.AvailableSeats</h1>
+                        <p class="lead">seats available</p>
+                        <p class="text-muted">out of @Model.ClassSession.Capacity total seats</p>
+
+                        @if (Model.CanBook)
+                        {
+                            <form method="post" asp-page-handler="Book" asp-route-id="@Model.ClassSession.Id">
+                                <button type="submit" class="btn btn-success btn-lg w-100">
+                                    <i class="bi bi-check-circle"></i> Book This Class
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning">
+                                <small>Please complete your member profile to book classes.</small>
+                            </div>
+                            <a asp-page="/Members/CompleteProfile" class="btn btn-warning w-100">Complete Profile</a>
+                        }
+                    }
+                    else
+                    {
+                        <h1 class="display-3 text-danger">0</h1>
+                        <p class="lead">seats available</p>
+                        <p class="text-danger"><strong>This class is fully booked</strong></p>
+                        <button class="btn btn-secondary btn-lg w-100" disabled>Fully Booked</button>
+                    }
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h6 class="card-title">Need Help?</h6>
+                    <p class="card-text small">
+                        If you have questions about this class or need assistance with booking, 
+                        please contact the front desk.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-3">
+        <div class="col-md-12">
+            <a asp-page="/Classes/Schedule" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left"></i> Back to Schedule
+            </a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-danger">
+        <strong>Class not found.</strong> The class session you're looking for doesn't exist or has been removed.
+    </div>
+}

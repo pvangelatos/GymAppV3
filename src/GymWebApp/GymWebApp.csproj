@@ -16,4 +16,9 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.10" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\GymAppV3.Core\GymAppV3.Core.csproj" />
+    <ProjectReference Include="..\GymAppV3.Infrastructure\GymAppV3.Infrastructure.csproj" />
+  </ItemGroup>
+
 </Project>

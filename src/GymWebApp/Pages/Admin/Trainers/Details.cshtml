@@ -1,0 +1,54 @@
+@page
+@model DetailsModel
+@{
+    ViewData["Title"] = "Trainer Details";
+}
+
+<h1>@ViewData["Title"]</h1>
+<hr />
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">@Model.Trainer.Firstname @Model.Trainer.Lastname</h4>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-3">Email</dt>
+                    <dd class="col-sm-9">@Model.Trainer.Email</dd>
+
+                    <dt class="col-sm-3">Phone</dt>
+                    <dd class="col-sm-9">@(Model.Trainer.Phone ?? "N/A")</dd>
+
+                    <dt class="col-sm-3">Bio</dt>
+                    <dd class="col-sm-9">@(Model.Trainer.Bio ?? "No bio provided")</dd>
+
+                    <dt class="col-sm-3">Specialties</dt>
+                    <dd class="col-sm-9">
+                        @if (Model.Trainer.Specialties.Count > 0)
+                        {
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach (var specialty in Model.Trainer.Specialties)
+                                {
+                                    <span class="badge bg-info">@specialty.ClassCategoryName</span>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <span class="text-muted">No specialties assigned</span>
+                        }
+                    </dd>
+
+                    <dt class="col-sm-3">User ID</dt>
+                    <dd class="col-sm-9"><code>@Model.Trainer.UserId</code></dd>
+                </dl>
+            </div>
+            <div class="card-footer">
+                <a asp-page="./Edit" asp-route-id="@Model.Trainer.Id" class="btn btn-primary">Edit</a>
+                <a asp-page="./Index" class="btn btn-secondary">Back to List</a>
+            </div>
+        </div>
+    </div>
+</div>

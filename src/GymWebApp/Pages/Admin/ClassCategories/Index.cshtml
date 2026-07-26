@@ -1,0 +1,45 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Manage Class Categories";
+}
+
+<h1>@ViewData["Title"]</h1>
+<p class="lead">Manage class types and categories</p>
+<hr />
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+<a asp-page="Create" class="btn btn-primary mb-3">Add New Category</a>
+
+@if (Model.Categories.Count > 0)
+{
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Category Name</th>
+                <th>Description</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var category in Model.Categories)
+            {
+                <tr>
+                    <td><strong>@category.Name</strong></td>
+                    <td>N/A</td>
+                    <td>
+                        <a asp-page="Edit" asp-route-id="@category.Id" class="btn btn-sm btn-primary">Edit</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <div class="alert alert-info">No class categories found.</div>
+}

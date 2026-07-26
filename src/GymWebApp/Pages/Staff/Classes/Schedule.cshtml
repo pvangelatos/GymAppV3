@@ -1,0 +1,75 @@
+@page
+@model ScheduleModel
+@{
+    ViewData["Title"] = "Schedule Class Session";
+}
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <h1>@ViewData["Title"]</h1>
+        <hr />
+
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="mb-3">
+                <label asp-for="Input.Title" class="form-label"></label>
+                <input asp-for="Input.Title" class="form-control" />
+                <span asp-validation-for="Input.Title" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Input.ClassCategoryId" class="form-label">Category</label>
+                <select asp-for="Input.ClassCategoryId" asp-items="Model.Categories" class="form-select">
+                    <option value="">-- Select Category --</option>
+                </select>
+                <span asp-validation-for="Input.ClassCategoryId" class="text-danger"></span>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Input.StartsAt" class="form-label">Date & Time</label>
+                    <input asp-for="Input.StartsAt" class="form-control" type="datetime-local" />
+                    <span asp-validation-for="Input.StartsAt" class="text-danger"></span>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Input.DurationInMinutes" class="form-label">Duration (minutes)</label>
+                    <input asp-for="Input.DurationInMinutes" class="form-control" type="number" min="15" max="180" />
+                    <span asp-validation-for="Input.DurationInMinutes" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Input.Capacity" class="form-label"></label>
+                <input asp-for="Input.Capacity" class="form-control" type="number" min="1" max="50" />
+                <span asp-validation-for="Input.Capacity" class="text-danger"></span>
+                <small class="form-text text-muted">Maximum number of participants</small>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Input.TrainerId" class="form-label">Trainer</label>
+                <select asp-for="Input.TrainerId" asp-items="Model.Trainers" class="form-select">
+                    <option value="">-- Select Trainer --</option>
+                </select>
+                <span asp-validation-for="Input.TrainerId" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Input.ClassRoomId" class="form-label">Room</label>
+                <select asp-for="Input.ClassRoomId" asp-items="Model.Rooms" class="form-select">
+                    <option value="">-- Select Room --</option>
+                </select>
+                <span asp-validation-for="Input.ClassRoomId" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <button type="submit" class="btn btn-primary">Schedule Class</button>
+                <a asp-page="/Staff/Classes/Index" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,48 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Manage Membership Packages";
+}
+
+<h1>@ViewData["Title"]</h1>
+<p class="lead">Manage membership packages and pricing</p>
+<hr />
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+<a asp-page="Create" class="btn btn-primary mb-3">Create New Package</a>
+
+@if (Model.Packages.Count > 0)
+{
+    <div class="row">
+        @foreach (var package in Model.Packages)
+        {
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">@package.Name</h5>
+                    </div>
+                    <div class="card-body">
+                        <h3 class="text-primary">@package.Price.ToString("C")</h3>
+                        <ul class="list-unstyled">
+                            <li><strong>Duration:</strong> @package.DurationInDays days</li>
+                            <li><strong>Sessions:</strong> @package.SessionsIncluded</li>
+                            <li><strong>Per Session:</strong> @((package.Price / package.SessionsIncluded).ToString("C"))</li>
+                            <li><strong>Category:</strong> @package.ClassCategoryName</li>
+                        </ul>
+                    </div>
+                    <div class="card-footer">
+                        <a asp-page="Edit" asp-route-id="@package.Id" class="btn btn-sm btn-primary">Edit</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="alert alert-info">No membership packages found.</div>
+}

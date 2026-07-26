@@ -1,0 +1,93 @@
+@page
+@model PurchaseModel
+@{
+    ViewData["Title"] = "Purchase Membership";
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a asp-page="/Index">Home</a></li>
+                <li class="breadcrumb-item"><a asp-page="/Memberships/Packages">Packages</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Purchase</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <strong>Error:</strong> @Model.ErrorMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (Model.Package != null)
+{
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white text-center">
+                    <h2 class="mb-0">@Model.Package.Name</h2>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <div class="display-3 text-success">
+                            €@Model.Package.Price.ToString("N2")
+                        </div>
+                    </div>
+
+                    <h5 class="card-title">Package Details</h5>
+                    <ul class="list-group list-group-flush mb-4">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span><i class="bi bi-calendar-check"></i> Duration</span>
+                            <strong>@Model.Package.DurationInDays days</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span><i class="bi bi-check-circle"></i> Sessions Included</span>
+                            <strong>@Model.Package.SessionsIncluded sessions</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span><i class="bi bi-trophy"></i> Class Category</span>
+                            <strong>@Model.Package.ClassCategoryName</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span><i class="bi bi-calculator"></i> Price per Session</span>
+                            <strong>€@((Model.Package.Price / Model.Package.SessionsIncluded).ToString("N2"))</strong>
+                        </li>
+                    </ul>
+
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">What happens next?</h6>
+                        <ul class="mb-0 small">
+                            <li>Your membership will be activated immediately</li>
+                            <li>You can start booking classes right away</li>
+                            <li>Session credits will be available for @Model.Package.DurationInDays days</li>
+                            <li>You can view your membership details in your account</li>
+                        </ul>
+                    </div>
+
+                    <form method="post">
+                        <input type="hidden" asp-for="PackageId" />
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-credit-card"></i> Confirm Purchase
+                            </button>
+                            <a asp-page="/Memberships/Packages" class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-danger">
+        <strong>Package not found.</strong> The membership package you're trying to purchase doesn't exist.
+    </div>
+}

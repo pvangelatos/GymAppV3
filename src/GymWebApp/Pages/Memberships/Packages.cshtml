@@ -1,0 +1,90 @@
+@page
+@model PackagesModel
+@{
+    ViewData["Title"] = "Membership Packages";
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <h1>@ViewData["Title"]</h1>
+        <p class="lead">Choose the membership package that fits your fitness goals</p>
+        <hr />
+    </div>
+</div>
+
+@if (Model.Packages.Count > 0)
+{
+    <div class="row">
+        @foreach (var package in Model.Packages)
+        {
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-header bg-primary text-white text-center">
+                        <h3 class="mb-0">@package.Name</h3>
+                    </div>
+                    <div class="card-body text-center">
+                        <div class="display-4 mb-3">
+                            €@package.Price.ToString("N2")
+                        </div>
+
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="bi bi-calendar-check text-success"></i>
+                                <strong>@package.DurationInDays days</strong> access
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-check-circle text-success"></i>
+                                <strong>@package.SessionsIncluded sessions</strong> included
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-trophy text-success"></i>
+                                <strong>@package.ClassCategoryName</strong> classes
+                            </li>
+                        </ul>
+
+                        @{
+                            var pricePerSession = package.SessionsIncluded > 0 
+                                ? package.Price / package.SessionsIncluded 
+                                : 0;
+                        }
+                        @if (pricePerSession > 0)
+                        {
+                            <p class="text-muted small">
+                                Only <strong>€@pricePerSession.ToString("N2")</strong> per session
+                            </p>
+                        }
+                    </div>
+                    <div class="card-footer bg-white">
+                        <a asp-page="/Memberships/Purchase" asp-route-id="@package.Id" class="btn btn-success w-100">
+                            Purchase Now
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="alert alert-info">
+                <h5 class="alert-heading"><i class="bi bi-info-circle"></i> Important Information</h5>
+                <ul class="mb-0">
+                    <li>Memberships are activated immediately upon purchase</li>
+                    <li>Session credits can be used to book classes within the valid period</li>
+                    <li>Unused sessions expire when the membership ends</li>
+                    <li>You can have multiple active memberships at the same time</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-12">
+            <div class="alert alert-warning">
+                <strong>No packages available.</strong> Please check back later or contact the gym for more information.
+            </div>
+        </div>
+    </div>
+}

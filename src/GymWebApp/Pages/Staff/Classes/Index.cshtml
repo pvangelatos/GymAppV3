@@ -1,0 +1,112 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Manage Class Sessions";
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <h1>@ViewData["Title"]</h1>
+        <p class="lead">View and schedule class sessions</p>
+        <hr />
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="row mb-3">
+    <div class="col-md-6">
+        <a asp-page="/Staff/Classes/Schedule" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Schedule New Class
+        </a>
+    </div>
+    <div class="col-md-6">
+        <form method="get" class="row g-2">
+            <div class="col-auto">
+                <input asp-for="FromDate" class="form-control" type="date" placeholder="From" />
+            </div>
+            <div class="col-auto">
+                <input asp-for="ToDate" class="form-control" type="date" placeholder="To" />
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-outline-secondary">Filter</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (Model.ClassSessions.Count > 0)
+{
+    <div class="row">
+        <div class="col-md-12">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Category</th>
+                            <th>Date & Time</th>
+                            <th>Duration</th>
+                            <th>Trainer</th>
+                            <th>Room</th>
+                            <th>Availability</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var session in Model.ClassSessions)
+                        {
+                            var isPast = session.StartsAt < DateTimeOffset.UtcNow;
+                            <tr class="@(isPast ? "table-secondary" : "")">
+                                <td><strong>@session.Title</strong></td>
+                                <td>@session.ClassCategoryName</td>
+                                <td>
+                                    @session.StartsAt.LocalDateTime.ToString("MMM dd, yyyy")
+                                    <br />
+                                    <small class="text-muted">@session.StartsAt.LocalDateTime.ToString("h:mm tt")</small>
+                                </td>
+                                <td>@session.DurationInMinutes min</td>
+                                <td>@session.TrainerName</td>
+                                <td>@session.ClassRoomName</td>
+                                <td>
+                                    <span class="badge @(session.AvailableSeats > 5 ? "bg-success" : session.AvailableSeats > 0 ? "bg-warning" : "bg-danger")">
+                                        @session.AvailableSeats/@session.Capacity
+                                    </span>
+                                </td>
+                                <td>
+                                    <a asp-page="/Staff/Classes/Details" asp-route-id="@session.Id" class="btn btn-sm btn-info">
+                                        View
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <p class="text-muted">
+                Showing @Model.ClassSessions.Count class session(s)
+            </p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-12">
+            <div class="alert alert-info">
+                <strong>No class sessions found.</strong> Schedule a new class session to get started.
+            </div>
+        </div>
+    </div>
+}

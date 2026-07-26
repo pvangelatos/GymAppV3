@@ -1,0 +1,49 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Manage Class Rooms";
+}
+
+<h1>@ViewData["Title"]</h1>
+<p class="lead">Manage class rooms and capacity</p>
+<hr />
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+<a asp-page="Create" class="btn btn-primary mb-3">Add New Room</a>
+
+@if (Model.Rooms.Count > 0)
+{
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Room Name</th>
+                <th>Building</th>
+                <th>Capacity</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var room in Model.Rooms)
+            {
+                <tr>
+                    <td><strong>@room.ClassRoomName</strong></td>
+                    <td>Building ID: @room.GymBuildingId</td>
+                    <td>
+                        <span class="badge bg-info">@room.Capacity people</span>
+                    </td>
+                    <td>
+                        <a asp-page="Edit" asp-route-id="@room.Id" class="btn btn-sm btn-primary">Edit</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <div class="alert alert-info">No class rooms found.</div>
+}

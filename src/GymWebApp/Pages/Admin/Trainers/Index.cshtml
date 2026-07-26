@@ -1,0 +1,50 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Manage Trainers";
+}
+
+<h1>@ViewData["Title"]</h1>
+<p class="lead">Manage gym trainers</p>
+<hr />
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+<a asp-page="Create" class="btn btn-primary mb-3">Add New Trainer</a>
+
+@if (Model.Trainers.Count > 0)
+{
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Specialties</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var trainer in Model.Trainers)
+            {
+                <tr>
+                    <td>@trainer.Firstname @trainer.Lastname</td>
+                    <td>@trainer.Email</td>
+                    <td>@(trainer.Phone ?? "N/A")</td>
+                    <td>@string.Join(", ", trainer.Specialties.Select(s => s.ClassCategoryName))</td>
+                    <td>
+                        <a asp-page="Details" asp-route-id="@trainer.Id" class="btn btn-sm btn-info">View</a>
+                        <a asp-page="Edit" asp-route-id="@trainer.Id" class="btn btn-sm btn-primary">Edit</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <div class="alert alert-info">No trainers found.</div>
+}

@@ -1,0 +1,118 @@
+@page
+@model DetailsModel
+@{
+    ViewData["Title"] = "Class Session Details";
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a asp-page="/Index">Home</a></li>
+                <li class="breadcrumb-item"><a asp-page="/Staff/Classes/Index">Classes</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Details</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+@if (Model.ClassSession != null)
+{
+    <div class="row">
+        <div class="col-md-12">
+            <h1>@Model.ClassSession.Title</h1>
+            <p class="lead">@Model.ClassSession.ClassCategoryName</p>
+            <hr />
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Schedule Information</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Date:</dt>
+                        <dd class="col-sm-8">@Model.ClassSession.StartsAt.LocalDateTime.ToString("dddd, MMMM dd, yyyy")</dd>
+
+                        <dt class="col-sm-4">Time:</dt>
+                        <dd class="col-sm-8">
+                            @Model.ClassSession.StartsAt.LocalDateTime.ToString("h:mm tt") - 
+                            @Model.ClassSession.StartsAt.AddMinutes(Model.ClassSession.DurationInMinutes).LocalDateTime.ToString("h:mm tt")
+                        </dd>
+
+                        <dt class="col-sm-4">Duration:</dt>
+                        <dd class="col-sm-8">@Model.ClassSession.DurationInMinutes minutes</dd>
+
+                        <dt class="col-sm-4">Trainer:</dt>
+                        <dd class="col-sm-8">@Model.ClassSession.TrainerName</dd>
+
+                        <dt class="col-sm-4">Room:</dt>
+                        <dd class="col-sm-8">@Model.ClassSession.ClassRoomName</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Capacity & Bookings</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-6">Total Capacity:</dt>
+                        <dd class="col-sm-6">@Model.ClassSession.Capacity people</dd>
+
+                        <dt class="col-sm-6">Available Seats:</dt>
+                        <dd class="col-sm-6">
+                            <span class="badge @(Model.ClassSession.AvailableSeats > 5 ? "bg-success" : Model.ClassSession.AvailableSeats > 0 ? "bg-warning" : "bg-danger")">
+                                @Model.ClassSession.AvailableSeats
+                            </span>
+                        </dd>
+
+                        <dt class="col-sm-6">Booked:</dt>
+                        <dd class="col-sm-6">@(Model.ClassSession.Capacity - Model.ClassSession.AvailableSeats)</dd>
+
+                        <dt class="col-sm-6">Occupancy:</dt>
+                        <dd class="col-sm-6">
+                            @{
+                                var occupancy = ((Model.ClassSession.Capacity - Model.ClassSession.AvailableSeats) * 100.0 / Model.ClassSession.Capacity);
+                            }
+                            @occupancy.ToString("F1")%
+                        </dd>
+                    </dl>
+
+                    @if (Model.ClassSession.AvailableSeats == 0)
+                    {
+                        <div class="alert alert-danger mt-2 mb-0">
+                            <strong>Fully Booked!</strong> This class has reached maximum capacity.
+                        </div>
+                    }
+                    else if (Model.ClassSession.AvailableSeats <= 5)
+                    {
+                        <div class="alert alert-warning mt-2 mb-0">
+                            <strong>Almost Full!</strong> Only @Model.ClassSession.AvailableSeats seat(s) remaining.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <a asp-page="/Staff/Classes/Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to List
+            </a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-danger">
+        Class session not found.
+    </div>
+}

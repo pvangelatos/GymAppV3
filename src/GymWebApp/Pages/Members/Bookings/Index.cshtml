@@ -1,0 +1,165 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "My Bookings";
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <h1>@ViewData["Title"]</h1>
+        <p class="lead">View and manage your class bookings</p>
+        <hr />
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="row mb-3">
+    <div class="col-md-12">
+        <a asp-page="/Classes/Schedule" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Book New Class
+        </a>
+    </div>
+</div>
+
+@if (Model.Bookings.Items.Count > 0)
+{
+    <div class="row">
+        <div class="col-md-12">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Class</th>
+                            <th>Date & Time</th>
+                            <th>Status</th>
+                            <th>Booked On</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var booking in Model.Bookings.Items)
+                        {
+                            var isPast = booking.SessionStartsAt < DateTimeOffset.UtcNow;
+                            var canCancel = booking.Status == "Confirmed" && !isPast;
+
+                            <tr class="@(isPast ? "table-secondary" : "")">
+                                <td>
+                                    <strong>@booking.SessionTitle</strong>
+                                </td>
+                                <td>
+                                    @booking.SessionStartsAt.LocalDateTime.ToString("MMM dd, yyyy")
+                                    <br />
+                                    <small class="text-muted">@booking.SessionStartsAt.LocalDateTime.ToString("h:mm tt")</small>
+                                </td>
+                                <td>
+                                    @if (booking.Status == "Confirmed")
+                                    {
+                                        <span class="badge bg-success">@booking.Status</span>
+                                    }
+                                    else if (booking.Status == "Cancelled")
+                                    {
+                                        <span class="badge bg-danger">@booking.Status</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">@booking.Status</span>
+                                    }
+                                </td>
+                                <td>
+                                    <small>@booking.BookedAt.LocalDateTime.ToString("MMM dd, yyyy")</small>
+                                </td>
+                                <td>
+                                    @if (canCancel)
+                                    {
+                                        <a asp-page="/Members/Bookings/Cancel" asp-route-id="@booking.Id" class="btn btn-sm btn-danger">
+                                            Cancel
+                                        </a>
+                                    }
+                                    else if (booking.Status == "Cancelled")
+                                    {
+                                        <small class="text-muted">
+                                            Cancelled on @booking.CancelledAt?.LocalDateTime.ToString("MMM dd")
+                                        </small>
+                                    }
+                                    else if (isPast)
+                                    {
+                                        <span class="badge bg-secondary">Past</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    @if (Model.Bookings.Count > Model.PageSize)
+    {
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <nav aria-label="Bookings pagination">
+                    <ul class="pagination justify-content-center">
+                        @{
+                            var totalPages = (int)Math.Ceiling((double)Model.Bookings.Count / Model.PageSize);
+                            var hasPrevious = Model.CurrentPage > 1;
+                            var hasNext = Model.CurrentPage < totalPages;
+                        }
+
+                        <li class="page-item @(!hasPrevious ? "disabled" : "")">
+                            <a class="page-link" asp-page="/Members/Bookings/Index" asp-route-page="@(Model.CurrentPage - 1)">Previous</a>
+                        </li>
+
+                        @for (int i = 1; i <= totalPages; i++)
+                        {
+                            <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                <a class="page-link" asp-page="/Members/Bookings/Index" asp-route-page="@i">@i</a>
+                            </li>
+                        }
+
+                        <li class="page-item @(!hasNext ? "disabled" : "")">
+                            <a class="page-link" asp-page="/Members/Bookings/Index" asp-route-page="@(Model.CurrentPage + 1)">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-md-12">
+            <p class="text-muted">
+                Showing @Model.Bookings.Items.Count of @Model.Bookings.Count total booking(s)
+            </p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-12">
+            <div class="alert alert-info">
+                <h4 class="alert-heading">No bookings yet</h4>
+                <p>You haven't booked any classes yet. Browse the class schedule to find a class that fits your schedule.</p>
+                <hr />
+                <a asp-page="/Classes/Schedule" class="btn btn-primary">Browse Classes</a>
+            </div>
+        </div>
+    </div>
+}

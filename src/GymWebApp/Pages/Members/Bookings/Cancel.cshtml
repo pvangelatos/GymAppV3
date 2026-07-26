@@ -1,0 +1,31 @@
+@page
+@model CancelModel
+@{
+    ViewData["Title"] = "Cancel Booking";
+}
+
+<div class="row">
+    <div class="col-md-6 offset-md-3">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0">@ViewData["Title"]</h4>
+            </div>
+            <div class="card-body">
+                <p class="lead">Are you sure you want to cancel this booking?</p>
+                <p>This action cannot be undone. You will need to book again if you change your mind.</p>
+
+                <form method="post">
+                    <input type="hidden" asp-for="BookingId" />
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger">
+                            Yes, Cancel Booking
+                        </button>
+                        <a asp-page="/Members/Bookings/Index" class="btn btn-secondary">
+                            No, Keep Booking
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

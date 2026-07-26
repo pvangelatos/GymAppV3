@@ -1,0 +1,106 @@
+@page
+@model CreateModel
+@{
+    ViewData["Title"] = "Create Member";
+}
+
+<div class="row">
+    <div class="col-md-10 offset-md-1">
+        <h1>@ViewData["Title"]</h1>
+        <hr />
+
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Input.Firstname" class="form-label"></label>
+                    <input asp-for="Input.Firstname" class="form-control" />
+                    <span asp-validation-for="Input.Firstname" class="text-danger"></span>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Input.Lastname" class="form-label"></label>
+                    <input asp-for="Input.Lastname" class="form-control" />
+                    <span asp-validation-for="Input.Lastname" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Input.Email" class="form-label"></label>
+                    <input asp-for="Input.Email" class="form-control" />
+                    <span asp-validation-for="Input.Email" class="text-danger"></span>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Input.Phone" class="form-label"></label>
+                    <input asp-for="Input.Phone" class="form-control" />
+                    <span asp-validation-for="Input.Phone" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Input.BirthDate" class="form-label"></label>
+                <input asp-for="Input.BirthDate" class="form-control" type="date" />
+                <span asp-validation-for="Input.BirthDate" class="text-danger"></span>
+            </div>
+
+            <h4 class="mt-4">Address</h4>
+            <hr />
+
+            <div class="mb-3">
+                <label asp-for="Input.Street" class="form-label"></label>
+                <input asp-for="Input.Street" class="form-control" />
+                <span asp-validation-for="Input.Street" class="text-danger"></span>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Input.City" class="form-label"></label>
+                    <input asp-for="Input.City" class="form-control" />
+                    <span asp-validation-for="Input.City" class="text-danger"></span>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Input.State" class="form-label"></label>
+                    <input asp-for="Input.State" class="form-control" />
+                    <span asp-validation-for="Input.State" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Input.ZipCode" class="form-label"></label>
+                    <input asp-for="Input.ZipCode" class="form-control" />
+                    <span asp-validation-for="Input.ZipCode" class="text-danger"></span>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Input.Country" class="form-label"></label>
+                    <input asp-for="Input.Country" class="form-control" />
+                    <span asp-validation-for="Input.Country" class="text-danger"></span>
+                </div>
+            </div>
+
+            <h4 class="mt-4">Health Information</h4>
+            <hr />
+
+            <div class="mb-3 form-check">
+                <input asp-for="Input.HasMedicalConditions" class="form-check-input" />
+                <label asp-for="Input.HasMedicalConditions" class="form-check-label"></label>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Input.MedicalNotes" class="form-label"></label>
+                <textarea asp-for="Input.MedicalNotes" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="Input.MedicalNotes" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <button type="submit" class="btn btn-primary">Create Member</button>
+                <a asp-page="/Staff/Members/Index" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

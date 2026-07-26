@@ -1,0 +1,116 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "View Bookings";
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <h1>@ViewData["Title"]</h1>
+        <p class="lead">View members with active class bookings</p>
+        <hr />
+    </div>
+</div>
+
+@if (Model.MembersWithActiveBookings.Items.Count > 0)
+{
+    <div class="row">
+        <div class="col-md-12">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Member Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>City</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var member in Model.MembersWithActiveBookings.Items)
+                        {
+                            <tr>
+                                <td><strong>@member.Firstname @member.Lastname</strong></td>
+                                <td>@member.Email</td>
+                                <td>@(member.Phone ?? "N/A")</td>
+                                <td>@member.Address.City</td>
+                                <td>
+                                    <a asp-page="/Staff/Members/Details" asp-route-id="@member.Id" class="btn btn-sm btn-info">
+                                        View Member
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    @if (Model.MembersWithActiveBookings.Count > Model.PageSize)
+    {
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <nav aria-label="Bookings pagination">
+                    <ul class="pagination justify-content-center">
+                        @{
+                            var totalPages = Model.MembersWithActiveBookings.TotalPages;
+                            var hasPrevious = Model.CurrentPage > 1;
+                            var hasNext = Model.CurrentPage < totalPages;
+                        }
+
+                        <li class="page-item @(!hasPrevious ? "disabled" : "")">
+                            <a class="page-link" asp-page="/Staff/Bookings/Index" asp-route-page="@(Model.CurrentPage - 1)">Previous</a>
+                        </li>
+
+                        @for (int i = 1; i <= totalPages; i++)
+                        {
+                            <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                <a class="page-link" asp-page="/Staff/Bookings/Index" asp-route-page="@i">@i</a>
+                            </li>
+                        }
+
+                        <li class="page-item @(!hasNext ? "disabled" : "")">
+                            <a class="page-link" asp-page="/Staff/Bookings/Index" asp-route-page="@(Model.CurrentPage + 1)">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-md-12">
+            <p class="text-muted">
+                Showing @Model.MembersWithActiveBookings.Items.Count of @Model.MembersWithActiveBookings.Count member(s) with active bookings
+            </p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-12">
+            <div class="alert alert-info">
+                <strong>No active bookings.</strong> There are currently no members with active class bookings.
+            </div>
+        </div>
+    </div>
+}
+
+<div class="row mt-3">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Booking Management Tips</h5>
+                <ul class="mb-0">
+                    <li>This page shows members who have upcoming class bookings</li>
+                    <li>Click "View Member" to see detailed member information</li>
+                    <li>To manage class sessions, go to the Classes management page</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

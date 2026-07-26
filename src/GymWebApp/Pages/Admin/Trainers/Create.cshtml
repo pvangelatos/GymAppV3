@@ -1,0 +1,62 @@
+@page
+@model CreateModel
+@{
+    ViewData["Title"] = "Create Trainer";
+}
+
+<h1>@ViewData["Title"]</h1>
+<hr />
+
+<div class="row">
+    <div class="col-md-8">
+        <form method="post">
+            <div class="mb-3">
+                <label asp-for="Input.Firstname" class="form-label"></label>
+                <input asp-for="Input.Firstname" class="form-control" />
+                <span asp-validation-for="Input.Firstname" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Input.Lastname" class="form-label"></label>
+                <input asp-for="Input.Lastname" class="form-control" />
+                <span asp-validation-for="Input.Lastname" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Input.Email" class="form-label"></label>
+                <input asp-for="Input.Email" type="email" class="form-control" />
+                <span asp-validation-for="Input.Email" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Input.Phone" class="form-label"></label>
+                <input asp-for="Input.Phone" class="form-control" />
+                <span asp-validation-for="Input.Phone" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Input.Bio" class="form-label"></label>
+                <textarea asp-for="Input.Bio" class="form-control" rows="4"></textarea>
+                <span asp-validation-for="Input.Bio" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Specialties</label>
+                <select asp-for="Input.SpecialtyCategoryIds" asp-items="Model.Categories" 
+                        class="form-select" multiple size="5">
+                </select>
+                <span asp-validation-for="Input.SpecialtyCategoryIds" class="text-danger"></span>
+                <div class="form-text">Hold Ctrl (Cmd on Mac) to select multiple categories</div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Create Trainer</button>
+                <a asp-page="./Index" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

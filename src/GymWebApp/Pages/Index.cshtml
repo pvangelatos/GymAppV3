@@ -1,10 +1,96 @@
 ﻿@page
 @model IndexModel
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "Home";
 }
 
 <div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    <h1 class="display-4">Welcome to Gym Management System</h1>
+    <p class="lead">Your complete fitness center management solution</p>
 </div>
+
+@if (User.Identity?.IsAuthenticated == true)
+{
+    <div class="row mt-5">
+        @if (User.IsInRole(RoleConstants.Member))
+        {
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">My Dashboard</h5>
+                        <p class="card-text">View your profile, bookings, and memberships</p>
+                        <a asp-page="/Members/Dashboard" class="btn btn-primary">Go to Dashboard</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Book a Class</h5>
+                        <p class="card-text">Browse and book upcoming fitness classes</p>
+                        <a asp-page="/Classes/Schedule" class="btn btn-primary">View Schedule</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Memberships</h5>
+                        <p class="card-text">View and purchase membership packages</p>
+                        <a asp-page="/Memberships/Packages" class="btn btn-primary">Browse Packages</a>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (User.IsInRole(RoleConstants.Trainer) || User.IsInRole(RoleConstants.TrainerAdmin) || User.IsInRole(RoleConstants.Admin))
+        {
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Manage Members</h5>
+                        <p class="card-text">View and manage gym members</p>
+                        <a asp-page="/Staff/Members/Index" class="btn btn-success">Manage Members</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">View Bookings</h5>
+                        <p class="card-text">See all class bookings</p>
+                        <a asp-page="/Staff/Bookings/Index" class="btn btn-success">View Bookings</a>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (User.IsInRole(RoleConstants.Admin) || User.IsInRole(RoleConstants.TrainerAdmin))
+        {
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Administration</h5>
+                        <p class="card-text">Manage facilities, packages, and reports</p>
+                        <a asp-page="/Admin/Buildings/Index" class="btn btn-danger">Admin Panel</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="row mt-5">
+        <div class="col-md-6 offset-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Get Started</h5>
+                    <p class="card-text">Sign in to access your gym account or register to become a member</p>
+                    <a asp-area="Identity" asp-page="/Account/Login" class="btn btn-primary me-2">Sign In</a>
+                    <a asp-area="Identity" asp-page="/Account/Register" class="btn btn-outline-primary">Register</a>
+                </div>
+            </div>
+        </div>
+    </div>
+}
