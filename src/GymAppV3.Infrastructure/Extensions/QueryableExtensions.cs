@@ -1,5 +1,6 @@
 using GymAppV3.Core.Common;
 using Microsoft.EntityFrameworkCore;
+using GymAppV3.Core.Exceptions;
 
 namespace GymAppV3.Infrastructure.Extensions;
 
@@ -107,7 +108,8 @@ public static class QueryableExtensions
             System.Reflection.BindingFlags.Instance);
 
         if (property == null)
-            return source; // Property not found, return unsorted
+            throw new BusinessRuleException(
+                $"Cannot sort by '{propertyName}': field is not sortable on this resource.");
 
         var parameter = System.Linq.Expressions.Expression.Parameter(type, "x");
         var propertyAccess = System.Linq.Expressions.Expression.Property(parameter, property);

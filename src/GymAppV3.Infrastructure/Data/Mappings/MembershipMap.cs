@@ -66,5 +66,10 @@ public class MembershipMap : IEntityTypeConfiguration<Membership>
         // because its setup differs by provider (SQL Server rowversion vs SQLite fallback).
         builder.Property(x => x.RowVersion)
             .IsRequired();
+
+        // Index on MemberId and EndDate for efficient queries on active memberships.(soft - deleted memberships are excluded)
+        builder.HasIndex(x => new { x.MemberId, x.EndDate })
+            .HasDatabaseName("IX_Memberships_MemberId_EndDate")
+            .HasFilter("[IsDeleted] = 0");
     }
 }

@@ -75,5 +75,17 @@ public class ClassSessionMap : IEntityTypeConfiguration<ClassSession>
             .WithMany()
             .HasForeignKey(x => x.ClassCategoryId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Create a filtered index on StartsAt for efficient querying
+        // of upcoming sessions, excluding deleted sessions
+        builder.HasIndex(x => x.StartsAt)
+            .HasDatabaseName("IX_ClassSession_StartsAt")
+            .HasFilter("[IsDeleted] = 0");
+
+        // Create a composite index on ClassRoomId and StartsAt to prevent
+        // scheduling conflicts in the same room, excluding deleted sessions
+        builder.HasIndex(x => new {x.ClassRoomId, x.StartsAt })
+            .HasDatabaseName("IX_ClassSession_ClassRoomId_StartsAt")
+            .HasFilter("[IsDeleted] = 0");
     }
 }

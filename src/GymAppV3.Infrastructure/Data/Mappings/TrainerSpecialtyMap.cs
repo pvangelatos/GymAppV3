@@ -24,5 +24,9 @@ public class TrainerSpecialtyMap : IEntityTypeConfiguration<TrainerSpecialty>
             .WithMany(t => t.Specialties)          
             .HasForeignKey(x => x.TrainerId)
             .OnDelete(DeleteBehavior.Cascade);     // remove trainer -> remove their links
+
+        // Global query filter to exclude deleted class categories.
+        builder.HasQueryFilter(t => !t.ClassCategory.IsDeleted);
+
     }
 }

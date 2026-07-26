@@ -14,7 +14,6 @@ using GymAppV3.Infrastructure.Mapper;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using System.Transactions;
 
 namespace GymAppV3.Infrastructure.Services;
 
@@ -244,13 +243,13 @@ public class MemberService : IMemberCommandService, IMemberQueryService
         if (query.HasActiveMembership.HasValue)
         {
             var now = _clock.UtcNow;
-            var hasAtive = query.HasActiveMembership.Value;
+            var hasActive = query.HasActiveMembership.Value;
 
             membersQuery = membersQuery.Where(m =>
                m.Memberships.Any(ms =>
                     ms.Status == MembershipStatus.Active &&
                     ms.StartDate <= now &&
-                    ms.EndDate >= now) == hasAtive);
+                    ms.EndDate >= now) == hasActive);
         }
 
         // Project before paging: MedicalNotes never leaves the database.

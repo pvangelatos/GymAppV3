@@ -55,5 +55,11 @@ public class PaymentMap : IEntityTypeConfiguration<Payment>
         builder.Property(x => x.NetAmount)
             .HasColumnType("decimal(18,2)")
             .IsRequired();
+
+        // Payments index for quick lookups by MemberId and PaidAt, filtered to exclude soft-deleted records.
+        builder.HasIndex(x => new { x.MemberId, x.PaidAt })
+            .HasDatabaseName("IX_Payments_MemberId_PaidAt")
+            .HasFilter("[IsDeleted] = 0");
+    
     }
 }
