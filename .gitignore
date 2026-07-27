@@ -481,5 +481,4 @@ $RECYCLE.BIN/
 # Vim temporary swap files
 *.swp
 
-GymAppV3.Server/appsettings/json
-GymAppV3.Server/appsettings/Development.json
+**/appsettings.Development.json
