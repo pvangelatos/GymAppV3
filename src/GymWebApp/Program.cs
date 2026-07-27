@@ -92,6 +92,8 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
+    var db = services.GetRequiredService<ApplicationDbContext>();
+    await db.Database.MigrateAsync(); // Ensure the database is created and migrations are applied
 
     // Create roles if they don't exist
     string[] roleNames = 
@@ -112,27 +114,28 @@ using (var scope = app.Services.CreateScope())
     }
 
     // Create default admin user if configured
-    var adminEmail = builder.Configuration["DefaultAdmin:Email"];
-    var adminPassword = builder.Configuration["DefaultAdmin:Password"];
+    var adminEmail = builder.Configuration["DefaultAdmin:Email"]
+        ?? throw new InvalidOperationException("Default admin email is not configured.");
+    var adminPassword = builder.Configuration["DefaultAdmin:Password"]
+        ?? throw new InvalidOperationException("Default admin password is not configured.");
 
-    if (!string.IsNullOrEmpty(adminEmail) && !string.IsNullOrEmpty(adminPassword))
+    var adminUser = await userManager.FindByEmailAsync(adminEmail);
+
+    if(adminUser == null)
     {
-        var adminUser = await userManager.FindByEmailAsync(adminEmail);
-        if (adminUser == null)
+        var newAdmin = new IdentityUser
         {
-            var newAdmin = new IdentityUser
-            {
-                UserName = adminEmail,
-                Email = adminEmail,
-                EmailConfirmed = true
-            };
+            UserName = adminEmail,
+            Email = adminEmail,
+            EmailConfirmed = true
+        };
 
-            var result = await userManager.CreateAsync(newAdmin, adminPassword);
+        var result = await userManager.CreateAsync(newAdmin, adminPassword);
             if (result.Succeeded)
             {
                 await userManager.AddToRoleAsync(newAdmin, RoleConstants.Admin);
             }
-        }
+        
     }
 }
 
