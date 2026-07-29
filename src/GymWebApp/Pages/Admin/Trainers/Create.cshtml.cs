@@ -26,7 +26,8 @@ public class CreateModel : PageModel
     [BindProperty]
     public InputModel Input { get; set; } = default!;
 
-    public SelectList Categories { get; set; } = default!;
+    // ✅ FIX: MultiSelectList αντί για SelectList — σωστό binding για multiple select
+    public MultiSelectList Categories { get; set; } = new MultiSelectList(Enumerable.Empty<SelectListItem>());
 
     public class InputModel
     {
@@ -71,6 +72,10 @@ public class CreateModel : PageModel
             new GetAllClassCategoriesQuery(),
             cancellationToken);
 
-        Categories = new SelectList(categories, nameof(ClassCategoryDto.Id), nameof(ClassCategoryDto.Name));
+        // ✅ FIX: MultiSelectList — κανένα pre-selected για create
+        Categories = new MultiSelectList(
+            categories,
+            nameof(ClassCategoryDto.Id),
+            nameof(ClassCategoryDto.Name));
     }
 }

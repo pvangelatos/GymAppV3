@@ -118,8 +118,16 @@ public class ScheduleModel : PageModel
             new GetAllClassRoomsQuery(),
             cancellationToken);
 
-        Categories = new SelectList(categories, "Id", "Name");
-        Trainers = new SelectList(trainers, "Id", "Name");
-        Rooms = new SelectList(rooms, "Id", "Name");
+        Categories = new SelectList(categories, nameof(ClassCategoryDto.Id), nameof(ClassCategoryDto.Name));
+
+        // ✅ FIX: TrainerDto has no "Name" — project to anonymous type first
+        var trainerItems = trainers.Select(t => new
+        {
+            t.Id,
+            Name = $"{t.Firstname} {t.Lastname}"
+        });
+        Trainers = new SelectList(trainerItems, "Id", "Name");
+
+        Rooms = new SelectList(rooms, nameof(ClassRoomDto.Id), nameof(ClassRoomDto.ClassRoomName));
     }
 }

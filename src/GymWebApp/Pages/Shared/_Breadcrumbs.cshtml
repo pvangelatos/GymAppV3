@@ -1,0 +1,35 @@
+﻿@*
+   Usage — set in each page's @{ } block:
+   ViewData["Breadcrumbs"] = new List<(string Label, string? Url)>
+   {
+       ("Home", "/"),
+       ("Staff", null),
+       ("Members", "/Staff/Members/Index"),
+       ("John Doe", null)
+   };
+   Then render with: <partial name="_Breadcrumbs" />
+*@
+@{
+    var crumbs = ViewData["Breadcrumbs"] as IEnumerable<(string Label, string? Url)>;
+}
+
+@if (crumbs is not null)
+{
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb gym-breadcrumb">
+            @foreach (var (label, url) in crumbs)
+            {
+                if (url is not null)
+                {
+                    <li class="breadcrumb-item">
+                        <a href="@url">@label</a>
+                    </li>
+                }
+                else
+                {
+                    <li class="breadcrumb-item active" aria-current="page">@label</li>
+                }
+            }
+        </ol>
+    </nav>
+}

@@ -1,0 +1,115 @@
+﻿@page
+@model FinancialModel
+@{
+    ViewData["Title"] = "Financial Reports";
+    ViewData["Breadcrumbs"] = new List<(string Label, string? Url)>
+    {
+        ("Home", "/"),
+        ("Administration", null),
+        ("Financial Reports", null)
+    };
+}
+
+<partial name="_Breadcrumbs" />
+
+<div class="d-flex justify-content-between align-items-start mb-1">
+    <div>
+        <h1 class="mb-0">Financial Reports</h1>
+        <p class="lead mb-0">Revenue and membership statistics</p>
+    </div>
+</div>
+<hr class="mt-3 mb-4" />
+
+<!-- Summary stat cards -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card card-accent-left">
+            <div class="card-body py-3">
+                <p class="mb-1" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gym-text-muted);">
+                    <i class="bi bi-currency-euro me-1"></i>Total Revenue
+                </p>
+                <h3 class="mb-0" style="font-family: var(--gym-font-display);">@Model.TotalRevenue.ToString("C")</h3>
+                <small style="color: var(--gym-text-muted);">All time</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card card-success-left">
+            <div class="card-body py-3">
+                <p class="mb-1" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gym-text-muted);">
+                    <i class="bi bi-calendar-month me-1"></i>This Month
+                </p>
+                <h3 class="mb-0" style="font-family: var(--gym-font-display);">@Model.RevenueThisMonth.ToString("C")</h3>
+                <small style="color: var(--gym-text-muted);">@DateTime.Now.ToString("MMMM yyyy")</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card card-warning-left">
+            <div class="card-body py-3">
+                <p class="mb-1" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gym-text-muted);">
+                    <i class="bi bi-people me-1"></i>Active Members
+                </p>
+                <h3 class="mb-0" style="font-family: var(--gym-font-display);">@Model.ActiveMembersCount</h3>
+                <small style="color: var(--gym-text-muted);">With active membership</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card card-accent-left">
+            <div class="card-body py-3">
+                <p class="mb-1" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gym-text-muted);">
+                    <i class="bi bi-card-checklist me-1"></i>Active Packages
+                </p>
+                <h3 class="mb-0" style="font-family: var(--gym-font-display);">@Model.ActiveMembershipsCount</h3>
+                <small style="color: var(--gym-text-muted);">Running memberships</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Sales Table -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 text-uppercase" style="font-size: 11px; letter-spacing: 0.5px; color: var(--gym-text-muted);">
+            <i class="bi bi-receipt me-2" style="color: var(--gym-accent);"></i>Recent Membership Sales
+        </h6>
+    </div>
+    <div class="card-body p-0">
+        @if (Model.RecentSales.Count > 0)
+        {
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Member</th>
+                            <th>Package</th>
+                            <th>Purchase Date</th>
+                            <th>Valid Until</th>
+                            <th class="text-end">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var sale in Model.RecentSales)
+                        {
+                            <tr>
+                                <td>@sale.MemberName</td>
+                                <td>@sale.PackageName</td>
+                                <td>@sale.PurchaseDate.LocalDateTime.ToString("dd/MM/yyyy")</td>
+                                <td>@sale.EndDate.LocalDateTime.ToString("dd/MM/yyyy")</td>
+                                <td class="text-end" style="color: var(--gym-success);">@sale.Price.ToString("C")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="p-4 text-center" style="color: var(--gym-text-muted);">
+                <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                <p class="mt-2 mb-0">No sales recorded yet.</p>
+            </div>
+        }
+    </div>
+</div>
