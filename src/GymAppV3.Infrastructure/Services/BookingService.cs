@@ -136,14 +136,28 @@ public class BookingService : IBookingCommandService, IBookingQueryService
 
     public async Task<ResultSet<BookingDto>> GetByMemberAsync(GetBookingsByMemberQuery query, CancellationToken cancellationToken)
     {
-        return await _context.Bookings
-            .Where(b => b.MemberId == query.MemberId)
-            // A stable ordering matters once Skip/Take is involved — without it the
-            // same row can show up on two different pages.
-            .OrderByDescending(b => b.BookedAt)
+        // Base query: all bookings for the member
+        var q = _context.Bookings.Where(b => b.MemberId == query.MemberId);
+
+        // If OnlyActive is true, filter to only confirmed bookings for future sessions
+        if (query.OnlyActive)
+        {   
+            var now = _clock.UtcNow;
+            q = q.Where(b => b.Status == BookingStatus.Confirmed
+                          && b.ClassSession.StartsAt > now);
+        }
+
+        // Order the results based on the OnlyActive flag
+        var ordered = query.OnlyActive
+            ? q.OrderBy(b => b.ClassSession.StartsAt)
+            : q.OrderByDescending(b => b.BookedAt);
+
+        // Project to DTOs and return a paginated result set
+        return await ordered
             .Select(ObjectMapper.Booking.ToDto)
             .ToResultSetAsync(query.Options, cancellationToken);
     }
+
 
     // Finds an active membership of the given category to refund a session credit to.
     // Prefers the one ending soonest, mirroring how BookAsync chooses which to spend.

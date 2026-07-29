@@ -1,31 +1,850 @@
+/* ============================================================
+   GymAppV3 — Athens Marble × Olive Lime
+   Warm charcoal base, olive-lime accent, Fraunces + Inter
+   Overrides Bootstrap 5.3 CSS variables + component styling
+   ============================================================ */
+
+:root {
+    /* ---- Palette tokens ---- */
+    --gym-bg: #0F0E0C;
+    --gym-bg-elevated: #1A1815;
+    --gym-bg-hover: #24211D;
+    --gym-border: #2A2723;
+    --gym-border-strong: #3A362F;
+    --gym-text: #F5F1E8;
+    --gym-text-muted: #8A8378;
+    --gym-accent: #C5D14E;
+    --gym-accent-hover: #D2DE5F;
+    --gym-on-accent: #0F0E0C;
+    --gym-success: #8FB577;
+    --gym-warning: #D9A54B;
+    --gym-danger: #B85450;
+    /* Tinted alert backgrounds (transparent overlays) */
+    --gym-success-bg: rgba(143, 181, 119, 0.10);
+    --gym-warning-bg: rgba(217, 165, 75, 0.10);
+    --gym-danger-bg: rgba(184, 84, 80, 0.12);
+    --gym-accent-bg: rgba(197, 209, 78, 0.10);
+    --gym-accent-focus: rgba(197, 209, 78, 0.15);
+    /* Softer text on tinted alert backgrounds */
+    --gym-success-text: #B8D4A3;
+    --gym-warning-text: #E5C182;
+    --gym-danger-text: #D68C89;
+    /* ---- Fonts ---- */
+    --gym-font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+    --gym-font-body: 'Inter', system-ui, -apple-system, sans-serif;
+    /* ---- Bootstrap variable overrides ---- */
+    --bs-body-bg: var(--gym-bg);
+    --bs-body-color: var(--gym-text);
+    --bs-body-font-family: var(--gym-font-body);
+    --bs-body-font-size: 15px;
+    --bs-heading-color: var(--gym-text);
+    --bs-emphasis-color: var(--gym-text);
+    --bs-secondary-color: var(--gym-text-muted);
+    --bs-tertiary-color: var(--gym-text-muted);
+    --bs-border-color: var(--gym-border);
+    --bs-border-color-translucent: var(--gym-border);
+    --bs-primary: var(--gym-accent);
+    --bs-primary-rgb: 197, 209, 78;
+    --bs-success: var(--gym-success);
+    --bs-success-rgb: 143, 181, 119;
+    --bs-warning: var(--gym-warning);
+    --bs-warning-rgb: 217, 165, 75;
+    --bs-danger: var(--gym-danger);
+    --bs-danger-rgb: 184, 84, 80;
+    --bs-info: var(--gym-text-muted);
+    --bs-info-rgb: 138, 131, 120;
+    --bs-dark: var(--gym-bg);
+    --bs-dark-rgb: 15, 14, 12;
+    --bs-light: var(--gym-bg-elevated);
+    --bs-light-rgb: 26, 24, 21;
+    --bs-link-color: var(--gym-accent);
+    --bs-link-hover-color: var(--gym-accent-hover);
+    --bs-link-color-rgb: 197, 209, 78;
+    --bs-link-hover-color-rgb: 210, 222, 95;
+}
+
+/* ============================================================
+   Base
+   ============================================================ */
+
 html {
-  font-size: 14px;
-}
-
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
+    position: relative;
+    min-height: 100%;
 }
 
 body {
-  margin-bottom: 60px;
+    background-color: var(--gym-bg);
+    color: var(--gym-text);
+    font-family: var(--gym-font-body);
+    font-size: 15px;
+    letter-spacing: -0.005em;
+    margin-bottom: 60px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-  color: var(--bs-secondary-color);
-  text-align: end;
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6 {
+    font-family: var(--gym-font-display);
+    font-weight: 500;
+    color: var(--gym-text);
+    letter-spacing: -0.01em;
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
+.display-1, .display-2, .display-3, .display-4, .display-5, .display-6 {
+    font-family: var(--gym-font-display);
+    font-weight: 500;
+    letter-spacing: -0.02em;
 }
+
+.lead {
+    color: var(--gym-text-muted);
+    font-weight: 400;
+    font-size: 17px;
+}
+
+hr {
+    border-color: var(--gym-border);
+    opacity: 1;
+}
+
+a {
+    color: var(--gym-accent);
+    text-decoration: none;
+}
+
+    a:hover {
+        color: var(--gym-accent-hover);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        text-decoration-thickness: 1px;
+    }
+
+/* Focus ring — replaces the default blue */
+.btn:focus, .btn:active:focus,
+.btn-link.nav-link:focus,
+.form-control:focus, .form-select:focus, .form-check-input:focus {
+    box-shadow: 0 0 0 3px var(--gym-accent-focus) !important;
+    outline: 0;
+}
+
+/* ============================================================
+   Navbar
+   ============================================================ */
+
+.navbar.bg-dark, .navbar-dark.bg-dark {
+    background-color: var(--gym-bg) !important;
+    border-bottom: 0.5px solid var(--gym-border);
+    box-shadow: none !important;
+    padding: 10px 0;
+}
+
+.navbar-brand {
+    font-family: var(--gym-font-display) !important;
+    font-weight: 500 !important;
+    font-size: 20px !important;
+    color: var(--gym-text) !important;
+    letter-spacing: 0.3px;
+}
+
+    .navbar-brand:hover {
+        color: var(--gym-text) !important;
+    }
+
+.navbar-dark .navbar-nav .nav-link {
+    color: var(--gym-text-muted) !important;
+    font-size: 14px;
+    padding: 6px 12px;
+    transition: color 0.15s;
+}
+
+    .navbar-dark .navbar-nav .nav-link:hover,
+    .navbar-dark .navbar-nav .nav-link:focus,
+    .navbar-dark .navbar-nav .nav-link.active,
+    .navbar-dark .navbar-nav .show > .nav-link {
+        color: var(--gym-text) !important;
+    }
+
+/* Dropdowns inside the navbar */
+.navbar-dark .dropdown-menu {
+    background-color: var(--gym-bg-elevated);
+    border: 0.5px solid var(--gym-border);
+    border-radius: 8px;
+    padding: 6px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    margin-top: 6px;
+}
+
+.dropdown-menu .dropdown-item {
+    color: var(--gym-text);
+    font-size: 14px;
+    border-radius: 4px;
+    padding: 6px 10px;
+}
+
+    .dropdown-menu .dropdown-item:hover,
+    .dropdown-menu .dropdown-item:focus {
+        background-color: var(--gym-bg-hover);
+        color: var(--gym-text);
+    }
+
+.dropdown-menu .dropdown-header {
+    color: var(--gym-text-muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 6px 10px 4px;
+}
+
+.dropdown-menu .dropdown-divider {
+    border-color: var(--gym-border);
+    margin: 4px 0;
+}
+
+/* Login partial (form-inline logout button styling) */
+.navbar-nav .form-inline {
+    display: inline-block;
+}
+
+    .navbar-nav .form-inline .btn.nav-link {
+        color: var(--gym-text-muted) !important;
+        padding: 6px 12px;
+        background: transparent !important;
+        border: 0 !important;
+        text-decoration: none;
+        font-size: 14px;
+    }
+
+        .navbar-nav .form-inline .btn.nav-link:hover {
+            color: var(--gym-text) !important;
+        }
+
+/* ============================================================
+   Cards
+   ============================================================ */
+
+.card {
+    background-color: var(--gym-bg-elevated);
+    border: 0.5px solid var(--gym-border);
+    border-radius: 12px;
+    color: var(--gym-text);
+    box-shadow: none;
+}
+
+.card-header {
+    background-color: transparent !important;
+    border-bottom: 0.5px solid var(--gym-border);
+    color: var(--gym-text) !important;
+    font-family: var(--gym-font-display);
+    font-weight: 500;
+    font-size: 15px;
+    padding: 14px 18px;
+}
+    /* Neutralise .bg-primary/success/warning/etc. applied to card headers */
+    .card-header.bg-primary,
+    .card-header.bg-success,
+    .card-header.bg-warning,
+    .card-header.bg-danger,
+    .card-header.bg-info {
+        background-color: transparent !important;
+        color: var(--gym-text) !important;
+    }
+
+.card-body {
+    padding: 18px;
+}
+
+.card-title, .card-subtitle {
+    color: var(--gym-text);
+    font-family: var(--gym-font-display);
+    font-weight: 500;
+}
+
+.card-text {
+    color: var(--gym-text-muted);
+}
+
+/* ============================================================
+   Buttons
+   ============================================================ */
+
+.btn {
+    font-family: var(--gym-font-body);
+    font-weight: 500;
+    font-size: 14px;
+    border-radius: 6px;
+    padding: 8px 16px;
+    transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.btn-lg {
+    padding: 10px 20px;
+    font-size: 15px;
+}
+
+.btn-sm {
+    padding: 5px 10px;
+    font-size: 12px;
+}
+
+/* Primary — the olive-lime CTA */
+.btn-primary {
+    background-color: var(--gym-accent);
+    border-color: var(--gym-accent);
+    color: var(--gym-on-accent);
+}
+
+    .btn-primary:hover, .btn-primary:focus, .btn-primary:active {
+        background-color: var(--gym-accent-hover) !important;
+        border-color: var(--gym-accent-hover) !important;
+        color: var(--gym-on-accent) !important;
+    }
+
+    .btn-primary:disabled {
+        background-color: var(--gym-accent);
+        border-color: var(--gym-accent);
+        color: var(--gym-on-accent);
+        opacity: 0.5;
+    }
+
+/* Success / Warning / Danger — restrained solids, dark text on light hues */
+.btn-success {
+    background-color: var(--gym-success);
+    border-color: var(--gym-success);
+    color: var(--gym-bg);
+}
+
+    .btn-success:hover, .btn-success:focus, .btn-success:active {
+        background-color: #A0C589 !important;
+        border-color: #A0C589 !important;
+        color: var(--gym-bg) !important;
+    }
+
+.btn-warning {
+    background-color: var(--gym-warning);
+    border-color: var(--gym-warning);
+    color: var(--gym-bg);
+}
+
+    .btn-warning:hover, .btn-warning:focus, .btn-warning:active {
+        background-color: #E5B865 !important;
+        border-color: #E5B865 !important;
+        color: var(--gym-bg) !important;
+    }
+
+.btn-danger {
+    background-color: var(--gym-danger);
+    border-color: var(--gym-danger);
+    color: var(--gym-text);
+}
+
+    .btn-danger:hover, .btn-danger:focus, .btn-danger:active {
+        background-color: #C86864 !important;
+        border-color: #C86864 !important;
+        color: var(--gym-text) !important;
+    }
+
+/* Info, Secondary — treated as neutral outlined */
+.btn-info,
+.btn-secondary {
+    background-color: transparent;
+    border-color: var(--gym-border-strong);
+    color: var(--gym-text);
+}
+
+    .btn-info:hover, .btn-info:focus,
+    .btn-secondary:hover, .btn-secondary:focus {
+        background-color: var(--gym-bg-hover) !important;
+        border-color: var(--gym-border-strong) !important;
+        color: var(--gym-text) !important;
+    }
+
+/* Outline variants */
+.btn-outline-primary {
+    color: var(--gym-accent);
+    border-color: var(--gym-accent);
+    background-color: transparent;
+}
+
+    .btn-outline-primary:hover, .btn-outline-primary:focus, .btn-outline-primary:active {
+        background-color: var(--gym-accent) !important;
+        color: var(--gym-on-accent) !important;
+        border-color: var(--gym-accent) !important;
+    }
+
+.btn-outline-success, .btn-outline-warning, .btn-outline-danger,
+.btn-outline-info, .btn-outline-secondary {
+    color: var(--gym-text);
+    border-color: var(--gym-border-strong);
+    background-color: transparent;
+}
+
+    .btn-outline-success:hover, .btn-outline-success:focus {
+        background-color: var(--gym-success) !important;
+        border-color: var(--gym-success) !important;
+        color: var(--gym-bg) !important;
+    }
+
+    .btn-outline-warning:hover, .btn-outline-warning:focus {
+        background-color: var(--gym-warning) !important;
+        border-color: var(--gym-warning) !important;
+        color: var(--gym-bg) !important;
+    }
+
+    .btn-outline-danger:hover, .btn-outline-danger:focus {
+        background-color: var(--gym-danger) !important;
+        border-color: var(--gym-danger) !important;
+        color: var(--gym-text) !important;
+    }
+
+    .btn-outline-info:hover, .btn-outline-info:focus,
+    .btn-outline-secondary:hover, .btn-outline-secondary:focus {
+        background-color: var(--gym-bg-hover) !important;
+        border-color: var(--gym-border-strong) !important;
+        color: var(--gym-text) !important;
+    }
+
+.btn-link {
+    color: var(--gym-accent);
+    text-decoration: none;
+}
+
+    .btn-link:hover {
+        color: var(--gym-accent-hover);
+    }
+
+/* ============================================================
+   Utility overrides — text-*, bg-*
+   ============================================================ */
+
+.bg-primary {
+    background-color: var(--gym-accent) !important;
+    color: var(--gym-on-accent) !important;
+}
+
+.bg-success {
+    background-color: var(--gym-success-bg) !important;
+    color: var(--gym-success-text) !important;
+}
+
+.bg-warning {
+    background-color: var(--gym-warning-bg) !important;
+    color: var(--gym-warning-text) !important;
+}
+
+.bg-danger {
+    background-color: var(--gym-danger-bg) !important;
+    color: var(--gym-danger-text) !important;
+}
+
+.bg-info {
+    background-color: var(--gym-bg-hover) !important;
+    color: var(--gym-text-muted) !important;
+}
+
+.bg-light {
+    background-color: var(--gym-bg-elevated) !important;
+    color: var(--gym-text) !important;
+}
+
+.bg-dark {
+    background-color: var(--gym-bg) !important;
+    color: var(--gym-text) !important;
+}
+
+.text-primary {
+    color: var(--gym-accent) !important;
+}
+
+.text-success {
+    color: var(--gym-success) !important;
+}
+
+.text-warning {
+    color: var(--gym-warning) !important;
+}
+
+.text-danger {
+    color: var(--gym-danger) !important;
+}
+
+.text-info {
+    color: var(--gym-text-muted) !important;
+}
+
+.text-muted {
+    color: var(--gym-text-muted) !important;
+}
+
+.text-secondary {
+    color: var(--gym-text-muted) !important;
+}
+
+.text-dark {
+    color: var(--gym-text) !important;
+}
+
+.text-light {
+    color: var(--gym-text) !important;
+}
+
+.text-white {
+    color: var(--gym-text) !important;
+}
+
+.text-body {
+    color: var(--gym-text) !important;
+}
+
+.border {
+    border-color: var(--gym-border) !important;
+}
+
+.border-top {
+    border-top-color: var(--gym-border) !important;
+}
+
+.border-bottom {
+    border-bottom-color: var(--gym-border) !important;
+}
+
+.border-start {
+    border-left-color: var(--gym-border) !important;
+}
+
+.border-end {
+    border-right-color: var(--gym-border) !important;
+}
+
+/* ============================================================
+   Forms
+   ============================================================ */
+
+.form-label {
+    color: var(--gym-text);
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 6px;
+}
+
+.form-control, .form-select, textarea.form-control {
+    background-color: var(--gym-bg-elevated);
+    border: 0.5px solid var(--gym-border-strong);
+    color: var(--gym-text);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: var(--gym-font-body);
+}
+
+    .form-control:focus, .form-select:focus, textarea.form-control:focus {
+        background-color: var(--gym-bg-elevated);
+        border-color: var(--gym-accent);
+        color: var(--gym-text);
+        box-shadow: 0 0 0 3px var(--gym-accent-focus);
+    }
+
+    .form-control:disabled, .form-control[readonly] {
+        background-color: var(--gym-bg);
+        color: var(--gym-text-muted);
+        border-color: var(--gym-border);
+        opacity: 0.7;
+    }
+
+    .form-control::placeholder,
+    .form-select option:disabled {
+        color: var(--gym-text-muted);
+        opacity: 0.6;
+    }
+
+    /* Date input calendar icon in dark theme */
+    .form-control[type="date"]::-webkit-calendar-picker-indicator {
+        filter: invert(0.7);
+        cursor: pointer;
+    }
+
+/* Checkboxes and radios */
+.form-check-input {
+    background-color: var(--gym-bg-elevated);
+    border-color: var(--gym-border-strong);
+}
+
+    .form-check-input:checked {
+        background-color: var(--gym-accent);
+        border-color: var(--gym-accent);
+    }
+
+    .form-check-input:focus {
+        box-shadow: 0 0 0 3px var(--gym-accent-focus);
+        border-color: var(--gym-accent);
+    }
+
+.form-check-label {
+    color: var(--gym-text);
+    font-size: 14px;
+}
+
+.form-text {
+    color: var(--gym-text-muted);
+    font-size: 12px;
+}
+
+/* Validation */
+.field-validation-error,
+.validation-summary-errors,
+.validation-summary-errors ul li {
+    color: var(--gym-danger) !important;
+    font-size: 12px;
+    list-style: none;
+}
+
+    .validation-summary-errors ul {
+        padding-left: 0;
+        margin-bottom: 0;
+    }
+
+.input-validation-error,
+.is-invalid {
+    border-color: var(--gym-danger) !important;
+}
+
+    .input-validation-error:focus,
+    .is-invalid:focus {
+        box-shadow: 0 0 0 3px rgba(184, 84, 80, 0.15) !important;
+    }
+
+.invalid-feedback {
+    color: var(--gym-danger);
+    font-size: 12px;
+}
+
+/* Form-floating (used on Register page) */
+.form-floating > label {
+    color: var(--gym-text-muted);
+}
+
+.form-floating > .form-control:focus ~ label,
+.form-floating > .form-control:not(:placeholder-shown) ~ label {
+    color: var(--gym-text-muted);
+    opacity: 0.85;
+}
+
+/* ============================================================
+   Tables
+   ============================================================ */
+
+.table {
+    color: var(--gym-text);
+    --bs-table-bg: transparent;
+    --bs-table-border-color: var(--gym-border);
+    --bs-table-color: var(--gym-text);
+    --bs-table-striped-color: var(--gym-text);
+    --bs-table-striped-bg: var(--gym-bg-hover);
+    --bs-table-hover-bg: var(--gym-bg-hover);
+    --bs-table-hover-color: var(--gym-text);
+}
+
+    .table > :not(caption) > * > * {
+        background-color: transparent;
+        color: var(--gym-text);
+        border-bottom-color: var(--gym-border);
+    }
+
+    .table thead th {
+        color: var(--gym-text-muted);
+        font-weight: 500;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 0.5px solid var(--gym-border);
+    }
+
+/* ============================================================
+   Alerts — thick left border + tinted background
+   ============================================================ */
+
+.alert {
+    background-color: transparent;
+    border: 0.5px solid;
+    border-left-width: 3px;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 14px;
+}
+
+.alert-success {
+    background-color: var(--gym-success-bg);
+    border-color: var(--gym-success);
+    color: var(--gym-success-text);
+}
+
+.alert-warning {
+    background-color: var(--gym-warning-bg);
+    border-color: var(--gym-warning);
+    color: var(--gym-warning-text);
+}
+
+.alert-danger {
+    background-color: var(--gym-danger-bg);
+    border-color: var(--gym-danger);
+    color: var(--gym-danger-text);
+}
+
+.alert-info {
+    background-color: var(--gym-bg-elevated);
+    border-color: var(--gym-border-strong);
+    color: var(--gym-text-muted);
+}
+
+.alert-primary {
+    background-color: var(--gym-accent-bg);
+    border-color: var(--gym-accent);
+    color: var(--gym-accent);
+}
+
+.alert .btn-close {
+    filter: invert(1) grayscale(100%) brightness(0.85);
+}
+
+/* ============================================================
+   Badges
+   ============================================================ */
+
+.badge {
+    font-family: var(--gym-font-body);
+    font-weight: 500;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.3px;
+}
+
+    .badge.bg-primary {
+        background-color: var(--gym-accent) !important;
+        color: var(--gym-on-accent) !important;
+    }
+
+    .badge.bg-success {
+        background-color: rgba(143, 181, 119, 0.15) !important;
+        color: var(--gym-success-text) !important;
+    }
+
+    .badge.bg-warning {
+        background-color: rgba(217, 165, 75, 0.15) !important;
+        color: var(--gym-warning-text) !important;
+    }
+
+    .badge.bg-danger {
+        background-color: rgba(184, 84, 80, 0.15) !important;
+        color: var(--gym-danger-text) !important;
+    }
+
+    .badge.bg-info,
+    .badge.bg-secondary {
+        background-color: rgba(138, 131, 120, 0.15) !important;
+        color: var(--gym-text-muted) !important;
+    }
+
+/* ============================================================
+   List groups
+   ============================================================ */
+
+.list-group {
+    background-color: transparent;
+}
+
+.list-group-item {
+    background-color: transparent;
+    border-color: var(--gym-border);
+    color: var(--gym-text);
+    padding: 10px 12px;
+}
+
+.list-group-flush > .list-group-item {
+    border-color: var(--gym-border);
+}
+
+.list-group-item small.text-muted {
+    color: var(--gym-text-muted) !important;
+}
+
+/* ============================================================
+   Modals
+   ============================================================ */
+
+.modal-content {
+    background-color: var(--gym-bg-elevated);
+    border: 0.5px solid var(--gym-border);
+    color: var(--gym-text);
+    border-radius: 12px;
+}
+
+.modal-header {
+    border-bottom: 0.5px solid var(--gym-border);
+}
+
+.modal-footer {
+    border-top: 0.5px solid var(--gym-border);
+}
+
+.modal-title {
+    font-family: var(--gym-font-display);
+    font-weight: 500;
+}
+
+.btn-close {
+    filter: invert(1) grayscale(100%) brightness(0.85);
+}
+
+/* ============================================================
+   Pagination
+   ============================================================ */
+
+.page-item .page-link {
+    background-color: transparent;
+    border-color: var(--gym-border);
+    color: var(--gym-text-muted);
+    font-size: 13px;
+    padding: 6px 12px;
+}
+
+.page-item.active .page-link {
+    background-color: var(--gym-accent);
+    border-color: var(--gym-accent);
+    color: var(--gym-on-accent);
+}
+
+.page-item .page-link:hover {
+    background-color: var(--gym-bg-hover);
+    border-color: var(--gym-border-strong);
+    color: var(--gym-text);
+}
+
+.page-item.disabled .page-link {
+    background-color: transparent;
+    border-color: var(--gym-border);
+    color: var(--gym-text-muted);
+    opacity: 0.4;
+}
+
+/* ============================================================
+   Footer
+   ============================================================ */
+
+.footer {
+    background-color: var(--gym-bg);
+    border-top: 0.5px solid var(--gym-border) !important;
+    color: var(--gym-text-muted);
+    font-size: 13px;
+    padding: 14px 0;
+}
+
+    .footer a {
+        color: var(--gym-text-muted);
+        text-decoration: none;
+    }
+
+        .footer a:hover {
+            color: var(--gym-text);
+            text-decoration: underline;
+        }

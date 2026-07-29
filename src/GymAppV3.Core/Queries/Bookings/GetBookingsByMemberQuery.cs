@@ -4,4 +4,7 @@ using GymAppV3.Core.DTOs;
 
 namespace GymAppV3.Core.Queries.Bookings;
 
-public record GetBookingsByMemberQuery(Guid MemberId, ListOptions? Options = null) : IQuery<ResultSet<BookingDto>>;
+public record GetBookingsByMemberQuery(
+    Guid MemberId,
+    ListOptions? Options = null,
+    bool OnlyActive = false) : IQuery<ResultSet<BookingDto>>;

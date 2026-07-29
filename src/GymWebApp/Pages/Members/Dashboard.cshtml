@@ -40,7 +40,7 @@
                     <p><strong>Name:</strong> @Model.Member.Firstname @Model.Member.Lastname</p>
                     <p><strong>Email:</strong> @Model.Member.Email</p>
                     <p><strong>Phone:</strong> @(Model.Member.Phone ?? "Not provided")</p>
-                    <p><strong>Birth Date:</strong> @Model.Member.BirthDate.ToString("MMMM dd, yyyy")</p>
+                    <p><strong>Birth Date:</strong> @Model.Member.BirthDate.ToString("dd/MM/yyyy")</p>
                     <p><strong>City:</strong> @Model.Member.Address.City, @Model.Member.Address.State</p>
                 }
                 <div class="mt-3">
@@ -68,7 +68,7 @@
                                     <small>@booking.Status</small>
                                 </div>
                                 <small class="text-muted">
-                                    @booking.SessionStartsAt.LocalDateTime.ToString("MMM dd, yyyy 'at' h:mm tt")
+                                    @booking.SessionStartsAt.LocalDateTime.ToString("dd/MM/yyyy 'at' hh:mm")
                                 </small>
                             </div>
                         }
@@ -108,7 +108,7 @@
                                     <span class="badge bg-success">@membership.Status</span>
                                 </div>
                                 <small class="text-muted">
-                                    Valid until @membership.EndDate.LocalDateTime.ToString("MMM dd, yyyy")
+                                    Valid until @membership.EndDate.LocalDateTime.ToString("dd/MM/yyyy")
                                 </small>
                                 @if (membership.RemainingSessions > 0)
                                 {
@@ -148,7 +148,7 @@
                         </a>
                     </div>
                     <div class="col-md-3 mb-2">
-                        <a asp-page="/Classes/Book" class="btn btn-success w-100">
+                        <a asp-page="/Classes/Schedule" class="btn btn-success w-100">
                             <i class="bi bi-plus-circle"></i> Book a Class
                         </a>
                     </div>

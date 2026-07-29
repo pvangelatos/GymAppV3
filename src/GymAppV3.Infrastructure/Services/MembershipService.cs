@@ -31,8 +31,19 @@ public class MembershipService : IMembershipCommandService, IMembershipQueryServ
 
     public async Task<IReadOnlyList<MembershipDto>> GetByMemberAsync(GetMembershipsByMemberQuery query, CancellationToken cancellationToken = default)
     {
-       return await _context.Memberships
-            .Where(m => m.MemberId == query.MemberId)
+        // Existence validation for the member
+        var q = _context.Memberships
+            .Where(m => m.MemberId == query.MemberId);
+
+        // Filter for only active memberships if requested
+        if (query.OnlyActive)
+        {
+            var now = _clock.UtcNow;
+            q = q.Where(m => m.Status == MembershipStatus.Active && m.EndDate > now);
+        }
+
+        // Order by StartDate descending and project to DTO
+        return await q
             .OrderByDescending(m => m.StartDate)
             .Select(ObjectMapper.Membership.ToDto)
             .ToListAsync(cancellationToken);

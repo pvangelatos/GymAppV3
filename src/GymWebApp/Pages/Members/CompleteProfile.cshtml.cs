@@ -1,5 +1,6 @@
 using GymAppV3.Core.Commands;
 using GymAppV3.Core.DTOs;
+using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -8,7 +9,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace GymWebApp.Pages.Members;
 
-[Authorize]
+[Authorize(Policy = "MemberOnly")]
 public class CompleteProfileModel : PageModel
 {
     private readonly IMemberCommandService _memberCommandService;
@@ -20,6 +21,10 @@ public class CompleteProfileModel : PageModel
 
     [BindProperty]
     public InputModel Input { get; set; } = new();
+
+    // Displayed read-only in the form. Kept as a page property (not ViewData) so it
+    // survives POST re-renders when validation fails.
+    public string Email { get; private set; } = string.Empty;
 
     public class InputModel
     {
@@ -74,59 +79,40 @@ public class CompleteProfileModel : PageModel
 
     public void OnGet()
     {
-        // Pre-populate with user's email
-        var email = User.Identity?.Name;
-        if (!string.IsNullOrEmpty(email))
-        {
-            ViewData["Email"] = email;
-        }
+        // [Authorize(MemberOnly)] guarantees an authenticated Identity user, so Name is populated.
+        Email = User.Identity!.Name!;
     }
 
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
     {
-        if (!ModelState.IsValid)
-        {
-            return Page();
-        }
+        Email = User.Identity!.Name!;
 
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        var email = User.Identity?.Name;
+        if (!ModelState.IsValid) return Page();
 
-        if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(email))
-        {
-            return RedirectToPage("/Account/Login", new { area = "Identity" });
-        }
+        var command = new CompleteMemberProfileCommand(
+            Firstname: Input.Firstname,
+            Lastname: Input.Lastname,
+            Email: Email,
+            Phone: Input.Phone,
+            Address: new AddressDto(Input.Street, Input.City, Input.State, Input.ZipCode, Input.Country),
+            BirthDate: Input.BirthDate,
+            HasMedicalConditions: Input.HasMedicalConditions,
+            MedicalNotes: Input.MedicalConditionsDescription
+        );
 
         try
         {
-            var address = new AddressDto(
-                Input.Street,
-                Input.City,
-                Input.State,
-                Input.ZipCode,
-                Input.Country
-            );
-
-            var command = new CompleteMemberProfileCommand(
-                Firstname: Input.Firstname,
-                Lastname: Input.Lastname,
-                Email: email,
-                Phone: Input.Phone,
-                Address: address,
-                BirthDate: Input.BirthDate,
-                HasMedicalConditions: Input.HasMedicalConditions,
-                MedicalNotes: Input.MedicalConditionsDescription
-            );
-
             await _memberCommandService.CompleteProfileAsync(command, cancellationToken);
-
-            TempData["SuccessMessage"] = "Your profile has been completed successfully!";
-            return RedirectToPage("/Members/Dashboard");
         }
-        catch (Exception ex)
+        catch (BusinessRuleException ex)
         {
-            ModelState.AddModelError(string.Empty, $"An error occurred: {ex.Message}");
+            // Expected domain rejection (e.g. profile already exists, underage) — show to user.
+            // Everything else bubbles to the global exception handler.
+            ModelState.AddModelError(string.Empty, ex.Message);
             return Page();
         }
+
+        TempData["SuccessMessage"] = "Your profile has been completed successfully!";
+        return RedirectToPage("/Members/Dashboard");
     }
 }
