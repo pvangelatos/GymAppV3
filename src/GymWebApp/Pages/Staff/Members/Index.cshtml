@@ -12,14 +12,6 @@
     </div>
 </div>
 
-@if (TempData["SuccessMessage"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        @TempData["SuccessMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-}
-
 <div class="row mb-3">
     <div class="col-md-6">
         <a asp-page="/Staff/Members/Create" class="btn btn-primary">
@@ -91,39 +83,60 @@
     </div>
 
     <!-- Pagination -->
-    @if (Model.Members.Count > Model.PageSize)
+    @if (Model.Members.Count > 0 && (Model.CurrentPage > 1 || Model.Members.Items.Count == Model.PageSize))
     {
         <div class="row mt-3">
             <div class="col-md-12">
                 <nav aria-label="Members pagination">
                     <ul class="pagination justify-content-center">
                         @{
-                            var totalPages = Model.Members.TotalPages;
+                            // Αν το TotalPages από το backend είναι 0, υπολογίζουμε ασφαλώς τα pages
+                            var totalPages = Model.Members.TotalPages > 0
+                                ? Model.Members.TotalPages
+                                : (int)Math.Ceiling((double)Model.Members.Count / Model.PageSize);
+
                             var hasPrevious = Model.CurrentPage > 1;
-                            var hasNext = Model.CurrentPage < totalPages;
+
+                            // Έχει Next είτε αν δεν φτάσαμε στο totalPages, είτε αν η τρέχουσα σελίδα γεμίζει πλήρως το PageSize
+                            var hasNext = totalPages > 0
+                                ? Model.CurrentPage < totalPages
+                                : Model.Members.Items.Count == Model.PageSize;
                         }
 
+                        <!-- Previous Button -->
                         <li class="page-item @(!hasPrevious ? "disabled" : "")">
                             <a class="page-link"
-                            asp-page="/Staff/Members/Index"
-                            asp-route-page="@Model.SearchTerm">Previous</a>
+                               asp-page="/Staff/Members/Index"
+                               asp-route-pageIndex="@(Model.CurrentPage - 1)"
+                               asp-route-searchTerm="@Model.SearchTerm">Previous</a>
                         </li>
 
-                        @for (int pageNum = 1; pageNum <= totalPages; pageNum++)
+                        <!-- Page Numbers -->
+                        @if (totalPages > 0)
                         {
-                            <li class="page-item @(pageNum == Model.CurrentPage ? "active" : "")">
-                                <a class="page-link"
-                                asp-page="/Staff/Members/Index"
-                                asp-route-page="@pageNum"
-                                asp-route-searchTerm="@Model.SearchTerm">@pageNum</a>
+                            @for (int p = 1; p <= totalPages; p++)
+                            {
+                                <li class="page-item @(p == Model.CurrentPage ? "active" : "")">
+                                    <a class="page-link"
+                                       asp-page="/Staff/Members/Index"
+                                       asp-route-pageIndex="@p"
+                                       asp-route-searchTerm="@Model.SearchTerm">@p</a>
+                                </li>
+                            }
+                        }
+                        else
+                        {
+                            <li class="page-item active">
+                                <span class="page-link">@Model.CurrentPage</span>
                             </li>
                         }
 
+                        <!-- Next Button -->
                         <li class="page-item @(!hasNext ? "disabled" : "")">
                             <a class="page-link"
-                            asp-page="/Staff/Members/Index"
-                            asp-route-page="@(Model.CurrentPage + 1)"
-                            asp-route-searchTerm="@Model.SearchTerm">Next</a>
+                               asp-page="/Staff/Members/Index"
+                               asp-route-pageIndex="@(Model.CurrentPage + 1)"
+                               asp-route-searchTerm="@Model.SearchTerm">Next</a>
                         </li>
                     </ul>
                 </nav>

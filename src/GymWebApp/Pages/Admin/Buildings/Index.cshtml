@@ -8,11 +8,6 @@
 <p class="lead">Manage gym buildings and locations</p>
 <hr />
 
-@if (TempData["SuccessMessage"] != null)
-{
-    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
-}
-
 <a asp-page="Create" class="btn btn-primary mb-3">Add New Building</a>
 
 @if (Model.Buildings.Count > 0)

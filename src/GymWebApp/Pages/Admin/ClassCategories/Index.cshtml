@@ -8,11 +8,6 @@
 <p class="lead">Manage class types and categories</p>
 <hr />
 
-@if (TempData["SuccessMessage"] != null)
-{
-    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
-}
-
 <a asp-page="Create" class="btn btn-primary mb-3">Add New Category</a>
 
 @if (Model.Categories.Count > 0)

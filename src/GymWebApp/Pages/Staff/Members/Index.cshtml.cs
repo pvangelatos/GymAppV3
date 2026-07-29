@@ -25,9 +25,10 @@ public class IndexModel : PageModel
     [BindProperty(SupportsGet = true)]
     public string? SearchTerm { get; set; }
 
-    public async Task OnGetAsync(int? page, CancellationToken cancellationToken)
+    public async Task OnGetAsync(int pageIndex = 1, CancellationToken cancellationToken = default)
     {
-        CurrentPage = page ?? 1;
+        CurrentPage = pageIndex < 1 ? 1 : pageIndex;
+
 
         Members = await _memberQueryService.GetAllAsync(
             new GetAllMembersQuery(
