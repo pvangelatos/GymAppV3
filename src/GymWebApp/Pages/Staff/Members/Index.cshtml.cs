@@ -30,7 +30,9 @@ public class IndexModel : PageModel
         CurrentPage = page ?? 1;
 
         Members = await _memberQueryService.GetAllAsync(
-            new GetAllMembersQuery(new ListOptions { Page = CurrentPage, Size = PageSize }),
+            new GetAllMembersQuery(
+                Options: new ListOptions { Page = CurrentPage, Size = PageSize },
+                SearchTerm: SearchTerm),
             cancellationToken);
     }
 }

@@ -12,7 +12,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace GymWebApp.Pages.Staff.Classes;
 
-[Authorize(Policy = "AdminOnly")]
+[Authorize(Policy = "StaffOnly")]
 public class ScheduleModel : PageModel
 {
     private readonly IClassSessionCommandService _classSessionCommandService;
