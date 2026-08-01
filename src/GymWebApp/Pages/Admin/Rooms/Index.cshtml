@@ -26,7 +26,7 @@
             {
                 <tr>
                     <td><strong>@room.ClassRoomName</strong></td>
-                    <td>Building ID: @room.GymBuildingId</td>
+                    <td>@(Model.BuildingNames.GetValueOrDefault(room.GymBuildingId, "Unknown"))</td>
                     <td>
                         <span class="badge bg-info">@room.Capacity people</span>
                     </td>
