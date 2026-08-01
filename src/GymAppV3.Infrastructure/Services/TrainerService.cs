@@ -1,13 +1,14 @@
 ﻿using GymAppV3.Core.Abstractions;
 using GymAppV3.Core.Commands;
+using GymAppV3.Core.Common;
 using GymAppV3.Core.DTOs;
 using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Models;
 using GymAppV3.Core.Queries.Trainers;
 using GymAppV3.Infrastructure.Data;
+using GymAppV3.Infrastructure.Extensions;
 using GymAppV3.Infrastructure.Identity;
-using GymAppV3.Infrastructure.Mapper;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -160,12 +161,12 @@ public class TrainerService : ITrainerCommandService, ITrainerQueryService
 
     #region Query Operations
 
-    public async Task<IReadOnlyList<TrainerDto>> GetAllAsync(GetAllTrainersQuery query, CancellationToken cancellationToken = default)
+    public async Task<ResultSet<TrainerDto>> GetAllAsync(GetAllTrainersQuery query, CancellationToken cancellationToken = default)
     {
         return await _context.Trainers
              .OrderBy(t => t.Lastname)
              .Select(ObjectMapper.Trainer.ToDto)
-             .ToListAsync(cancellationToken);
+             .ToResultSetAsync(query.Options, cancellationToken);
     }
 
     public async Task<TrainerDto?> GetByIdAsync(GetTrainerByIdQuery query, CancellationToken cancellationToken = default)

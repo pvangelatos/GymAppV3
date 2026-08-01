@@ -1,5 +1,6 @@
 ﻿using GymAppv3.Server.Endpoints.Common;
 using GymAppV3.Core.Commands;
+using GymAppV3.Core.Common;
 using GymAppV3.Core.DTOs;
 
 namespace GymAppv3.Server.Endpoints.Trainer;
@@ -20,7 +21,7 @@ public static class TrainerEndpoints
         group.MapGet("/", TrainerHandlers.GetAllAsync)
             .WithName("GetTrainers")
             .RequireAuthorization()
-            .Produces<IReadOnlyList<TrainerDto>>(StatusCodes.Status200OK);
+            .Produces<ResultSet<TrainerDto>>(StatusCodes.Status200OK);
 
         group.MapPost("/", TrainerHandlers.CreateAsync)
             .WithName("CreateTrainer")

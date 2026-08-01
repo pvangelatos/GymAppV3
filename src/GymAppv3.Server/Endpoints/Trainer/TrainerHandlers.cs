@@ -1,5 +1,6 @@
 ﻿using GymAppV3.Core.Abstractions;
 using GymAppV3.Core.Commands;
+using GymAppV3.Core.Common;
 using GymAppV3.Core.DTOs;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Queries.Trainers;
@@ -19,11 +20,14 @@ public static class TrainerHandlers
         return TypedResults.Created($"/api/trainers/{created.Trainer.Id}", created);
     }
 
-    public static async Task<Ok<IReadOnlyList<TrainerDto>>> GetAllAsync(
+    public static async Task<Ok<ResultSet<TrainerDto>>> GetAllAsync(
+        [AsParameters] GetAllTrainersRequest request,
         ITrainerQueryService queryService,
         CancellationToken cancellationToken)
     {
-        var result = await queryService.GetAllAsync(new GetAllTrainersQuery(), cancellationToken);
+        var options = new ListOptions(request.Page, request.Size) { Sort = request.Sort };
+
+        var result = await queryService.GetAllAsync(new GetAllTrainersQuery(options), cancellationToken);
         return TypedResults.Ok(result);
     }
 
@@ -71,3 +75,11 @@ public static class TrainerHandlers
         return TypedResults.NoContent();
     }
 }
+
+/// <summary>
+/// Request model for GetAll with pagination.
+/// </summary>
+public record GetAllTrainersRequest(
+    int Page = 1,
+    int Size = 50,
+    string? Sort = null);

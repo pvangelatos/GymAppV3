@@ -1,4 +1,5 @@
 using GymAppV3.Core.Commands;
+using GymAppV3.Core.Common;
 using GymAppV3.Core.DTOs;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Queries.ClassCategories;
@@ -121,7 +122,7 @@ public class ScheduleModel : PageModel
         Categories = new SelectList(categories, nameof(ClassCategoryDto.Id), nameof(ClassCategoryDto.Name));
 
         // ✅ FIX: TrainerDto has no "Name" — project to anonymous type first
-        var trainerItems = trainers.Select(t => new
+        var trainerItems = trainers.Items.Select(t => new
         {
             t.Id,
             Name = $"{t.Firstname} {t.Lastname}"

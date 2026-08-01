@@ -1,10 +1,14 @@
+using GymAppV3.Core.Common;
 using GymAppV3.Core.DTOs;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Queries.ClassCategories;
+using GymAppV3.Core.Queries.ClassRooms;
 using GymAppV3.Core.Queries.ClassSessions;
+using GymAppV3.Core.Queries.Trainers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace GymWebApp.Pages.Classes;
 

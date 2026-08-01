@@ -10,7 +10,7 @@
 
 <a asp-page="Create" class="btn btn-primary mb-3">Add New Trainer</a>
 
-@if (Model.Trainers.Count > 0)
+@if (Model.Trainers.Items.Count > 0)
 {
     <table class="table table-hover">
         <thead>
@@ -23,7 +23,7 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (var trainer in Model.Trainers)
+            @foreach (var trainer in Model.Trainers.Items)
             {
                 <tr>
                     <td>@trainer.Firstname @trainer.Lastname</td>
@@ -43,6 +43,54 @@
             }
         </tbody>
     </table>
+
+    <!-- Pagination -->
+    @if (Model.Trainers.Count > 0 && (Model.CurrentPage > 1 || Model.Trainers.Items.Count == Model.PageSize))
+    {
+        <nav aria-label="Trainers pagination">
+            <ul class="pagination justify-content-center">
+                @{
+                    var totalPages = Model.Trainers.TotalPages > 0
+                        ? Model.Trainers.TotalPages
+                        : (int)Math.Ceiling((double)Model.Trainers.Count / Model.PageSize);
+
+                    var hasPrevious = Model.CurrentPage > 1;
+
+                    var hasNext = totalPages > 0
+                        ? Model.CurrentPage < totalPages
+                        : Model.Trainers.Items.Count == Model.PageSize;
+                }
+
+                <li class="page-item @(!hasPrevious ? "disabled" : "")">
+                    <a class="page-link" asp-page="Index" asp-route-pageIndex="@(Model.CurrentPage - 1)">Previous</a>
+                </li>
+
+                @if (totalPages > 0)
+                {
+                    @for (int p = 1; p <= totalPages; p++)
+                    {
+                        <li class="page-item @(p == Model.CurrentPage ? "active" : "")">
+                            <a class="page-link" asp-page="Index" asp-route-pageIndex="@p">@p</a>
+                        </li>
+                    }
+                }
+                else
+                {
+                    <li class="page-item active">
+                        <span class="page-link">@Model.CurrentPage</span>
+                    </li>
+                }
+
+                <li class="page-item @(!hasNext ? "disabled" : "")">
+                    <a class="page-link" asp-page="Index" asp-route-pageIndex="@(Model.CurrentPage + 1)">Next</a>
+                </li>
+            </ul>
+        </nav>
+
+        <p class="text-muted">
+            Showing @Model.Trainers.Items.Count of @Model.Trainers.Count total trainer(s)
+        </p>
+    }
 }
 else
 {

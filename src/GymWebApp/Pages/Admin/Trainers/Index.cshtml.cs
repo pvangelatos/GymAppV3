@@ -1,3 +1,4 @@
+using GymAppV3.Core.Common;
 using GymAppV3.Core.DTOs;
 using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.Interfaces;
@@ -22,12 +23,14 @@ public class IndexModel : PageModel
         _trainerCommandService = trainerCommandService;
     }
 
-    public IReadOnlyList<TrainerDto> Trainers { get; set; } = [];
+    public ResultSet<TrainerDto> Trainers { get; set; } = new([], 0);
+    public int CurrentPage { get; set; } = 1;
+    public int PageSize { get; set; } = 20;
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
         Trainers = await _trainerQueryService.GetAllAsync(
-            new GetAllTrainersQuery(),
+            new GetAllTrainersQuery(new ListOptions(CurrentPage, PageSize)),
             cancellationToken);
     }
 
