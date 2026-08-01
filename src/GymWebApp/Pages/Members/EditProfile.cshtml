@@ -2,10 +2,17 @@
 @model EditProfileModel
 @{
     ViewData["Title"] = "Edit Profile";
+    ViewData["Breadcrumbs"] = new List<(string Label, string? Url)>
+    {
+        ("Home", "/"),
+        ("Profile", null),
+        ("Edit Profile", null)
+    };
 }
 
 <div class="row">
     <div class="col-md-8 offset-md-2">
+        <partial name="_Breadcrumbs" />
         <h1>@ViewData["Title"]</h1>
         <hr />
 

@@ -2,6 +2,12 @@
 @model ScheduleModel
 @{
     ViewData["Title"] = "Class Schedule";
+    ViewData["Breadcrumbs"] = new List<(string Label, string? Url)>
+    {
+        ("Home", "/"),
+        ("Administration", null),
+        ("Class Schedule", null)
+    };
 }
 
 <div class="row">

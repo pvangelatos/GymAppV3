@@ -2,10 +2,17 @@
 @model CancelModel
 @{
     ViewData["Title"] = "Cancel Booking";
+    ViewData["Breadcrumbs"] = new List<(string Label, string? Url)>
+    {
+        ("Home", "/"),
+        ("Profile", "/Members/Profile"),
+        ("Cancel Booking", null)
+    };
 }
 
 <div class="row">
     <div class="col-md-6 offset-md-3">
+        <partial name="_Breadcrumbs" />
         <div class="card">
             <div class="card-header bg-danger text-white">
                 <h4 class="mb-0">@ViewData["Title"]</h4>

@@ -2,10 +2,17 @@
 @model CompleteProfileModel
 @{
     ViewData["Title"] = "Complete Your Profile";
+    ViewData["Breadcrumbs"] = new List<(string Label, string? Url)>
+    {
+        ("Home", "/"),
+        ("Profile", null),
+        ("Complete Your Profile", null)
+    };
 }
 
 <div class="row">
     <div class="col-md-8 offset-md-2">
+        <partial name="_Breadcrumbs" />
         <h1>@ViewData["Title"]</h1>
         <p class="lead">Please complete your member profile to access all features.</p>
         <hr />

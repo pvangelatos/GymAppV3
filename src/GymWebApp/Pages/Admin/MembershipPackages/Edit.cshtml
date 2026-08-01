@@ -2,8 +2,16 @@
 @model EditModel
 @{
     ViewData["Title"] = "Edit Membership Package";
+    ViewData["Breadcrumbs"] = new List<(string Label, string? Url)>
+    {
+        ("Home", "/"),
+        ("Administration", null),
+        ("Membership Packages", "/Admin/MembershipPackages/Index"),
+        ("Edit", null)
+    };
 }
 
+<partial name="_Breadcrumbs" />
 <h1>@ViewData["Title"]</h1>
 <hr />
 

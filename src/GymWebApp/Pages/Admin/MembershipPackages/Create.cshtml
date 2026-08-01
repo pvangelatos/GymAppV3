@@ -2,8 +2,16 @@
 @model CreateModel
 @{
     ViewData["Title"] = "Create Membership Package";
+    ViewData["Breadcrumbs"] = new List<(string Label, string? Url)>
+    {
+        ("Home", "/"),
+        ("Administration", null),
+        ("Membership Packages", "/Admin/MembershipPackages/Index"),
+        ("Create", null)
+    };
 }
 
+<partial name="_Breadcrumbs" />
 <h1>@ViewData["Title"]</h1>
 <hr />
 

@@ -2,8 +2,15 @@
 @model IndexModel
 @{
     ViewData["Title"] = "Manage Buildings";
+    ViewData["Breadcrumbs"] = new List<(string Label, string? Url)>
+    {
+        ("Home", "/"),
+        ("Administration", null),
+        ("Buildings", null)
+    };
 }
 
+<partial name="_Breadcrumbs" />
 <h1>@ViewData["Title"]</h1>
 <p class="lead">Manage gym buildings and locations</p>
 <hr />

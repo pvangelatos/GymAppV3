@@ -2,11 +2,18 @@
 @model ProfileModel
 @{
     ViewData["Title"] = "My Profile";
+    ViewData["Breadcrumbs"] = new List<(string Label, string? Url)>
+    {
+        ("Home", "/"),
+        ("Profile", null),
+        ("My Profile", null)
+    };
 }
 
 <div class="row">
     <div class="col-md-12">
         <div class="d-flex justify-content-between align-items-center mb-3">
+            <partial name="_Breadcrumbs" />
             <h1>@ViewData["Title"]</h1>
             <a asp-page="/Members/EditProfile" class="btn btn-primary">Edit Profile</a>
         </div>

@@ -2,10 +2,17 @@
 @model PackagesModel
 @{
     ViewData["Title"] = "Membership Packages";
+    ViewData["Breadcrumbs"] = new List<(string Label, string? Url)>
+    {
+        ("Home", "/"),
+        ("Administration", null),
+        ("Membership Packages", null)
+    };
 }
 
 <div class="row">
     <div class="col-md-12">
+        <partial name="_Breadcrumbs" />
         <h1>@ViewData["Title"]</h1>
         <p class="lead">Choose the membership package that fits your fitness goals</p>
         <hr />

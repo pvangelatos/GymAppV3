@@ -177,7 +177,7 @@ a:hover {
    ============================================================ */
 
 .gym-breadcrumb { background: transparent; padding: 0; margin: 0; }
-.gym-breadcrumb .breadcrumb-item { font-size: 13px; }
+.gym-breadcrumb .breadcrumb-item { font-size: 13px; color: var(--gym-text-muted); }
 .gym-breadcrumb .breadcrumb-item a { color: var(--gym-text-muted); text-decoration: none; }
 .gym-breadcrumb .breadcrumb-item a:hover { color: var(--gym-accent); }
 .gym-breadcrumb .breadcrumb-item.active { color: var(--gym-text); }

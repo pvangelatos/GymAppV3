@@ -2,10 +2,18 @@
 @model EditModel
 @{
     ViewData["Title"] = "Edit Member";
+    ViewData["Breadcrumbs"] = new List<(string Label, string? Url)>
+    {
+        ("Home", "/"),
+        ("Staff", null),
+        ("Members", "/Staff/Members/Index"),
+        ("Edit Member", null)
+    };
 }
 
 <div class="row">
     <div class="col-md-10 offset-md-1">
+        <partial name="_Breadcrumbs" />
         <h1>@ViewData["Title"]</h1>
         <hr />
 

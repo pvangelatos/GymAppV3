@@ -2,8 +2,16 @@
 @model CreateModel
 @{
     ViewData["Title"] = "Create Building";
+    ViewData["Breadcrumbs"] = new List<(string Label, string? Url)>
+    {
+        ("Home", "/"),
+        ("Administration", null),
+        ("Buildings", "/Admin/Buildings/Index"),
+        ("Create", null)
+    };
 }
 
+<partial name="_Breadcrumbs" />
 <h1>@ViewData["Title"]</h1>
 <hr />
 

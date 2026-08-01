@@ -2,10 +2,17 @@
 @model IndexModel
 @{
     ViewData["Title"] = "View Bookings";
+    ViewData["Breadcrumbs"] = new List<(string Label, string? Url)>
+    {
+        ("Home", "/"),
+        ("Staff", null),
+        ("Bookings", null)
+    };
 }
 
 <div class="row">
     <div class="col-md-12">
+        <partial name="_Breadcrumbs" />
         <h1>@ViewData["Title"]</h1>
         <p class="lead">View members with active class bookings</p>
         <hr />

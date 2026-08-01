@@ -2,8 +2,16 @@
 @model DetailsModel
 @{
     ViewData["Title"] = "Trainer Details";
+    ViewData["Breadcrumbs"] = new List<(string Label, string? Url)>
+    {
+        ("Home", "/"),
+        ("Administration", null),
+        ("Trainers", "/Admin/Trainers/Index"),
+        ("Details", null)
+    };
 }
 
+<partial name="_Breadcrumbs" />
 <h1>@ViewData["Title"]</h1>
 <hr />
 

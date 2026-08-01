@@ -2,6 +2,12 @@
 @model DashboardModel
 @{
     ViewData["Title"] = "My Dashboard";
+    ViewData["Breadcrumbs"] = new List<(string Label, string? Url)>
+    {
+        ("Home", "/"),
+        ("Profile", null),
+        ("My Dashboard", null)
+    };
 }
 
 <div class="d-flex justify-content-between align-items-start mb-1">

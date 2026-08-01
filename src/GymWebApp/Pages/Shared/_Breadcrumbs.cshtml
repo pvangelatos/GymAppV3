@@ -8,18 +8,30 @@
        ("John Doe", null)
    };
    Then render with: <partial name="_Breadcrumbs" />
+
+   Only the LAST entry is treated as the current page (bold, no link, active styling),
+   regardless of whether it has a Url. Earlier entries with Url = null render as plain
+   muted text (not a link, not bold) — use that for section labels that have no landing
+   page of their own (e.g. "Staff", "Administration").
 *@
 @{
-    var crumbs = ViewData["Breadcrumbs"] as IEnumerable<(string Label, string? Url)>;
+    var crumbs = (ViewData["Breadcrumbs"] as IEnumerable<(string Label, string? Url)>)?.ToList();
 }
 
-@if (crumbs is not null)
+@if (crumbs is not null && crumbs.Count > 0)
 {
     <nav aria-label="breadcrumb" class="mb-3">
         <ol class="breadcrumb gym-breadcrumb">
-            @foreach (var (label, url) in crumbs)
+            @for (var i = 0; i < crumbs.Count; i++)
             {
-                if (url is not null)
+                var (label, url) = crumbs[i];
+                var isLast = i == crumbs.Count - 1;
+
+                if (isLast)
+                {
+                    <li class="breadcrumb-item active" aria-current="page">@label</li>
+                }
+                else if (url is not null)
                 {
                     <li class="breadcrumb-item">
                         <a href="@url">@label</a>
@@ -27,7 +39,7 @@
                 }
                 else
                 {
-                    <li class="breadcrumb-item active" aria-current="page">@label</li>
+                    <li class="breadcrumb-item">@label</li>
                 }
             }
         </ol>

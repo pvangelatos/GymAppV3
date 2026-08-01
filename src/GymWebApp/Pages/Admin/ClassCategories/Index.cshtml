@@ -2,8 +2,15 @@
 @model IndexModel
 @{
     ViewData["Title"] = "Manage Class Categories";
+    ViewData["Breadcrumbs"] = new List<(string Label, string? Url)>
+    {
+        ("Home", "/"),
+        ("Administration", null),
+        ("Class Categories", null)
+    };
 }
 
+<partial name="_Breadcrumbs" />
 <h1>@ViewData["Title"]</h1>
 <p class="lead">Manage class types and categories</p>
 <hr />

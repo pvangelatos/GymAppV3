@@ -2,6 +2,12 @@
 @model DetailsModel
 @{
     ViewData["Title"] = "Class Details";
+    ViewData["Breadcrumbs"] = new List<(string Label, string? Url)>
+    {
+        ("Home", "/"),
+        ("Administration", null),
+        ("Class Details", null)
+    };
 }
 
 <div class="row">
