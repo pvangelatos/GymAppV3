@@ -32,6 +32,11 @@
                     </td>
                     <td>
                         <a asp-page="Edit" asp-route-id="@room.Id" class="btn btn-sm btn-primary">Edit</a>
+                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                data-bs-toggle="modal" data-bs-target="#deleteRoomModal"
+                                data-room-id="@room.Id" data-room-name="@room.ClassRoomName">
+                            Delete
+                        </button>
                     </td>
                 </tr>
             }
@@ -41,4 +46,36 @@
 else
 {
     <div class="alert alert-info">No class rooms found.</div>
+}
+
+<div class="modal fade" id="deleteRoomModal" tabindex="-1" aria-labelledby="deleteRoomModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="Delete">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteRoomModalLabel">Delete Room</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete <strong id="deleteRoomName"></strong>?</p>
+                    <p class="text-muted mb-0">This action cannot be undone. Rooms with scheduled class sessions cannot be deleted.</p>
+                    <input type="hidden" name="id" id="deleteRoomId" />
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Delete Room</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('deleteRoomModal').addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            document.getElementById('deleteRoomId').value = button.getAttribute('data-room-id');
+            document.getElementById('deleteRoomName').textContent = button.getAttribute('data-room-name');
+        });
+    </script>
 }

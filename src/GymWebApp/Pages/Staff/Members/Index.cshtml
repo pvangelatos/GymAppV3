@@ -73,6 +73,14 @@
                                     <a asp-page="/Staff/Members/Edit" asp-route-id="@member.Id" class="btn btn-sm btn-primary">
                                         Edit
                                     </a>
+                                    @if (User.IsInRole(RoleConstants.Admin))
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                                data-bs-toggle="modal" data-bs-target="#deleteMemberModal"
+                                                data-member-id="@member.Id" data-member-name="@member.Firstname @member.Lastname">
+                                            Delete
+                                        </button>
+                                    }
                                 </td>
                             </tr>
                         }
@@ -161,4 +169,39 @@ else
             </div>
         </div>
     </div>
+}
+
+@if (User.IsInRole(RoleConstants.Admin))
+{
+    <div class="modal fade" id="deleteMemberModal" tabindex="-1" aria-labelledby="deleteMemberModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" asp-page-handler="Delete">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deleteMemberModalLabel">Delete Member</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Are you sure you want to delete <strong id="deleteMemberName"></strong>?</p>
+                        <p class="text-muted mb-0">This cancels their active bookings and soft-deletes their profile and memberships. Payment history is preserved.</p>
+                        <input type="hidden" name="id" id="deleteMemberId" />
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Delete Member</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @section Scripts {
+        <script>
+            document.getElementById('deleteMemberModal').addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                document.getElementById('deleteMemberId').value = button.getAttribute('data-member-id');
+                document.getElementById('deleteMemberName').textContent = button.getAttribute('data-member-name');
+            });
+        </script>
+    }
 }

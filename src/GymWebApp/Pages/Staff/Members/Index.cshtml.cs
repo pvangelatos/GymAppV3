@@ -1,5 +1,7 @@
+using GymAppV3.Core.Commands;
 using GymAppV3.Core.Common;
 using GymAppV3.Core.DTOs;
+using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Queries.Members;
 using Microsoft.AspNetCore.Authorization;
@@ -12,10 +14,14 @@ namespace GymWebApp.Pages.Staff.Members;
 public class IndexModel : PageModel
 {
     private readonly IMemberQueryService _memberQueryService;
+    private readonly IMemberCommandService _memberCommandService;
 
-    public IndexModel(IMemberQueryService memberQueryService)
+    public IndexModel(
+        IMemberQueryService memberQueryService,
+        IMemberCommandService memberCommandService)
     {
         _memberQueryService = memberQueryService;
+        _memberCommandService = memberCommandService;
     }
 
     public ResultSet<MemberDto> Members { get; set; } = new([], 0);
@@ -35,5 +41,26 @@ public class IndexModel : PageModel
                 Options: new ListOptions { Page = CurrentPage, Size = PageSize },
                 SearchTerm: SearchTerm),
             cancellationToken);
+    }
+
+    // Only the Admin role can delete members (enforced in the domain service too;
+    // TrainerAdmin passes the page's StaffOnly/AdminOnly policies but not this specific rule).
+    public async Task<IActionResult> OnPostDeleteAsync(Guid id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _memberCommandService.DeleteAsync(new DeleteMemberCommand(id), cancellationToken);
+            TempData["SuccessMessage"] = "Member deleted successfully.";
+        }
+        catch (BusinessRuleException ex)
+        {
+            TempData["ErrorMessage"] = ex.Message;
+        }
+        catch (ForbiddenException ex)
+        {
+            TempData["ErrorMessage"] = ex.Message;
+        }
+
+        return RedirectToPage("./Index");
     }
 }

@@ -33,6 +33,11 @@
                     <td>
                         <a asp-page="Details" asp-route-id="@trainer.Id" class="btn btn-sm btn-info">View</a>
                         <a asp-page="Edit" asp-route-id="@trainer.Id" class="btn btn-sm btn-primary">Edit</a>
+                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                data-bs-toggle="modal" data-bs-target="#deleteTrainerModal"
+                                data-trainer-id="@trainer.Id" data-trainer-name="@trainer.Firstname @trainer.Lastname">
+                            Delete
+                        </button>
                     </td>
                 </tr>
             }
@@ -42,4 +47,36 @@
 else
 {
     <div class="alert alert-info">No trainers found.</div>
+}
+
+<div class="modal fade" id="deleteTrainerModal" tabindex="-1" aria-labelledby="deleteTrainerModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="Delete">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteTrainerModalLabel">Delete Trainer</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete <strong id="deleteTrainerName"></strong>?</p>
+                    <p class="text-muted mb-0">This action cannot be undone.</p>
+                    <input type="hidden" name="id" id="deleteTrainerId" />
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Delete Trainer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('deleteTrainerModal').addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            document.getElementById('deleteTrainerId').value = button.getAttribute('data-trainer-id');
+            document.getElementById('deleteTrainerName').textContent = button.getAttribute('data-trainer-name');
+        });
+    </script>
 }

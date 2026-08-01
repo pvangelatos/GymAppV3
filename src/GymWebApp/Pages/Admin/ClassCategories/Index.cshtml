@@ -28,6 +28,11 @@
                     <td>N/A</td>
                     <td>
                         <a asp-page="Edit" asp-route-id="@category.Id" class="btn btn-sm btn-primary">Edit</a>
+                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                data-bs-toggle="modal" data-bs-target="#deleteCategoryModal"
+                                data-category-id="@category.Id" data-category-name="@category.Name">
+                            Delete
+                        </button>
                     </td>
                 </tr>
             }
@@ -37,4 +42,36 @@
 else
 {
     <div class="alert alert-info">No class categories found.</div>
+}
+
+<div class="modal fade" id="deleteCategoryModal" tabindex="-1" aria-labelledby="deleteCategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="Delete">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteCategoryModalLabel">Delete Category</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete <strong id="deleteCategoryName"></strong>?</p>
+                    <p class="text-muted mb-0">This action cannot be undone.</p>
+                    <input type="hidden" name="id" id="deleteCategoryId" />
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Delete Category</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('deleteCategoryModal').addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            document.getElementById('deleteCategoryId').value = button.getAttribute('data-category-id');
+            document.getElementById('deleteCategoryName').textContent = button.getAttribute('data-category-name');
+        });
+    </script>
 }
