@@ -45,12 +45,12 @@
                             <h4>Schedule</h4>
                             <dl class="row">
                                 <dt class="col-sm-4"><i class="bi bi-calendar"></i> Date:</dt>
-                                <dd class="col-sm-8">@Model.ClassSession.StartsAt.LocalDateTime.ToString("dddd, MMMM dd, yyyy")</dd>
+                                <dd class="col-sm-8">@Model.ClassSession.StartsAt.LocalDateTime.ToString("dd/MM/yyyy")</dd>
 
                                 <dt class="col-sm-4"><i class="bi bi-clock"></i> Time:</dt>
                                 <dd class="col-sm-8">
-                                    @Model.ClassSession.StartsAt.LocalDateTime.ToString("h:mm tt") - 
-                                    @Model.ClassSession.StartsAt.AddMinutes(Model.ClassSession.DurationInMinutes).LocalDateTime.ToString("h:mm tt")
+                                    @Model.ClassSession.StartsAt.LocalDateTime.ToString("HH:mm") - 
+                                    @Model.ClassSession.StartsAt.AddMinutes(Model.ClassSession.DurationInMinutes).LocalDateTime.ToString("HH:mm")
                                 </dd>
 
                                 <dt class="col-sm-4"><i class="bi bi-hourglass"></i> Duration:</dt>

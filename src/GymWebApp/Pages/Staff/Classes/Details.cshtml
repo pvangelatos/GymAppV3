@@ -37,12 +37,12 @@
                 <div class="card-body">
                     <dl class="row mb-0" style="font-size: 14px;">
                         <dt class="col-sm-4" style="color: var(--gym-text-muted); font-weight: 400;">Date</dt>
-                        <dd class="col-sm-8 mb-2">@Model.ClassSession.StartsAt.LocalDateTime.ToString("dddd, MMMM dd, yyyy")</dd>
+                        <dd class="col-sm-8 mb-2">@Model.ClassSession.StartsAt.LocalDateTime.ToString("dd/MM/yyyy")</dd>
 
                         <dt class="col-sm-4" style="color: var(--gym-text-muted); font-weight: 400;">Time</dt>
                         <dd class="col-sm-8 mb-2">
-                            @Model.ClassSession.StartsAt.LocalDateTime.ToString("h:mm tt") –
-                            @Model.ClassSession.StartsAt.AddMinutes(Model.ClassSession.DurationInMinutes).LocalDateTime.ToString("h:mm tt")
+                            @Model.ClassSession.StartsAt.LocalDateTime.ToString("HH:mm") –
+                            @Model.ClassSession.StartsAt.AddMinutes(Model.ClassSession.DurationInMinutes).LocalDateTime.ToString("HH:mm")
                         </dd>
 
                         <dt class="col-sm-4" style="color: var(--gym-text-muted); font-weight: 400;">Duration</dt>

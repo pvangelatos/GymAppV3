@@ -53,9 +53,9 @@
                                     <strong>@booking.SessionTitle</strong>
                                 </td>
                                 <td>
-                                    @booking.SessionStartsAt.LocalDateTime.ToString("MMM dd, yyyy")
+                                    @booking.SessionStartsAt.LocalDateTime.ToString("dd/MM/yyyy")
                                     <br />
-                                    <small class="text-muted">@booking.SessionStartsAt.LocalDateTime.ToString("h:mm tt")</small>
+                                    <small class="text-muted">@booking.SessionStartsAt.LocalDateTime.ToString("HH:mm")</small>
                                 </td>
                                 <td>
                                     @if (booking.Status == "Confirmed")
@@ -72,7 +72,7 @@
                                     }
                                 </td>
                                 <td>
-                                    <small>@booking.BookedAt.LocalDateTime.ToString("MMM dd, yyyy")</small>
+                                    <small>@booking.BookedAt.LocalDateTime.ToString("dd/MM/yyyy")</small>
                                 </td>
                                 <td>
                                     @if (canCancel)
@@ -84,7 +84,7 @@
                                     else if (booking.Status == "Cancelled")
                                     {
                                         <small class="text-muted">
-                                            Cancelled on @booking.CancelledAt?.LocalDateTime.ToString("MMM dd")
+                                            Cancelled on @booking.CancelledAt?.LocalDateTime.ToString("dd/MM/yyyy")
                                         </small>
                                     }
                                     else if (isPast)

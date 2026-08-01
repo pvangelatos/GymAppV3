@@ -66,9 +66,9 @@
                     <div class="card-body">
                         <p class="card-text">
                             <i class="bi bi-calendar"></i> <strong>When:</strong><br />
-                            @session.StartsAt.LocalDateTime.ToString("dddd, MMMM dd, yyyy")<br />
-                            @session.StartsAt.LocalDateTime.ToString("h:mm tt") - 
-                            @session.StartsAt.AddMinutes(session.DurationInMinutes).LocalDateTime.ToString("h:mm tt")
+                            @session.StartsAt.LocalDateTime.ToString("dd/MM/yyyy")<br />
+                            @session.StartsAt.LocalDateTime.ToString("HH:mm") - 
+                            @session.StartsAt.AddMinutes(session.DurationInMinutes).LocalDateTime.ToString("HH:mm")
                         </p>
                         <p class="card-text">
                             <i class="bi bi-person"></i> <strong>Trainer:</strong> @session.TrainerName<br />

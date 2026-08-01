@@ -52,7 +52,7 @@
                         <dd class="col-sm-8 mb-2">@(Model.Member.Phone ?? "—")</dd>
 
                         <dt class="col-sm-4" style="color: var(--gym-text-muted); font-weight: 400;">Birth Date</dt>
-                        <dd class="col-sm-8 mb-2">@Model.Member.BirthDate.ToString("MMMM dd, yyyy")</dd>
+                        <dd class="col-sm-8 mb-2">@Model.Member.BirthDate.ToString("dd/MM/yyyy")</dd>
 
                         <dt class="col-sm-4" style="color: var(--gym-text-muted); font-weight: 400;">Age</dt>
                         <dd class="col-sm-8 mb-2">@(DateTime.Today.Year - Model.Member.BirthDate.Year) years old</dd>
