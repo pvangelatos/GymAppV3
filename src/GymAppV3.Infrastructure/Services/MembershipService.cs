@@ -15,11 +15,15 @@ public class MembershipService : IMembershipCommandService, IMembershipQueryServ
 {
     private readonly ApplicationDbContext _context;
     private readonly IDateTimeProvider _clock;
+    private readonly IPaymentCommandService _paymentCommandService;
 
-    public MembershipService(ApplicationDbContext context, IDateTimeProvider clock)
+    public MembershipService(ApplicationDbContext context,
+        IDateTimeProvider clock,
+        IPaymentCommandService paymentCommandService)
     {
         _context = context;
         _clock = clock;
+        _paymentCommandService = paymentCommandService;
     }
     public async Task<MembershipDto?> GetByIdAsync(GetMembershipByIdQuery query, CancellationToken cancellationToken = default)
     {
@@ -91,8 +95,17 @@ public class MembershipService : IMembershipCommandService, IMembershipQueryServ
             Status = MembershipStatus.Active
         };
 
+        // --- Atomic: membership + payment succeed or fail together ---
+        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+
         _context.Memberships.Add(membership);
         await _context.SaveChangesAsync(cancellationToken);
+
+        await _paymentCommandService.RecordAsync(
+            new RecordPaymentCommand(member.Id, membership.Id, package.Price, request.Method),
+            cancellationToken);
+
+        await transaction.CommitAsync(cancellationToken);
 
         return ObjectMapper.Membership.ToDtoCompiled(membership);
     }

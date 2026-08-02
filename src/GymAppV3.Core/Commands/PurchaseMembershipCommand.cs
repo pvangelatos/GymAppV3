@@ -1,4 +1,4 @@
-﻿
+﻿using GymAppV3.Core.Enums;
 
 namespace GymAppV3.Core.Commands;
 
@@ -7,5 +7,6 @@ namespace GymAppV3.Core.Commands;
 // service from the package. The client cannot dictate the price or the balance.
 public record PurchaseMembershipCommand(
     Guid MemberId,
-    Guid MembershipPackageId);
+    Guid MembershipPackageId, 
+    PaymentMethod Method);
 

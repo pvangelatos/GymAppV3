@@ -12,6 +12,8 @@
     };
 }
 
+@using GymAppV3.Core.Enums;
+
 <partial name="_Breadcrumbs" />
 <h1>@ViewData["Title"]</h1>
 <p class="lead">
@@ -33,7 +35,10 @@
             <option value="">-- Select package --</option>
         </select>
     </div>
-
+    <div class="mb-3">
+        <label asp-for="Method" class="form-label">Payment Method</label>
+        <select asp-for="Method" class="form-select" asp-items="Html.GetEnumSelectList<PaymentMethod>()"></select>
+    </div>
     <button type="submit" class="btn btn-primary">Assign Membership </button>
     <a asp-page="/Staff/Members/Details" asp-route-id="@Model.MemberId" class="btn btn-secondary">Cancel</a>
 </form>

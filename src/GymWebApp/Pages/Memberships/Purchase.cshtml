@@ -10,6 +10,8 @@
     };
 }
 
+@using GymAppV3.Core.Enums;
+
 <div class="row">
     <div class="col-md-12">
         <nav aria-label="breadcrumb">
@@ -77,6 +79,10 @@
 
                     <form method="post">
                         <input type="hidden" asp-for="PackageId" />
+                        <div class="mb-3">
+                            <label asp-for="Method" class="form-label">Payment Method</label>
+                            <select asp-for="Method" class="form-select" asp-items="Html.GetEnumSelectList<PaymentMethod>()"></select>
+                        </div>
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-success btn-lg">
                                 <i class="bi bi-credit-card"></i> Confirm Purchase

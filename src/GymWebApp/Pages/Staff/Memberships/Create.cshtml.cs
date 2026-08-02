@@ -1,9 +1,10 @@
 using GymAppV3.Core.Commands;
 using GymAppV3.Core.DTOs;
+using GymAppV3.Core.Enums;
 using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.Interfaces;
-using GymAppV3.Core.Queries.MembershipPackages;
 using GymAppV3.Core.Queries.Members;
+using GymAppV3.Core.Queries.MembershipPackages;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -34,6 +35,9 @@ public class CreateModel : PageModel
     [BindProperty]
     public Guid MembershipPackageId { get; set; }
 
+    [BindProperty]
+    public PaymentMethod Method { get; set; } = PaymentMethod.Cash;
+
     public MemberDetailDto? Member { get; set; }
     public SelectList Packages { get; set; } = new SelectList(Enumerable.Empty<SelectListItem>());
     public string? ErrorMessage { get; set; }
@@ -55,7 +59,7 @@ public class CreateModel : PageModel
         try
         {
             await _membershipCommandService.PurchaseAsync(
-                new PurchaseMembershipCommand(MemberId, MembershipPackageId),
+                new PurchaseMembershipCommand(MemberId, MembershipPackageId, Method),
                 cancellationToken);
 
             TempData["SuccessMessage"] = "Membership assigned successfully.";

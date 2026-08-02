@@ -6,6 +6,8 @@ using GymAppV3.Core.Queries.Members;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.ComponentModel;
+using GymAppV3.Core.Enums;
 
 namespace GymWebApp.Pages.Memberships;
 
@@ -31,6 +33,9 @@ public class PurchaseModel : PageModel
 
     [BindProperty]
     public Guid PackageId { get; set; }
+
+    [BindProperty]
+    public PaymentMethod Method { get; set; } = PaymentMethod.Card;
 
     public async Task<IActionResult> OnGetAsync(Guid id, CancellationToken cancellationToken)
     {
@@ -69,7 +74,8 @@ public class PurchaseModel : PageModel
         {
             var command = new PurchaseMembershipCommand(
                 MemberId: member.Id,
-                MembershipPackageId: PackageId
+                MembershipPackageId: PackageId,
+                Method: Method
             );
 
             await _membershipCommandService.PurchaseAsync(command, cancellationToken);
