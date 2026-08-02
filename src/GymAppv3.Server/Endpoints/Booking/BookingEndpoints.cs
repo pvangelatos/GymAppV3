@@ -16,6 +16,10 @@ public static class BookingEndpoints
         var group = app.MapGroup("/api/bookings")
             .WithTags("Bookings");
 
+        var memberBookings = app.MapGroup("/api/members/{memberId:guid}/bookings")
+            .WithTags("Bookings")
+            .AddEndpointFilter<MemberScopedFilter>();
+
         group.MapPost("/{id:guid}/cancel", BookingHandlers.CancelAsync)
             .WithName("CancelBooking")
             .RequireAuthorization()

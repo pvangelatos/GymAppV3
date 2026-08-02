@@ -13,7 +13,8 @@ public static class PaymentEndpoints
             .WithTags("Payments");
 
         var memberPayments = app.MapGroup("/api/members/{memberId:guid}/payments")
-            .WithTags("Payments");
+            .WithTags("Payments")
+            .AddEndpointFilter<MemberScopedFilter>();
 
         payments.MapPost("/", PaymentHandlers.RecordAsync)
             .WithName("RecordPayment")

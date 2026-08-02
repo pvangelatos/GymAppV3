@@ -16,6 +16,10 @@ public static class MembershipEndpoints
         var group = app.MapGroup("/api/memberships")
             .WithTags("Memberships");
 
+        var memberMemberships = app.MapGroup("/api/members/{memberId:guid}/memberships")
+            .WithTags("Memberships")
+            .AddEndpointFilter<MemberScopedFilter>();
+
         group.MapPost("/", MembershipHandlers.PurchaseAsync)
             .WithName("PurchaseMembership")
             .RequireAuthorization()
