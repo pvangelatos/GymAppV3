@@ -15,7 +15,7 @@
 <div class="d-flex justify-content-between align-items-start mb-1">
     <div>
         <h1 class="mb-0">@ViewData["Title"]</h1>
-        <p class="lead mb-0">Δες το πρόγραμμα και πρόσθεσε μέλη σε μαθήματα</p>
+        <p class="lead mb-0">View the schedule and add members to classes</p>
     </div>
     <a asp-page="/Staff/Classes/Schedule" class="btn btn-primary btn-sm mt-1">
         <i class="bi bi-plus-circle me-1"></i> Schedule New Class
@@ -23,14 +23,20 @@
 </div>
 <hr class="mt-3 mb-4" />
 
+<div class="d-flex justify-content-end mb-2">
+    <button type="button" class="btn btn-outline-primary btn-sm" id="duplicateWeekBtn">
+        <i class="bi bi-copy"></i> Duplicate this week
+    </button>
+</div>
+
 <div id="classesCalendar"></div>
 
-<!-- Modal: λεπτομέρειες μαθήματος + προσθήκη μέλους -->
+<!-- Modal: class session details + member adding -->
 <div class="modal fade" id="sessionModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="sessionModalTitle">Μάθημα</h5>
+                <h5 class="modal-title" id="sessionModalTitle">Class session</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -41,7 +47,7 @@
                 </p>
                 <hr />
                 <label class="form-label">Προσθήκη μέλους</label>
-                <input type="text" id="memberSearch" class="form-control mb-2" placeholder="Ψάξε με όνομα ή email..." autocomplete="off" />
+                <input type="text" id="memberSearch" class="form-control mb-2" placeholder="Search with name or email..." autocomplete="off" />
                 <ul class="list-group" id="candidateResults"></ul>
                 <div id="bookingError" class="text-danger small mt-2"></div>
             </div>
@@ -49,12 +55,36 @@
     </div>
 </div>
 
+<!-- Modal: Duplicate a week-->
+<div class="modal fade" id="duplicateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Duplicate week</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <label class="form-label">Into how many upcoming weeks?</label>
+                <input type="number" id="duplicateWeeksInput" class="form-control" min="1" max="52" value="1" />
+                <div id="duplicateError" class="text-danger small mt-2" style="white-space: pre-line;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmDuplicateBtn">Copy</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form id="antiForgeryForm">@Html.AntiForgeryToken()</form>
+
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
         const calendarEl = document.getElementById('classesCalendar');
         const sessionModal = new bootstrap.Modal(document.getElementById('sessionModal'));
+        const duplicateModal = new bootstrap.Modal(document.getElementById('duplicateModal'));
         const searchInput = document.getElementById('memberSearch');
         const resultsList = document.getElementById('candidateResults');
         const errorBox = document.getElementById('bookingError');
@@ -79,7 +109,7 @@
         document.getElementById('sessionTrainer').textContent = info.event.extendedProps.trainerName;
         document.getElementById('sessionRoom').textContent = info.event.extendedProps.roomName;
         document.getElementById('sessionCapacity').textContent =
-        `${info.event.extendedProps.availableSeats} / ${info.event.extendedProps.capacity} διαθέσιμες θέσεις`;
+        `${info.event.extendedProps.availableSeats} / ${info.event.extendedProps.capacity} available seats`;
 
         searchInput.value = '';
         resultsList.innerHTML = '';
@@ -89,6 +119,7 @@
         });
         calendar.render();
 
+        // --- Search-as-you-type members for booking ---
         searchInput.addEventListener('input', function () {
         clearTimeout(searchDebounce);
         const term = searchInput.value.trim();
@@ -104,7 +135,7 @@
         function renderCandidates(candidates) {
         resultsList.innerHTML = '';
         if (candidates.length === 0) {
-        resultsList.innerHTML = '<li class="list-group-item text-muted">Κανένα αποτέλεσμα</li>';
+        resultsList.innerHTML = '<li class="list-group-item text-muted">No results</li>';
         return;
         }
         candidates.forEach(function (c) {
@@ -126,20 +157,41 @@
         errorBox.textContent = '';
         const res = await fetch(`?handler=AddBooking&memberId=${memberId}&classSessionId=${currentSessionId}`, {
         method: 'POST',
-        headers: {
-        'RequestVerificationToken': antiForgeryToken
-        }
+        headers: { 'RequestVerificationToken': antiForgeryToken }
         });
         const result = await res.json();
         if (result.success) {
         sessionModal.hide();
         calendar.refetchEvents();
         } else {
-        errorBox.textContent = result.message || 'Κάτι πήγε στραβά.';
+        errorBox.textContent = result.message || 'Something went wrong.';
         }
         }
+
+        // --- Duplicate of a week ---
+        document.getElementById('duplicateWeekBtn').addEventListener('click', function () {
+        document.getElementById('duplicateError').textContent = '';
+        duplicateModal.show();
+        });
+
+        document.getElementById('confirmDuplicateBtn').addEventListener('click', async function () {
+        const repeatWeeks = document.getElementById('duplicateWeeksInput').value;
+        const weekStart = calendar.view.activeStart.toISOString();
+        const weekEnd = calendar.view.activeEnd.toISOString();
+
+        const res = await fetch(`?handler=DuplicateWeek&weekStart=${weekStart}&weekEnd=${weekEnd}&repeatWeeks=${repeatWeeks}`, {
+        method: 'POST',
+        headers: { 'RequestVerificationToken': antiForgeryToken }
+        });
+        const result = await res.json();
+
+        if (result.success) {
+        duplicateModal.hide();
+        calendar.refetchEvents();
+        } else {
+        document.getElementById('duplicateError').textContent = result.message || 'Something went wrong.';
+        }
+        });
         });
     </script>
 }
-
-<form id="antiForgeryForm">@Html.AntiForgeryToken()</form>

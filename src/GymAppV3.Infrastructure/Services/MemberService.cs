@@ -332,8 +332,8 @@ public class MemberService : IMemberCommandService, IMemberQueryService
                 ? new BookingCandidateDto(m.Id, m.FullName, true, null)
                 : new BookingCandidateDto(m.Id, m.FullName, false,
                     m.RemainingSessions == null
-                        ? "Χωρίς ενεργή συνδρομή για αυτή την κατηγορία"
-                        : "0 συνεδρίες υπόλοιπο"))
+                        ? "No active membership for this category"
+                        : "0 sessions remaining"))
             .ToList();
     }
 

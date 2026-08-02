@@ -11,22 +11,33 @@
     };
 }
 
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
-
 <partial name="_Breadcrumbs" />
 <h1>@ViewData["Title"]</h1>
-<p class="lead">Κάνε κλικ σε μια ώρα στο ημερολόγιο για να προγραμματίσεις μάθημα εκεί.</p>
+<p class="lead">Click a time slot on the calendar to schedule a class there.</p>
 <hr />
+
+@if (!ViewData.ModelState.IsValid)
+{
+    foreach (var error in ViewData.ModelState[string.Empty]?.Errors ?? Enumerable.Empty<Microsoft.AspNetCore.Mvc.ModelBinding.ModelError>())
+    {
+        <div class="alert alert-danger">
+            @foreach (var line in error.ErrorMessage.Split('\n'))
+            {
+                <div>@line</div>
+            }
+        </div>
+    }
+}
 
 <div id="scheduleCalendar"></div>
 
-<!-- Modal φόρμα δημιουργίας -->
+<!-- Modal form for creating a new class session -->
 <div class="modal fade" id="scheduleModal" tabindex="-1" aria-labelledby="scheduleModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <form method="post">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="scheduleModalLabel">Νέο Μάθημα</h5>
+                    <h5 class="modal-title" id="scheduleModalLabel">New Class Session</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -80,6 +91,17 @@
                         </select>
                         <span asp-validation-for="Input.ClassRoomId" class="text-danger"></span>
                     </div>
+
+                    <div class="mb-3 form-check">
+                        <input asp-for="Input.RepeatWeekly" class="form-check-input" id="repeatWeeklyCheck" />
+                        <label asp-for="Input.RepeatWeekly" class="form-check-label">Repeat Weekly</label>
+                    </div>
+
+                    <div class="mb-3" id="repeatWeeksField" style="display: none;">
+                        <label asp-for="Input.RepeatWeeks" class="form-label">For how many weeks?</label>
+                        <input asp-for="Input.RepeatWeeks" class="form-control" type="number" min="1" max="52" />
+                        <span asp-validation-for="Input.RepeatWeeks" class="text-danger"></span>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -102,7 +124,6 @@
 
         const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'timeGridWeek',
-        locale: 'el',
         selectable: true,
         titleFormat: { day: 'numeric', month: 'long', year: 'numeric' },
         dayHeaderFormat: { weekday: 'short', day: 'numeric', month: 'numeric' },
@@ -113,7 +134,6 @@
         },
         events: { url: '?handler=Events', method: 'GET' },
         select: function (info) {
-        // Γέμισμα του πεδίου ημερομηνίας/ώρας με ό,τι επέλεξε ο χρήστης
         const pad = n => n.toString().padStart(2, '0');
         const d = info.start;
         const localValue = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
@@ -125,8 +145,11 @@
 
         calendar.render();
 
-        // Μόλις κλείσει το modal μετά από επιτυχή δημιουργία, το OnPostAsync κάνει
-        // ήδη redirect στην ίδια σελίδα, οπότε το ημερολόγιο θα ξαναφορτώσει τα events μόνο του.
+        const repeatCheck = document.getElementById('repeatWeeklyCheck');
+        const repeatField = document.getElementById('repeatWeeksField');
+        repeatCheck.addEventListener('change', function () {
+        repeatField.style.display = repeatCheck.checked ? 'block' : 'none';
+        });
         });
     </script>
 }

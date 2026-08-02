@@ -69,6 +69,11 @@ public class ScheduleModel : PageModel
 
         [Required]
         public Guid ClassRoomId { get; set; }
+
+        public bool RepeatWeekly { get; set; }
+
+        [Range(1, 52)]
+        public int RepeatWeeks { get; set; } = 1;
     }
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
@@ -103,24 +108,27 @@ public class ScheduleModel : PageModel
 
         try
         {
-            var command = new ScheduleClassSessionCommand(
+            var command = new ScheduleRecurringClassSessionCommand(
                 Title: Input.Title,
                 ClassCategoryId: Input.ClassCategoryId,
                 StartsAt: Input.StartsAt.ToUniversalTime(),
                 DurationInMinutes: Input.DurationInMinutes,
                 Capacity: Input.Capacity,
                 TrainerId: Input.TrainerId,
-                ClassRoomId: Input.ClassRoomId
+                ClassRoomId: Input.ClassRoomId,
+                RepeatWeeks: Input.RepeatWeekly ? Input.RepeatWeeks : 1
             );
 
-            await _classSessionCommandService.ScheduleAsync(command, cancellationToken);
+            var created = await _classSessionCommandService.ScheduleRecurringAsync(command, cancellationToken);
 
-            TempData["SuccessMessage"] = "Class session scheduled successfully!";
-            return RedirectToPage("/Staff/Classes/Index");
+            TempData["SuccessMessage"] = created.Count > 1
+                ? $"{created.Count} class sessions scheduled successfully!"
+                : "Class session scheduled successfully!";
+            return RedirectToPage("./Schedule");
         }
         catch (Exception ex)
         {
-            ModelState.AddModelError(string.Empty, $"An error occurred: {ex.Message}");
+            ModelState.AddModelError(string.Empty, ex.Message);
             await LoadDropdownsAsync(cancellationToken);
             return Page();
         }

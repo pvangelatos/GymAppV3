@@ -1,3 +1,4 @@
+using GymAppV3.Core.Command;
 using GymAppV3.Core.Commands;
 using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.Interfaces;
@@ -16,20 +17,23 @@ public class IndexModel : PageModel
     private readonly IClassSessionQueryService _classSessionQueryService;
     private readonly IMemberQueryService _memberQueryService;
     private readonly IBookingCommandService _bookingCommandService;
+    private readonly IClassSessionCommandService _classSessionCommandService;
 
     public IndexModel(
         IClassSessionQueryService classSessionQueryService,
         IMemberQueryService memberQueryService,
-        IBookingCommandService bookingCommandService)
+        IBookingCommandService bookingCommandService,
+        IClassSessionCommandService classSessionCommandService  )
     {
         _classSessionQueryService = classSessionQueryService;
         _memberQueryService = memberQueryService;
         _bookingCommandService = bookingCommandService;
+        _classSessionCommandService = classSessionCommandService;
     }
 
     public void OnGet()
     {
-        // Το calendar φορτώνει τα events του από το OnGetEventsAsync
+        // calendar loads events from OnGetEventsAsync
     }
 
     public async Task<IActionResult> OnGetEventsAsync(DateTime start, DateTime end, CancellationToken cancellationToken)
@@ -84,9 +88,27 @@ public class IndexModel : PageModel
         }
     }
 
+    public async Task<IActionResult> OnPostDuplicateWeekAsync(DateTime weekStart, DateTime weekEnd, int repeatWeeks, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var created = await _classSessionCommandService.DuplicateWeekAsync(
+                new DuplicateWeekCommand(weekStart.ToUniversalTime(), weekEnd.ToUniversalTime(), repeatWeeks),
+                cancellationToken);
+
+            return new JsonResult(new { success = true, count = created.Count }, CamelCaseJson);
+        }
+        catch (BusinessRuleException ex)
+        {
+            return new JsonResult(new { success = false, message = ex.Message }, CamelCaseJson);
+        }
+    }
+
     private static readonly JsonSerializerOptions CamelCaseJson = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
+
+
 }
 

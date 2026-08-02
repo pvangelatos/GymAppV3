@@ -15,7 +15,7 @@
 <partial name="_Breadcrumbs" />
 <h1>@ViewData["Title"]</h1>
 <p class="lead">
-    Μέλος: <strong>@Model.Member?.Firstname @Model.Member?.Lastname</strong>
+    Member: <strong>@Model.Member?.Firstname @Model.Member?.Lastname</strong>
 </p>
 <hr />
 
@@ -28,9 +28,9 @@
     <input type="hidden" asp-for="MemberId" />
 
     <div class="mb-3">
-        <label asp-for="MembershipPackageId" class="form-label">Πακέτο</label>
+        <label asp-for="MembershipPackageId" class="form-label">Package</label>
         <select asp-for="MembershipPackageId" asp-items="Model.Packages" class="form-select">
-            <option value="">-- Επίλεξε πακέτο --</option>
+            <option value="">-- Select package --</option>
         </select>
     </div>
 

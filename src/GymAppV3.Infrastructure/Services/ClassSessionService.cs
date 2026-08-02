@@ -1,4 +1,5 @@
 ﻿using GymAppV3.Core.Abstractions;
+using GymAppV3.Core.Command;
 using GymAppV3.Core.Commands;
 using GymAppV3.Core.DTOs;
 using GymAppV3.Core.Exceptions;
@@ -192,6 +193,80 @@ public class ClassSessionService : IClassSessionCommandService, IClassSessionQue
         await _context.SaveChangesAsync(cancellationToken);
 
         return sessions.Select(ObjectMapper.ClassSession.ToDtoCompiled).ToList();
+    }
+
+    public async Task<IReadOnlyList<ClassSessionDto>> DuplicateWeekAsync(DuplicateWeekCommand request, CancellationToken cancellationToken = default)
+    {
+        if (request.RepeatWeeks < 1 || request.RepeatWeeks > 52)
+            throw new BusinessRuleException("The number of weeks must be between 1 and 52.");
+
+        var sourceSessions = await _context.ClassSessions
+            .Where(s => s.StartsAt >= request.SourceWeekStart && s.StartsAt < request.SourceWeekEnd)
+            .ToListAsync(cancellationToken);
+
+        if (sourceSessions.Count == 0)
+            throw new BusinessRuleException("There are no classes this week to duplicate.");
+
+        var occurrences = new List<(ClassSession Source, DateTimeOffset NewStart)>();
+        for (int week = 1; week <= request.RepeatWeeks; week++)
+        {
+            foreach (var s in sourceSessions)
+            {
+                occurrences.Add((s, s.StartsAt.AddDays(week * 7)));
+            }
+        }
+
+        var now = _clock.UtcNow;
+        var conflicts = new List<string>();
+
+        foreach (var (source, newStart) in occurrences)
+        {
+            if (newStart <= now)
+            {
+                conflicts.Add($"{source.Title} @ {newStart:dd/MM/yyyy HH:mm} — cannot be in the past.");
+                continue;
+            }
+
+            var newEnd = newStart.AddMinutes(source.DurationInMinutes);
+
+            var roomConflict = await _context.ClassSessions.AnyAsync(s =>
+                s.ClassRoomId == source.ClassRoomId && s.StartsAt < newEnd && s.EndsAt > newStart,
+                cancellationToken);
+
+            var trainerConflict = await _context.ClassSessions.AnyAsync(s =>
+                s.TrainerId == source.TrainerId && s.StartsAt < newEnd && s.EndsAt > newStart,
+                cancellationToken);
+
+            if (roomConflict)
+                conflicts.Add($"{source.Title} @ {newStart:dd/MM/yyyy HH:mm} — the room is already booked.");
+            if (trainerConflict)
+                conflicts.Add($"{source.Title} @ {newStart:dd/MM/yyyy HH:mm} — the trainer already has a class.");
+        }
+
+        if (conflicts.Count > 0)
+            throw new BusinessRuleException(
+                "Could not duplicate the entire week:\n" + string.Join("\n", conflicts));
+
+        var recurrenceGroupId = Guid.NewGuid();
+
+        var newSessions = occurrences.Select(o => new ClassSession
+        {
+            Title = o.Source.Title,
+            ClassCategoryId = o.Source.ClassCategoryId,
+            StartsAt = o.NewStart,
+            EndsAt = o.NewStart.AddMinutes(o.Source.DurationInMinutes),
+            DurationInMinutes = o.Source.DurationInMinutes,
+            Capacity = o.Source.Capacity,
+            AvailableSeats = o.Source.Capacity,
+            TrainerId = o.Source.TrainerId,
+            ClassRoomId = o.Source.ClassRoomId,
+            RecurrenceGroupId = recurrenceGroupId
+        }).ToList();
+
+        _context.ClassSessions.AddRange(newSessions);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return newSessions.Select(ObjectMapper.ClassSession.ToDtoCompiled).ToList();
     }
 
 }

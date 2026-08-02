@@ -1,3 +1,4 @@
+using GymAppV3.Core.Command;
 using GymAppV3.Core.Commands;
 using GymAppV3.Core.DTOs;
 
@@ -7,4 +8,5 @@ public interface IClassSessionCommandService
 {
     Task<ClassSessionDto> ScheduleAsync(ScheduleClassSessionCommand command, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<ClassSessionDto>> ScheduleRecurringAsync(ScheduleRecurringClassSessionCommand command, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<ClassSessionDto>> DuplicateWeekAsync(DuplicateWeekCommand command, CancellationToken cancellationToken = default);
 }
