@@ -91,7 +91,7 @@ public static class QueryableExtensions
     /// <param name="source">The source queryable.</param>
     /// <param name="sortExpression">Sort expression (e.g., "Firstname", "Lastname desc").</param>
     /// <returns>Sorted queryable.</returns>
-    private static IQueryable<T> ApplySorting<T>(this IQueryable<T> source, string sortExpression)
+    internal static IQueryable<T> ApplySorting<T>(this IQueryable<T> source, string sortExpression)
     {
         if (string.IsNullOrWhiteSpace(sortExpression))
             return source;

@@ -27,10 +27,17 @@ public class IndexModel : PageModel
     public int CurrentPage { get; set; } = 1;
     public int PageSize { get; set; } = 20;
 
-    public async Task OnGetAsync(CancellationToken cancellationToken)
+    [BindProperty(SupportsGet = true)]
+    public string? SortBy { get; set; }
+
+
+
+    public async Task OnGetAsync(int pageIndex = 1, CancellationToken cancellationToken = default)
     {
+        CurrentPage = pageIndex < 1 ? 1 : pageIndex;
+
         Trainers = await _trainerQueryService.GetAllAsync(
-            new GetAllTrainersQuery(new ListOptions(CurrentPage, PageSize)),
+            new GetAllTrainersQuery(new ListOptions{ Page = CurrentPage, Size = PageSize, Sort = SortBy }),
             cancellationToken);
     }
 
@@ -47,5 +54,17 @@ public class IndexModel : PageModel
         }
 
         return RedirectToPage("./Index");
+    }
+
+    public string SortRoute(string column) =>
+        !string.IsNullOrEmpty(SortBy) && SortBy.Equals(column, StringComparison.OrdinalIgnoreCase)
+        ? $"{column} desc" : column;
+
+    public string SortIcon(string column)
+    {
+        if (string.IsNullOrEmpty(SortBy)) return "bi-arrow-down-up text-muted";
+        if (SortBy.Equals(column, StringComparison.OrdinalIgnoreCase)) return "bi-sort-up-alt";
+        if (SortBy.Equals($"{column} desc", StringComparison.OrdinalIgnoreCase)) return "bi-sort-down-alt";
+        return "bi-arrow-down-up text-muted";
     }
 }

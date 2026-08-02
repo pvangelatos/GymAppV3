@@ -163,10 +163,13 @@ public class TrainerService : ITrainerCommandService, ITrainerQueryService
 
     public async Task<ResultSet<TrainerDto>> GetAllAsync(GetAllTrainersQuery query, CancellationToken cancellationToken = default)
     {
-        return await _context.Trainers
-             .OrderBy(t => t.Lastname)
-             .Select(ObjectMapper.Trainer.ToDto)
-             .ToResultSetAsync(query.Options, cancellationToken);
+        var trainersQuery = !string.IsNullOrWhiteSpace(query.Options?.Sort)
+            ? _context.Trainers.ApplySorting(query.Options.Sort)
+            : _context.Trainers.OrderBy(t => t.Lastname);
+
+        return await trainersQuery
+            .Select(ObjectMapper.Trainer.ToDto)
+            .ToResultSetAsync(query.Options?.Page ?? 1, query.Options?.Size ?? 50, cancellationToken);
     }
 
     public async Task<TrainerDto?> GetByIdAsync(GetTrainerByIdQuery query, CancellationToken cancellationToken = default)

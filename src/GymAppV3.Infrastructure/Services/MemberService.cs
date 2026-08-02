@@ -252,10 +252,15 @@ public class MemberService : IMemberCommandService, IMemberQueryService
                     ms.EndDate >= now) == hasActive);
         }
 
+        if (!string.IsNullOrWhiteSpace(query.Options?.Sort))
+        {
+            membersQuery = membersQuery.ApplySorting(query.Options.Sort);
+        }
+
         // Project before paging: MedicalNotes never leaves the database.
         return await membersQuery
             .Select(ObjectMapper.Member.ToDto)
-            .ToResultSetAsync(query.Options, cancellationToken);
+            .ToResultSetAsync(query.Options?.Page ?? 1, query.Options?.Size ?? 50, cancellationToken);
     }
 
     public async Task<ResultSet<MemberDto>> GetByActiveBookingsAsync(GetMembersByActiveBookingsQuery query, CancellationToken cancellationToken = default)

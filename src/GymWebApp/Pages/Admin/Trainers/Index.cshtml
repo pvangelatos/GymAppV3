@@ -22,8 +22,16 @@
     <table class="table table-hover">
         <thead>
             <tr>
-                <th>Name</th>
-                <th>Email</th>
+                <th>
+                    <a asp-page="Index" asp-route-sortBy="@Model.SortRoute("Lastname")" class="text-decoration-none text-reset">
+                        Name <i class="bi @Model.SortIcon("Lastname")"></i>
+                    </a>
+                </th>
+                <th>
+                    <a asp-page="Index" asp-route-sortBy="@Model.SortRoute("Email")" class="text-decoration-none text-reset">
+                        Email <i class="bi @Model.SortIcon("Email")"></i>
+                    </a>l
+                </th>
                 <th>Phone</th>
                 <th>Specialties</th>
                 <th>Actions</th>

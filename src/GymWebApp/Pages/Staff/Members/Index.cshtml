@@ -45,8 +45,18 @@
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th>Name</th>
-                            <th>Email</th>
+                            <th>
+                                <a asp-page="/Staff/Members/Index" asp-route-searchTerm="@Model.SearchTerm"
+                                   asp-route-sortBy="@Model.SortRoute("Lastname")" class="text-decoration-none text-reset">
+                                    Name <i class="bi @Model.SortIcon("Lastname")"></i>
+                                </a>
+                            </th>
+                            <th>
+                                <a asp-page="/Staff/Members/Index" asp-route-searchTerm="@Model.SearchTerm"
+                                   asp-route-sortBy="@Model.SortRoute("Email")" class="text-decoration-none text-reset">
+                                    Email <i class="bi @Model.SortIcon("Email")"></i>
+                                </a>
+                            </th>
                             <th>Phone</th>
                             <th>City</th>
                             <th>Birth Date</th>
@@ -123,7 +133,9 @@
                             <a class="page-link"
                                asp-page="/Staff/Members/Index"
                                asp-route-pageIndex="@(Model.CurrentPage - 1)"
-                               asp-route-searchTerm="@Model.SearchTerm">Previous</a>
+                               asp-route-searchTerm="@Model.SearchTerm"
+                               asp-route-sortBy="@Model.SortBy">Previous
+                            </a>
                         </li>
 
                         <!-- Page Numbers -->

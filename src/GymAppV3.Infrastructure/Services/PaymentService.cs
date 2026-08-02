@@ -67,11 +67,15 @@ public class PaymentService : IPaymentCommandService, IPaymentQueryService
 
     public async Task<ResultSet<PaymentDto>> GetPaymentsByMemberIdAsync(GetPaymentsByMemberQuery query, CancellationToken cancellationToken = default)
     {
-        return await _context.Payments
-           .Where(p => p.MemberId == query.MemberId)
-           .OrderByDescending(p => p.PaidAt)
-           .Select(ObjectMapper.Payment.ToDto)
-           .ToResultSetAsync(query.Options, cancellationToken);
+        var paymentsQuery = _context.Payments.Where(p => p.MemberId == query.MemberId);
+
+        paymentsQuery = !string.IsNullOrWhiteSpace(query.Options?.Sort)
+            ? paymentsQuery.ApplySorting(query.Options.Sort)
+            : paymentsQuery.OrderByDescending(p => p.PaidAt);
+
+        return await paymentsQuery
+            .Select(ObjectMapper.Payment.ToDto)
+            .ToResultSetAsync(query.Options?.Page ?? 1, query.Options?.Size ?? 50, cancellationToken);
     }
 
     public async Task<PaymentDto> RecordAsync(RecordPaymentCommand command, CancellationToken cancellationToken = default)

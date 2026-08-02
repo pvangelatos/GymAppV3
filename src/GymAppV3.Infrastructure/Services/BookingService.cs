@@ -148,14 +148,16 @@ public class BookingService : IBookingCommandService, IBookingQueryService
         }
 
         // Order the results based on the OnlyActive flag
-        var ordered = query.OnlyActive
+        var ordered = !string.IsNullOrWhiteSpace(query.Options?.Sort)
+            ? q.ApplySorting(query.Options.Sort)
+            : query.OnlyActive
             ? q.OrderBy(b => b.ClassSession.StartsAt)
             : q.OrderByDescending(b => b.BookedAt);
 
         // Project to DTOs and return a paginated result set
         return await ordered
             .Select(ObjectMapper.Booking.ToDto)
-            .ToResultSetAsync(query.Options, cancellationToken);
+            .ToResultSetAsync(query.Options?.Page ?? 1, query.Options?.Size ?? 50, cancellationToken);
     }
 
 
