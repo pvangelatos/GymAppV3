@@ -14,6 +14,7 @@ using GymAppV3.Infrastructure.Mapper;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace GymAppV3.Infrastructure.Services;
 
@@ -206,7 +207,12 @@ public class MemberService : IMemberCommandService, IMemberQueryService
         if (member == null)
             return null;
 
+        // A member may only view their own profile.Staff can view anyone's.
+        if (!_userContext.IsStaff() && member.UserId != _userContext.UserId)
+            throw new ForbiddenException("You are not allowed to view this member's profile.");
+
         var dto = member.ToDetailDto();
+
 
         // Everyone sees HasMedicalConditions, but MedicalNotes is restricted.
         return await CanSeeMedicalNotesAsync(member, cancellationToken)
