@@ -2,8 +2,10 @@
 using GymAppV3.Core.Commands;
 using GymAppV3.Core.Enums;
 using GymAppV3.Core.Exceptions;
+using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Models;
 using GymAppV3.Core.Queries.Memberships;
+using GymAppV3.Infrastructure.Identity;
 using GymAppV3.Infrastructure.Services;
 using Xunit;
 
@@ -12,8 +14,10 @@ namespace GymAppV3.Tests;
 public class MembershipServiceTests : TestBase
 {
     private static readonly DateTimeOffset Now = new(2026, 1, 15, 10, 0, 0, TimeSpan.Zero);
+    private IPaymentCommandService CreatePaymentService() => 
+        new PaymentService(Context, new FixedClock(Now), new VatRateProvider(), UserContext);
 
-    private MembershipService CreateSut() => new(Context, new FixedClock(Now));
+    private MembershipService CreateSut() => new(Context, new FixedClock(Now), CreatePaymentService(), UserContext);
 
     // Seeds a member and returns its id.
     private async Task<Guid> SeedMember(string email = "m@gym.gr")
@@ -37,6 +41,8 @@ public class MembershipServiceTests : TestBase
         };
         Context.Members.Add(member);
         await Context.SaveChangesAsync();
+
+        UserContext.As(member.UserId!, RoleConstants.Member);
         return member.Id;
     }
 
@@ -67,7 +73,7 @@ public class MembershipServiceTests : TestBase
         var packageId = await SeedPackage(price: 50m, days: 30, sessions: 8);
         var sut = CreateSut();
 
-        var result = await sut.PurchaseAsync(new PurchaseMembershipCommand(memberId, packageId));
+        var result = await sut.PurchaseAsync(new PurchaseMembershipCommand(memberId, packageId, PaymentMethod.Card));
 
         result.StartDate.Should().Be(Now);
         result.EndDate.Should().Be(Now.AddDays(30));
@@ -85,7 +91,7 @@ public class MembershipServiceTests : TestBase
         var packageId = await SeedPackage(price: 50m);
         var sut = CreateSut();
 
-        var membership = await sut.PurchaseAsync(new PurchaseMembershipCommand(memberId, packageId));
+        var membership = await sut.PurchaseAsync(new PurchaseMembershipCommand(memberId, packageId, PaymentMethod.Card));
 
         // Change the package price afterwards.
         var package = await Context.MembershipPackages.FindAsync(packageId);
@@ -107,10 +113,10 @@ public class MembershipServiceTests : TestBase
         var sut = CreateSut();
 
         // First Pilates: 15/1 → 14/2.
-        var first = await sut.PurchaseAsync(new PurchaseMembershipCommand(memberId, packageId));
+        var first = await sut.PurchaseAsync(new PurchaseMembershipCommand(memberId, packageId, PaymentMethod.Card));
 
         // Second Pilates (renewal): must start when the first ends, not now.
-        var second = await sut.PurchaseAsync(new PurchaseMembershipCommand(memberId, packageId));
+        var second = await sut.PurchaseAsync(new PurchaseMembershipCommand(memberId, packageId, PaymentMethod.Card));
 
         second.StartDate.Should().Be(first.EndDate);
         second.EndDate.Should().Be(first.EndDate.AddDays(30));
@@ -126,8 +132,8 @@ public class MembershipServiceTests : TestBase
         var yogaId = await SeedPackage(name: "Yoga", days: 30);
         var sut = CreateSut();
 
-        var pilates = await sut.PurchaseAsync(new PurchaseMembershipCommand(memberId, pilatesId));
-        var yoga = await sut.PurchaseAsync(new PurchaseMembershipCommand(memberId, yogaId));
+        var pilates = await sut.PurchaseAsync(new PurchaseMembershipCommand(memberId, pilatesId, PaymentMethod.Card));
+        var yoga = await sut.PurchaseAsync(new PurchaseMembershipCommand(memberId, yogaId, PaymentMethod.Card));
 
         // Yoga ignores Pilates — both start now.
         yoga.StartDate.Should().Be(Now);
@@ -142,7 +148,7 @@ public class MembershipServiceTests : TestBase
         var packageId = await SeedPackage();
         var sut = CreateSut();
 
-        var act = () => sut.PurchaseAsync(new PurchaseMembershipCommand(Guid.NewGuid(), packageId));
+        var act = () => sut.PurchaseAsync(new PurchaseMembershipCommand(Guid.NewGuid(), packageId, PaymentMethod.Card));
 
         await act.Should().ThrowAsync<NotFoundException>();
     }
@@ -153,7 +159,7 @@ public class MembershipServiceTests : TestBase
         var memberId = await SeedMember();
         var sut = CreateSut();
 
-        var act = () => sut.PurchaseAsync(new PurchaseMembershipCommand(memberId, Guid.NewGuid()));
+        var act = () => sut.PurchaseAsync(new PurchaseMembershipCommand(memberId, Guid.NewGuid(), PaymentMethod.Card));
 
         await act.Should().ThrowAsync<NotFoundException>();
     }
@@ -168,8 +174,8 @@ public class MembershipServiceTests : TestBase
         var yogaId = await SeedPackage(name: "Yoga");
         var sut = CreateSut();
 
-        await sut.PurchaseAsync(new PurchaseMembershipCommand(memberId, pilatesId));
-        await sut.PurchaseAsync(new PurchaseMembershipCommand(memberId, yogaId));
+        await sut.PurchaseAsync(new PurchaseMembershipCommand(memberId, pilatesId, PaymentMethod.Card));
+        await sut.PurchaseAsync(new PurchaseMembershipCommand(memberId, yogaId, PaymentMethod.Card));
 
         var result = await sut.GetByMemberAsync(new GetMembershipsByMemberQuery(memberId));
 

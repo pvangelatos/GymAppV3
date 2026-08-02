@@ -3,6 +3,7 @@ using GymAppV3.Core.Commands;
 using GymAppV3.Core.Enums;
 using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.Models;
+using GymAppV3.Infrastructure.Identity;
 using GymAppV3.Infrastructure.Services;
 
 
@@ -12,7 +13,7 @@ public class BookingServiceTests : TestBase
 {
     private static readonly DateTimeOffset Now = new(2026, 1, 15, 10, 0, 0, TimeSpan.Zero);
 
-    private BookingService CreateSut() => new(Context, new FixedClock(Now));
+    private BookingService CreateSut() => new(Context, new FixedClock(Now), UserContext);
 
     // Seeds a category and returns it.
     private async Task<ClassCategory> SeedCategory(string name)
@@ -45,6 +46,7 @@ public class BookingServiceTests : TestBase
         };
         Context.Members.Add(member);
         await Context.SaveChangesAsync();
+        UserContext.As(member.UserId!, RoleConstants.Member);
         return member;
     }
 

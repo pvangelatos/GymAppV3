@@ -8,6 +8,7 @@ using GymAppV3.Core.Models;
 using GymAppV3.Core.Commands;
 using GymAppV3.Core.Common;
 using GymAppV3.Core.Queries.Payments;
+using GymAppV3.Infrastructure.Identity;
 
 namespace GymAppV3.Tests;
 
@@ -17,7 +18,7 @@ public class PaymentServiceTests : TestBase
 
     private readonly IVatRateProvider _vatRates = new MockVatRateProvider();
 
-    private PaymentService CreateSut() => new(Context, new FixedClock(Now), _vatRates);
+    private PaymentService CreateSut() => new(Context, new FixedClock(Now), _vatRates, UserContext);
     private async Task<Member> SeedMember(string email = "m@gym.gr")
     {
         var member = new Member
@@ -39,6 +40,7 @@ public class PaymentServiceTests : TestBase
         };
         Context.Members.Add(member);
         await Context.SaveChangesAsync();
+        UserContext.As(member.UserId!, RoleConstants.Member);
         return member;
     }
 
@@ -93,6 +95,7 @@ public class PaymentServiceTests : TestBase
     public async Task GetMonthlyReportAsync_sums_only_the_given_month()
     {
         var member = await SeedMember();
+        UserContext.As("admin1", RoleConstants.Admin);
         var sut = CreateSut();
 
         // Two payments; we'll report on whatever month "now" falls in.
@@ -113,6 +116,7 @@ public class PaymentServiceTests : TestBase
     public async Task GetMonthlyReportAsync_returns_zeros_for_empty_month()
     {
         await SeedMember();
+        UserContext.As("admin1", RoleConstants.Admin);
         var sut = CreateSut();
 
         // A month far in the past with no payments.

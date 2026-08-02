@@ -14,12 +14,13 @@ public abstract class TestBase : IDisposable
 {
 
     protected readonly ApplicationDbContext Context;
+    protected readonly FakeUserContext UserContext = new();
 
     protected TestBase()
     {
         var interceptor = new AuditableEntityInterceptor(
             new DateTimeProvider(),
-            new UserContext(new HttpContextAccessor()));
+            UserContext);
 
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
