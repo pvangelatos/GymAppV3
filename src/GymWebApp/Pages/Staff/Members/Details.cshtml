@@ -24,6 +24,9 @@
             <a asp-page="/Staff/Members/Edit" asp-route-id="@Model.Member.Id" class="btn btn-primary btn-sm">
                 <i class="bi bi-pencil me-1"></i> Edit Member
             </a>
+            <a asp-page="/Staff/Memberships/Create" asp-route-memberId="@Model.Member.Id" class="btn btn-success btn-sm">
+                <i class="bi bi-card-checklist"></i> Assign Membership
+            </a>
             <a asp-page="/Staff/Members/Index" class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-arrow-left me-1"></i> Back to List
             </a>

@@ -17,4 +17,5 @@ public record ClassSessionDto(
     Guid TrainerId,
     string TrainerName,
     Guid ClassRoomId,
-    string ClassRoomName);  
+    string ClassRoomName,
+    Guid? RecurrenceGroupId);  

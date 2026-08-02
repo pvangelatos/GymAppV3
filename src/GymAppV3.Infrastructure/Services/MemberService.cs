@@ -294,6 +294,49 @@ public class MemberService : IMemberCommandService, IMemberQueryService
             .ToResultSetAsync(query.Options, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<BookingCandidateDto>> GetBookingCandidatesAsync(GetBookingCandidatesQuery query, CancellationToken cancellationToken = default)
+    {
+        EnsureIsAdminOrTrainer();
+
+        var now = _clock.UtcNow;
+        var membersQuery = _context.Members.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(query.SearchTerm))
+        {
+            var search = query.SearchTerm.ToLower();
+            membersQuery = membersQuery.Where(m =>
+                m.Firstname.ToLower().Contains(search) ||
+                m.Lastname.ToLower().Contains(search) ||
+                m.Email.ToLower().Contains(search));
+        }
+
+        var raw = await membersQuery
+            .OrderBy(m => m.Lastname)
+            .Take(20)
+            .Select(m => new
+            {
+                m.Id,
+                FullName = m.Firstname + " " + m.Lastname,
+                RemainingSessions = m.Memberships
+                    .Where(ms => ms.MembershipPackage.ClassCategoryId == query.ClassCategoryId
+                              && ms.Status == MembershipStatus.Active
+                              && ms.StartDate <= now
+                              && ms.EndDate >= now)
+                    .OrderByDescending(ms => ms.RemainingSessions)
+                    .Select(ms => (int?)ms.RemainingSessions)
+                    .FirstOrDefault()
+            })
+            .ToListAsync(cancellationToken);
+
+        return raw.Select(m => m.RemainingSessions is > 0
+                ? new BookingCandidateDto(m.Id, m.FullName, true, null)
+                : new BookingCandidateDto(m.Id, m.FullName, false,
+                    m.RemainingSessions == null
+                        ? "Χωρίς ενεργή συνδρομή για αυτή την κατηγορία"
+                        : "0 συνεδρίες υπόλοιπο"))
+            .ToList();
+    }
+
     #endregion
 
     #region Authorization Helpers

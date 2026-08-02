@@ -4,6 +4,7 @@ using GymAppV3.Core.DTOs;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Queries.ClassCategories;
 using GymAppV3.Core.Queries.ClassRooms;
+using GymAppV3.Core.Queries.ClassSessions;
 using GymAppV3.Core.Queries.Trainers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,17 +18,20 @@ namespace GymWebApp.Pages.Staff.Classes;
 public class ScheduleModel : PageModel
 {
     private readonly IClassSessionCommandService _classSessionCommandService;
+    private readonly IClassSessionQueryService _classSessionQueryService;
     private readonly IClassCategoryQueryService _classCategoryQueryService;
     private readonly ITrainerQueryService _trainerQueryService;
     private readonly IClassRoomQueryService _classRoomQueryService;
 
     public ScheduleModel(
         IClassSessionCommandService classSessionCommandService,
+        IClassSessionQueryService classSessionQueryService,
         IClassCategoryQueryService classCategoryQueryService,
         ITrainerQueryService trainerQueryService,
         IClassRoomQueryService classRoomQueryService)
     {
         _classSessionCommandService = classSessionCommandService;
+        _classSessionQueryService = classSessionQueryService;
         _classCategoryQueryService = classCategoryQueryService;
         _trainerQueryService = trainerQueryService;
         _classRoomQueryService = classRoomQueryService;
@@ -54,7 +58,7 @@ public class ScheduleModel : PageModel
 
         [Required]
         [Range(15, 180)]
-        public int DurationInMinutes { get; set; } = 60;
+        public int DurationInMinutes { get; set; } = 50;
 
         [Required]
         [Range(1, 50)]
@@ -70,6 +74,23 @@ public class ScheduleModel : PageModel
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
         await LoadDropdownsAsync(cancellationToken);
+    }
+
+    public async Task<IActionResult> OnGetEventsAsync(DateTime start, DateTime end, CancellationToken cancellationToken)
+    {
+        var sessions = await _classSessionQueryService.GetUpcomingAsync(
+            new GetUpcomingClassSessionsQuery(start.ToUniversalTime(), end.ToUniversalTime()),
+            cancellationToken);
+
+        var events = sessions.Select(s => new
+        {
+            title = $"{s.Title} ({s.TrainerName} · {s.ClassRoomName})",
+            start = s.StartsAt.ToString("o"),
+            end = s.StartsAt.AddMinutes(s.DurationInMinutes).ToString("o"),
+            color = s.AvailableSeats > 5 ? "#8FB577" : s.AvailableSeats > 0 ? "#D9A54B" : "#B85450"
+        });
+
+        return new JsonResult(events);
     }
 
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
@@ -108,16 +129,13 @@ public class ScheduleModel : PageModel
     private async Task LoadDropdownsAsync(CancellationToken cancellationToken)
     {
         var categories = await _classCategoryQueryService.GetAllAsync(
-            new GetAllClassCategoriesQuery(),
-            cancellationToken);
+            new GetAllClassCategoriesQuery(), cancellationToken);
 
         var trainers = await _trainerQueryService.GetAllAsync(
-            new GetAllTrainersQuery(),
-            cancellationToken);
+            new GetAllTrainersQuery(), cancellationToken);
 
         var rooms = await _classRoomQueryService.GetAllAsync(
-            new GetAllClassRoomsQuery(),
-            cancellationToken);
+            new GetAllClassRoomsQuery(), cancellationToken);
 
         Categories = new SelectList(categories, nameof(ClassCategoryDto.Id), nameof(ClassCategoryDto.Name));
 

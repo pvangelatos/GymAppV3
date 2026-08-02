@@ -6,4 +6,5 @@ namespace GymAppV3.Core.Interfaces;
 public interface IClassSessionCommandService
 {
     Task<ClassSessionDto> ScheduleAsync(ScheduleClassSessionCommand command, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<ClassSessionDto>> ScheduleRecurringAsync(ScheduleRecurringClassSessionCommand command, CancellationToken cancellationToken = default);
 }

@@ -10,6 +10,8 @@
     };
 }
 
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
+
 <div class="row">
     <div class="col-md-12">
         <h1>@ViewData["Title"]</h1>
@@ -51,59 +53,78 @@
     </div>
 </div>
 
+<div class="row mb-3">
+    <div class="col-md-12 d-flex justify-content-end">
+        <div class="btn-group" role="group" aria-label="View toggle">
+            <button type="button" class="btn btn-outline-primary active" id="listViewBtn">
+                <i class="bi bi-list-ul"></i> List
+            </button>
+            <button type="button" class="btn btn-outline-primary" id="calendarViewBtn">
+                <i class="bi bi-calendar3"></i> Calendar
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="calendarView" style="display: none;">
+    <div id="scheduleCalendar"></div>
+</div>
+
 <!-- Class Sessions List -->
-<div class="row">
-    @if (Model.ClassSessions.Count > 0)
-    {
-        @foreach (var session in Model.ClassSessions)
+<div id="listView">
+    <div class="row">
+        @if (Model.ClassSessions.Count > 0)
         {
-            <div class="col-md-6 col-lg-4 mb-3">
-                <div class="card h-100">
-                    <div class="card-header @(session.AvailableSeats > 0 ? "bg-success" : "bg-danger") text-white">
-                        <h5 class="mb-0">@session.Title</h5>
-                        <small>@session.ClassCategoryName</small>
+            @foreach (var session in Model.ClassSessions)
+            {
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-header @(session.AvailableSeats > 0 ? "bg-success" : "bg-danger") text-white">
+                            <h5 class="mb-0">@session.Title</h5>
+                            <small>@session.ClassCategoryName</small>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">
+                                <i class="bi bi-calendar"></i> <strong>When:</strong><br />
+                                @session.StartsAt.LocalDateTime.ToString("dd/MM/yyyy")<br />
+                                @session.StartsAt.LocalDateTime.ToString("HH:mm") - 
+                                @session.StartsAt.AddMinutes(session.DurationInMinutes).LocalDateTime.ToString("HH:mm")
+                            </p>
+                            <p class="card-text">
+                                <i class="bi bi-person"></i> <strong>Trainer:</strong> @session.TrainerName<br />
+                                <i class="bi bi-geo-alt"></i> <strong>Room:</strong> @session.ClassRoomName
+                            </p>
+                            <p class="card-text">
+                                <span class="badge @(session.AvailableSeats > 5 ? "bg-success" : session.AvailableSeats > 0 ? "bg-warning" : "bg-danger")">
+                                    @session.AvailableSeats / @session.Capacity seats available
+                                </span>
+                            </p>
+                        </div>
+                        <div class="card-footer">
+                            @if (session.AvailableSeats > 0)
+                            {
+                                <a asp-page="/Classes/Details" asp-route-id="@session.Id" class="btn btn-primary w-100">
+                                    View Details & Book
+                                </a>
+                            }
+                            else
+                            {
+                                <button class="btn btn-secondary w-100" disabled>Fully Booked</button>
+                            }
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <p class="card-text">
-                            <i class="bi bi-calendar"></i> <strong>When:</strong><br />
-                            @session.StartsAt.LocalDateTime.ToString("dd/MM/yyyy")<br />
-                            @session.StartsAt.LocalDateTime.ToString("HH:mm") - 
-                            @session.StartsAt.AddMinutes(session.DurationInMinutes).LocalDateTime.ToString("HH:mm")
-                        </p>
-                        <p class="card-text">
-                            <i class="bi bi-person"></i> <strong>Trainer:</strong> @session.TrainerName<br />
-                            <i class="bi bi-geo-alt"></i> <strong>Room:</strong> @session.ClassRoomName
-                        </p>
-                        <p class="card-text">
-                            <span class="badge @(session.AvailableSeats > 5 ? "bg-success" : session.AvailableSeats > 0 ? "bg-warning" : "bg-danger")">
-                                @session.AvailableSeats / @session.Capacity seats available
-                            </span>
-                        </p>
-                    </div>
-                    <div class="card-footer">
-                        @if (session.AvailableSeats > 0)
-                        {
-                            <a asp-page="/Classes/Details" asp-route-id="@session.Id" class="btn btn-primary w-100">
-                                View Details & Book
-                            </a>
-                        }
-                        else
-                        {
-                            <button class="btn btn-secondary w-100" disabled>Fully Booked</button>
-                        }
-                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-md-12">
+                <div class="alert alert-info">
+                    <strong>No classes found.</strong> Try adjusting your filters or check back later for new classes.
                 </div>
             </div>
         }
-    }
-    else
-    {
-        <div class="col-md-12">
-            <div class="alert alert-info">
-                <strong>No classes found.</strong> Try adjusting your filters or check back later for new classes.
-            </div>
-        </div>
-    }
+    </div>
 </div>
 
 @if (Model.ClassSessions.Count > 0)
@@ -115,4 +136,70 @@
             </div>
         </div>
     </div>
+}
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+        const calendarEl = document.getElementById('scheduleCalendar');
+
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'timeGridWeek',
+        locale: 'el',
+        titleFormat: { day: 'numeric', month: 'long', year: 'numeric' },
+        dayHeaderFormat: { weekday: 'short', day: 'numeric', month: 'numeric' },
+        headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'timeGridWeek,dayGridMonth'
+        },
+        events: {
+        url: '?handler=Events',
+        method: 'GET',
+        extraParams: function () {
+        const categorySelect = document.getElementById('categoryId');
+        return {
+        categoryId: categorySelect && categorySelect.value ? categorySelect.value : null
+        };
+        },
+        failure: function () {
+        alert('Classes could not be loaded.');
+        }
+        },
+        eventClick: function (info) {
+        info.jsEvent.preventDefault();
+        if (info.event.url) window.location.href = info.event.url;
+        }
+        });
+
+        // --- List / Calendar view toggle ---
+        const listBtn = document.getElementById('listViewBtn');
+        const calBtn = document.getElementById('calendarViewBtn');
+        const listView = document.getElementById('listView');
+        const calendarView = document.getElementById('calendarView');
+        let rendered = false;
+
+        calBtn.addEventListener('click', function () {
+        listView.style.display = 'none';
+        calendarView.style.display = 'block';
+        calBtn.classList.add('active');
+        listBtn.classList.remove('active');
+        if (!rendered) {
+        calendar.render();
+        rendered = true;
+        } else {
+        calendar.refetchEvents();
+        }
+        });
+
+        listBtn.addEventListener('click', function () {
+        calendarView.style.display = 'none';
+        listView.style.display = 'block';
+        listBtn.classList.add('active');
+        calBtn.classList.remove('active');
+        });
+        });
+    </script>
+}
 }

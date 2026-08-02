@@ -41,6 +41,11 @@ public class ClassSession : AuditableEntity
     public Guid ClassCategoryId { get; set; }
     public ClassCategory ClassCategory { get; set; } = null!;
 
+    // Groups sessions created together via "repeat weekly" ή "duplicate week"
+    // It's not a true recurring-event link — each row remains independent;
+    // it exists only so that we can later perform a bulk "delete the entire series".
+    public Guid? RecurrenceGroupId { get; set; }
+
     // Row version for optimistic concurrency control in database updates
     public byte[] RowVersion { get; set; } = Array.Empty<byte>();
 

@@ -1,0 +1,39 @@
+﻿@page
+@model CreateModel
+@{
+    ViewData["Title"] = "Assign Membership";
+    ViewData["Breadcrumbs"] = new List<(string Label, string? Url)>
+    {
+        ("Home", "/"),
+        ("Staff", null),
+        ("Members", "/Staff/Members/Index"),
+        (Model.Member?.Firstname + " " + Model.Member?.Lastname, $"/Staff/Members/Details/{Model.MemberId}"),
+        ("Assign Membership", null)
+    };
+}
+
+<partial name="_Breadcrumbs" />
+<h1>@ViewData["Title"]</h1>
+<p class="lead">
+    Μέλος: <strong>@Model.Member?.Firstname @Model.Member?.Lastname</strong>
+</p>
+<hr />
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+
+<form method="post" class="col-md-6">
+    <input type="hidden" asp-for="MemberId" />
+
+    <div class="mb-3">
+        <label asp-for="MembershipPackageId" class="form-label">Πακέτο</label>
+        <select asp-for="MembershipPackageId" asp-items="Model.Packages" class="form-select">
+            <option value="">-- Επίλεξε πακέτο --</option>
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Assign Membership </button>
+    <a asp-page="/Staff/Members/Details" asp-route-id="@Model.MemberId" class="btn btn-secondary">Cancel</a>
+</form>

@@ -59,4 +59,27 @@ public class ScheduleModel : PageModel
             ? allSessions.Where(s => s.ClassCategoryId == CategoryId.Value).ToList()
             : allSessions;
     }
+
+    public async Task<IActionResult> OnGetEventsAsync(DateTime start, DateTime end, Guid? categoryId, CancellationToken cancellationToken)
+    {
+        var sessions = await _classSessionQueryService.GetUpcomingAsync(
+            new GetUpcomingClassSessionsQuery(start.ToUniversalTime(), end.ToUniversalTime()),
+            cancellationToken);
+
+        if (categoryId.HasValue)
+        {
+            sessions = sessions.Where(s => s.ClassCategoryId == categoryId.Value).ToList();
+        }
+
+        var events = sessions.Select(s => new
+        {
+            title = s.Title,
+            start = s.StartsAt.ToString("o"),
+            end = s.StartsAt.AddMinutes(s.DurationInMinutes).ToString("o"),
+            color = s.AvailableSeats > 5 ? "#8FB577" : s.AvailableSeats > 0 ? "#D9A54B" : "#B85450",
+            url = Url.Page("/Classes/Details", new { id = s.Id })
+        });
+
+        return new JsonResult(events);
+    }
 }

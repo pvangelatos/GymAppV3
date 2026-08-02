@@ -11,73 +11,122 @@
     };
 }
 
-<div class="row">
-    <div class="col-md-8 offset-md-2">
-        <partial name="_Breadcrumbs" />
-        <h1>@ViewData["Title"]</h1>
-        <hr />
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
 
-        <form method="post">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+<partial name="_Breadcrumbs" />
+<h1>@ViewData["Title"]</h1>
+<p class="lead">Κάνε κλικ σε μια ώρα στο ημερολόγιο για να προγραμματίσεις μάθημα εκεί.</p>
+<hr />
 
-            <div class="mb-3">
-                <label asp-for="Input.Title" class="form-label"></label>
-                <input asp-for="Input.Title" class="form-control" />
-                <span asp-validation-for="Input.Title" class="text-danger"></span>
-            </div>
+<div id="scheduleCalendar"></div>
 
-            <div class="mb-3">
-                <label asp-for="Input.ClassCategoryId" class="form-label">Category</label>
-                <select asp-for="Input.ClassCategoryId" asp-items="Model.Categories" class="form-select">
-                    <option value="">-- Select Category --</option>
-                </select>
-                <span asp-validation-for="Input.ClassCategoryId" class="text-danger"></span>
-            </div>
-
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label asp-for="Input.StartsAt" class="form-label">Date & Time</label>
-                    <input asp-for="Input.StartsAt" class="form-control" type="datetime-local" />
-                    <span asp-validation-for="Input.StartsAt" class="text-danger"></span>
+<!-- Modal φόρμα δημιουργίας -->
+<div class="modal fade" id="scheduleModal" tabindex="-1" aria-labelledby="scheduleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="scheduleModalLabel">Νέο Μάθημα</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label asp-for="Input.DurationInMinutes" class="form-label">Duration (minutes)</label>
-                    <input asp-for="Input.DurationInMinutes" class="form-control" type="number" min="15" max="180" />
-                    <span asp-validation-for="Input.DurationInMinutes" class="text-danger"></span>
+                <div class="modal-body">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="Input.Title" class="form-label"></label>
+                        <input asp-for="Input.Title" class="form-control" />
+                        <span asp-validation-for="Input.Title" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Input.ClassCategoryId" class="form-label">Category</label>
+                        <select asp-for="Input.ClassCategoryId" asp-items="Model.Categories" class="form-select">
+                            <option value="">-- Select Category --</option>
+                        </select>
+                        <span asp-validation-for="Input.ClassCategoryId" class="text-danger"></span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Input.StartsAt" class="form-label">Date & Time</label>
+                            <input asp-for="Input.StartsAt" class="form-control" type="datetime-local" />
+                            <span asp-validation-for="Input.StartsAt" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Input.DurationInMinutes" class="form-label">Duration (minutes)</label>
+                            <input asp-for="Input.DurationInMinutes" class="form-control" type="number" min="15" max="180" />
+                            <span asp-validation-for="Input.DurationInMinutes" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Input.Capacity" class="form-label"></label>
+                        <input asp-for="Input.Capacity" class="form-control" type="number" min="1" max="50" />
+                        <span asp-validation-for="Input.Capacity" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Input.TrainerId" class="form-label">Trainer</label>
+                        <select asp-for="Input.TrainerId" asp-items="Model.Trainers" class="form-select">
+                            <option value="">-- Select Trainer --</option>
+                        </select>
+                        <span asp-validation-for="Input.TrainerId" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Input.ClassRoomId" class="form-label">Room</label>
+                        <select asp-for="Input.ClassRoomId" asp-items="Model.Rooms" class="form-select">
+                            <option value="">-- Select Room --</option>
+                        </select>
+                        <span asp-validation-for="Input.ClassRoomId" class="text-danger"></span>
+                    </div>
                 </div>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="Input.Capacity" class="form-label"></label>
-                <input asp-for="Input.Capacity" class="form-control" type="number" min="1" max="50" />
-                <span asp-validation-for="Input.Capacity" class="text-danger"></span>
-                <small class="form-text text-muted">Maximum number of participants</small>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="Input.TrainerId" class="form-label">Trainer</label>
-                <select asp-for="Input.TrainerId" asp-items="Model.Trainers" class="form-select">
-                    <option value="">-- Select Trainer --</option>
-                </select>
-                <span asp-validation-for="Input.TrainerId" class="text-danger"></span>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="Input.ClassRoomId" class="form-label">Room</label>
-                <select asp-for="Input.ClassRoomId" asp-items="Model.Rooms" class="form-select">
-                    <option value="">-- Select Room --</option>
-                </select>
-                <span asp-validation-for="Input.ClassRoomId" class="text-danger"></span>
-            </div>
-
-            <div class="mb-3">
-                <button type="submit" class="btn btn-primary">Schedule Class</button>
-                <a asp-page="/Staff/Classes/Index" class="btn btn-secondary">Cancel</a>
-            </div>
-        </form>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Schedule Class</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+        const calendarEl = document.getElementById('scheduleCalendar');
+        const modalEl = document.getElementById('scheduleModal');
+        const modal = new bootstrap.Modal(modalEl);
+        const startsAtInput = document.getElementById('Input_StartsAt');
+
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'timeGridWeek',
+        locale: 'el',
+        selectable: true,
+        titleFormat: { day: 'numeric', month: 'long', year: 'numeric' },
+        dayHeaderFormat: { weekday: 'short', day: 'numeric', month: 'numeric' },
+        headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'timeGridWeek'
+        },
+        events: { url: '?handler=Events', method: 'GET' },
+        select: function (info) {
+        // Γέμισμα του πεδίου ημερομηνίας/ώρας με ό,τι επέλεξε ο χρήστης
+        const pad = n => n.toString().padStart(2, '0');
+        const d = info.start;
+        const localValue = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        startsAtInput.value = localValue;
+        calendar.unselect();
+        modal.show();
+        }
+        });
+
+        calendar.render();
+
+        // Μόλις κλείσει το modal μετά από επιτυχή δημιουργία, το OnPostAsync κάνει
+        // ήδη redirect στην ίδια σελίδα, οπότε το ημερολόγιο θα ξαναφορτώσει τα events μόνο του.
+        });
+    </script>
 }

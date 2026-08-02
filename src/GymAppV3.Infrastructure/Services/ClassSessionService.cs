@@ -89,6 +89,14 @@ public class ClassSessionService : IClassSessionCommandService, IClassSessionQue
         if (hasRoomSessionsConficts)
             throw new BusinessRuleException("The room is already booked for an overlapping time slot.");
 
+        // --- Business Rule: Trainer schedule overlap check ---
+        var hasTrainerSessionsConflicts = await _context.ClassSessions
+            .Where(s => s.TrainerId == request.TrainerId && s.StartsAt < newEnd && s.EndsAt > newStart)
+            .AnyAsync(cancellationToken);
+
+        if (hasTrainerSessionsConflicts)
+            throw new BusinessRuleException("The trainer already has a session scheduled for an overlapping time slot.");
+
         // --- Construct entity ---
         var session = new ClassSession
         {
@@ -111,5 +119,79 @@ public class ClassSessionService : IClassSessionCommandService, IClassSessionQue
         return ObjectMapper.ClassSession.ToDtoCompiled(session);
     }
 
-    
+    public async Task<IReadOnlyList<ClassSessionDto>> ScheduleRecurringAsync(ScheduleRecurringClassSessionCommand request, CancellationToken cancellationToken = default)
+    {
+        if (request.RepeatWeeks < 1 || request.RepeatWeeks > 52)
+            throw new BusinessRuleException("The number of repeat weeks must be between 1 and 52.");
+
+        if (request.StartsAt <= _clock.UtcNow)
+            throw new BusinessRuleException("A session cannot be scheduled in the past.");
+
+        var trainer = await _context.Trainers
+            .FirstOrDefaultAsync(t => t.Id == request.TrainerId, cancellationToken)
+            ?? throw new NotFoundException(nameof(Trainer), request.TrainerId);
+
+        var room = await _context.ClassRooms
+            .FirstOrDefaultAsync(r => r.Id == request.ClassRoomId, cancellationToken)
+            ?? throw new NotFoundException(nameof(ClassRoom), request.ClassRoomId);
+
+        if (request.Capacity > room.Capacity)
+            throw new BusinessRuleException(
+                $"Session capacity ({request.Capacity}) exceeds room capacity ({room.Capacity}).");
+
+        var category = await _context.ClassCategories
+            .FirstOrDefaultAsync(c => c.Id == request.ClassCategoryId, cancellationToken)
+            ?? throw new NotFoundException(nameof(ClassCategory), request.ClassCategoryId);
+
+        var occurrences = Enumerable.Range(0, request.RepeatWeeks)
+            .Select(week => request.StartsAt.AddDays(week * 7))
+            .ToList();
+
+        // --- Validate ALL occurrences BEFORE creating any (all-or-nothing) ---
+        var conflicts = new List<string>();
+        foreach (var occurrenceStart in occurrences)
+        {
+            var occurrenceEnd = occurrenceStart.AddMinutes(request.DurationInMinutes);
+
+            var roomConflict = await _context.ClassSessions.AnyAsync(s =>
+                s.ClassRoomId == request.ClassRoomId && s.StartsAt < occurrenceEnd && s.EndsAt > occurrenceStart,
+                cancellationToken);
+
+            var trainerConflict = await _context.ClassSessions.AnyAsync(s =>
+                s.TrainerId == request.TrainerId && s.StartsAt < occurrenceEnd && s.EndsAt > occurrenceStart,
+                cancellationToken);
+
+            if (roomConflict)
+                conflicts.Add($"{occurrenceStart:dd/MM/yyyy HH:mm} — the room is already booked.");
+            if (trainerConflict)
+                conflicts.Add($"{occurrenceStart:dd/MM/yyyy HH:mm} — the trainer already has a session.");
+        }
+
+        if (conflicts.Count > 0)
+            throw new BusinessRuleException(
+                "Could not schedule all occurrences:\n" + string.Join("\n", conflicts));
+
+        // --- All clear: create every occurrence, sharing a RecurrenceGroupId ---
+        var recurrenceGroupId = request.RepeatWeeks > 1 ? Guid.NewGuid() : (Guid?)null;
+
+        var sessions = occurrences.Select(occurrenceStart => new ClassSession
+        {
+            Title = request.Title,
+            ClassCategoryId = request.ClassCategoryId,
+            StartsAt = occurrenceStart,
+            EndsAt = occurrenceStart.AddMinutes(request.DurationInMinutes),
+            DurationInMinutes = request.DurationInMinutes,
+            Capacity = request.Capacity,
+            AvailableSeats = request.Capacity,
+            TrainerId = request.TrainerId,
+            ClassRoomId = request.ClassRoomId,
+            RecurrenceGroupId = recurrenceGroupId
+        }).ToList();
+
+        _context.ClassSessions.AddRange(sessions);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return sessions.Select(ObjectMapper.ClassSession.ToDtoCompiled).ToList();
+    }
+
 }

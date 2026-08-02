@@ -36,4 +36,10 @@ public interface IMemberQueryService
     /// Gets members who have active memberships (paginated).
     /// </summary>
     Task<ResultSet<MemberDto>> GetByActiveMembershipAsync(GetMembersByActiveMembershipQuery query, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Search-as-you-type candidates for booking into a session of the given category.
+    /// Includes ineligible members too, with a Reason, instead of silently filtering them out.
+    /// </summary>
+    Task<IReadOnlyList<BookingCandidateDto>> GetBookingCandidatesAsync(GetBookingCandidatesQuery query, CancellationToken cancellationToken = default);
 }

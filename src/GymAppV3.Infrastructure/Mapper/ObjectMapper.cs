@@ -139,7 +139,8 @@ public static class ObjectMapper
             s.TrainerId,
             s.Trainer.Firstname + " " + s.Trainer.Lastname,
             s.ClassRoomId,
-            s.ClassRoom.ClassRoomName);
+            s.ClassRoom.ClassRoomName,
+            s.RecurrenceGroupId);
 
         public static readonly Func<Models.ClassSession, ClassSessionDto> ToDtoCompiled = ToDto.Compile();
     }

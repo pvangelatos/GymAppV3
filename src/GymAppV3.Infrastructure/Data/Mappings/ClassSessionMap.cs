@@ -87,5 +87,11 @@ public class ClassSessionMap : IEntityTypeConfiguration<ClassSession>
         builder.HasIndex(x => new {x.ClassRoomId, x.StartsAt })
             .HasDatabaseName("IX_ClassSession_ClassRoomId_StartsAt")
             .HasFilter("[IsDeleted] = 0");
+
+        builder.Property(x => x.RecurrenceGroupId);
+
+        builder.HasIndex(x => x.RecurrenceGroupId)
+            .HasDatabaseName("IX_ClassSession_RecurrenceGroupId")
+            .HasFilter("[RecurrenceGroupId] IS NOT NULL AND [IsDeleted] = 0");
     }
 }
