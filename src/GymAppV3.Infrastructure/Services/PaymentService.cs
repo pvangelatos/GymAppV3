@@ -89,7 +89,7 @@ public class PaymentService : IPaymentCommandService, IPaymentQueryService
 
         paymentsQuery = !string.IsNullOrWhiteSpace(query.Options?.Sort)
             ? paymentsQuery.ApplySorting(query.Options.Sort)
-            : paymentsQuery.OrderByDescending(p => p.PaidAt);
+            : paymentsQuery.OrderByDescending(p => p.PaidAt).ThenBy(p => p.Id);
 
         return await paymentsQuery
             .Select(ObjectMapper.Payment.ToDto)

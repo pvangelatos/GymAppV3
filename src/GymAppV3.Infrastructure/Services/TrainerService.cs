@@ -165,7 +165,7 @@ public class TrainerService : ITrainerCommandService, ITrainerQueryService
     {
         var trainersQuery = !string.IsNullOrWhiteSpace(query.Options?.Sort)
             ? _context.Trainers.ApplySorting(query.Options.Sort)
-            : _context.Trainers.OrderBy(t => t.Lastname);
+            : _context.Trainers.OrderBy(t => t.Lastname).ThenBy(t => t.Id);
 
         return await trainersQuery
             .Select(ObjectMapper.Trainer.ToDto)

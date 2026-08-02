@@ -262,6 +262,10 @@ public class MemberService : IMemberCommandService, IMemberQueryService
         {
             membersQuery = membersQuery.ApplySorting(query.Options.Sort);
         }
+        else
+        {
+            membersQuery = membersQuery.OrderBy(m => m.Id);
+        }
 
         // Project before paging: MedicalNotes never leaves the database.
         return await membersQuery

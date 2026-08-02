@@ -84,8 +84,10 @@ public static class QueryableExtensions
     }
 
     /// <summary>
-    /// Applies sorting to an IQueryable based on a sort expression.
-    /// Supports simple property names and "propertyname desc" for descending order.
+    /// Applies sorting to an IQueryable based on a sort expression. Always appends an
+    /// Id-based tiebreaker after the primary key, so paging stays deterministic across
+    /// ties and repeated calls — without it, SQL Server doesn't guarantee stable order
+    /// for rows sharing the same sort value.
     /// </summary>
     /// <typeparam name="T">The entity type.</typeparam>
     /// <param name="source">The source queryable.</param>
@@ -100,7 +102,6 @@ public static class QueryableExtensions
         var propertyName = parts[0];
         var isDescending = parts.Length > 1 && parts[1].Equals("desc", StringComparison.OrdinalIgnoreCase);
 
-        // Use reflection to get property
         var type = typeof(T);
         var property = type.GetProperty(propertyName,
             System.Reflection.BindingFlags.IgnoreCase |
@@ -115,14 +116,34 @@ public static class QueryableExtensions
         var propertyAccess = System.Linq.Expressions.Expression.Property(parameter, property);
         var lambda = System.Linq.Expressions.Expression.Lambda(propertyAccess, parameter);
 
-        var methodName = isDescending ? "OrderByDescending" : "OrderBy";
-        var resultExpression = System.Linq.Expressions.Expression.Call(
+        var orderMethodName = isDescending ? "OrderByDescending" : "OrderBy";
+        System.Linq.Expressions.Expression orderedExpression = System.Linq.Expressions.Expression.Call(
             typeof(Queryable),
-            methodName,
+            orderMethodName,
             new[] { type, property.PropertyType },
             source.Expression,
             System.Linq.Expressions.Expression.Quote(lambda));
 
-        return source.Provider.CreateQuery<T>(resultExpression);
+        // Stable-paging tiebreaker — skip it if we're already sorting by Id itself.
+        var idProperty = type.GetProperty("Id",
+            System.Reflection.BindingFlags.IgnoreCase |
+            System.Reflection.BindingFlags.Public |
+            System.Reflection.BindingFlags.Instance);
+
+        if (idProperty is not null && !string.Equals(idProperty.Name, property.Name, StringComparison.OrdinalIgnoreCase))
+        {
+            var idParameter = System.Linq.Expressions.Expression.Parameter(type, "x");
+            var idAccess = System.Linq.Expressions.Expression.Property(idParameter, idProperty);
+            var idLambda = System.Linq.Expressions.Expression.Lambda(idAccess, idParameter);
+
+            orderedExpression = System.Linq.Expressions.Expression.Call(
+                typeof(Queryable),
+                "ThenBy",
+                new[] { type, idProperty.PropertyType },
+                orderedExpression,
+                System.Linq.Expressions.Expression.Quote(idLambda));
+        }
+
+        return source.Provider.CreateQuery<T>(orderedExpression);
     }
 }

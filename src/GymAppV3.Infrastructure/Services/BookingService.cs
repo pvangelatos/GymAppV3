@@ -165,8 +165,8 @@ public class BookingService : IBookingCommandService, IBookingQueryService
         var ordered = !string.IsNullOrWhiteSpace(query.Options?.Sort)
             ? q.ApplySorting(query.Options.Sort)
             : query.OnlyActive
-            ? q.OrderBy(b => b.ClassSession.StartsAt)
-            : q.OrderByDescending(b => b.BookedAt);
+            ? q.OrderBy(b => b.ClassSession.StartsAt).ThenBy(b => b.Id)
+            : q.OrderByDescending(b => b.BookedAt).ThenBy(b => b.Id);
 
         // Project to DTOs and return a paginated result set
         return await ordered
