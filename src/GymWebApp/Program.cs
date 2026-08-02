@@ -1,3 +1,4 @@
+using FluentValidation;
 using GymAppV3.Core.Abstractions;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Infrastructure.Data;
@@ -81,6 +82,11 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("AdminOnly", policy =>
         policy.RequireRole(RoleConstants.Admin, RoleConstants.TrainerAdmin));
 });
+
+// Reuse the same Core command validators already used by the Server API.
+// Deliberately NOT setting Greek culture here (unlike Server) — keeps English
+// messages, consistent with this session's English-only UI decision.
+builder.Services.AddValidatorsFromAssembly(typeof(GymAppV3.Core.Commands.ScheduleClassSessionCommand).Assembly);
 
 builder.Services.AddRazorPages();
 
