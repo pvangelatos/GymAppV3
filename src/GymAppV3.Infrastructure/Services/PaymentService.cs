@@ -9,6 +9,7 @@ using GymAppV3.Core.Models;
 using GymAppV3.Core.Queries.Payments;
 using GymAppV3.Infrastructure.Data;
 using GymAppV3.Infrastructure.Extensions;
+using GymAppV3.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -26,16 +27,25 @@ public class PaymentService : IPaymentCommandService, IPaymentQueryService
     private readonly ApplicationDbContext _context;
     private readonly IDateTimeProvider _clock;
     private readonly IVatRateProvider _vatRates;
+    private readonly IUserContext _userContext;
 
-    public PaymentService(ApplicationDbContext context, IDateTimeProvider clock, IVatRateProvider vatRates)
+
+    public PaymentService(
+        ApplicationDbContext context,
+        IDateTimeProvider clock,
+        IVatRateProvider vatRates, 
+        IUserContext userContext)
     {
         _context = context;
         _clock = clock;
         _vatRates = vatRates;
+        _userContext = userContext;
     }
 
     public async Task<MonthlyFinancialReportDto> GetMonthlyFinancialReportAsync(GetMonthlyFinancialReportQuery query, CancellationToken cancellationToken = default)
     {
+        _userContext.EnsureIsAdmin();
+
         // Validation for valid month and date
         if (query.Year < 2000 || query.Month < 1 || query.Month > 12)
             throw new BusinessRuleException("Invalid year or month provided for financial report.");
@@ -67,6 +77,14 @@ public class PaymentService : IPaymentCommandService, IPaymentQueryService
 
     public async Task<ResultSet<PaymentDto>> GetPaymentsByMemberIdAsync(GetPaymentsByMemberQuery query, CancellationToken cancellationToken = default)
     {
+        if (!_userContext.IsStaff())
+        {
+            var userId = _userContext.RequireUserId();
+            var isOwner = await _context.Members.AnyAsync(m => m.Id == query.MemberId && m.UserId == userId, cancellationToken);
+            if (!isOwner)
+                throw new ForbiddenException("You are not allowed to view this member's payments.");
+        }
+
         var paymentsQuery = _context.Payments.Where(p => p.MemberId == query.MemberId);
 
         paymentsQuery = !string.IsNullOrWhiteSpace(query.Options?.Sort)

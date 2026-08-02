@@ -7,6 +7,7 @@ using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Models;
 using GymAppV3.Core.Queries.Memberships;
 using GymAppV3.Infrastructure.Data;
+using GymAppV3.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace GymAppV3.Infrastructure.Services;
@@ -16,17 +17,30 @@ public class MembershipService : IMembershipCommandService, IMembershipQueryServ
     private readonly ApplicationDbContext _context;
     private readonly IDateTimeProvider _clock;
     private readonly IPaymentCommandService _paymentCommandService;
+    private readonly IUserContext _userContext;
+
 
     public MembershipService(ApplicationDbContext context,
         IDateTimeProvider clock,
-        IPaymentCommandService paymentCommandService)
+        IPaymentCommandService paymentCommandService,
+        IUserContext userContext)
     {
         _context = context;
         _clock = clock;
         _paymentCommandService = paymentCommandService;
+        _userContext = userContext;
     }
     public async Task<MembershipDto?> GetByIdAsync(GetMembershipByIdQuery query, CancellationToken cancellationToken = default)
     {
+        if (!_userContext.IsStaff())
+        {
+            var userId = _userContext.RequireUserId();
+            var isOwner = await _context.Memberships
+                .AnyAsync(m => m.Id == query.Id && m.Member.UserId == userId, cancellationToken);
+            if (!isOwner)
+                throw new ForbiddenException("You are not allowed to view this membership.");
+        }
+
         return await _context.Memberships
             .Where(m => m.Id == query.Id)
             .Select(ObjectMapper.Membership.ToDto)
@@ -35,6 +49,14 @@ public class MembershipService : IMembershipCommandService, IMembershipQueryServ
 
     public async Task<IReadOnlyList<MembershipDto>> GetByMemberAsync(GetMembershipsByMemberQuery query, CancellationToken cancellationToken = default)
     {
+        if (!_userContext.IsStaff())
+        {
+            var userId = _userContext.RequireUserId();
+            var isOwner = await _context.Members.AnyAsync(m => m.Id == query.MemberId && m.UserId == userId, cancellationToken);
+            if (!isOwner)
+                throw new ForbiddenException("You are not allowed to view this member's memberships.");
+        }
+
         // Existence validation for the member
         var q = _context.Memberships
             .Where(m => m.MemberId == query.MemberId);
@@ -60,6 +82,8 @@ public class MembershipService : IMembershipCommandService, IMembershipQueryServ
         var member = await _context.Members
             .FirstOrDefaultAsync(m => m.Id == request.MemberId, cancellationToken) ??
             throw new NotFoundException(nameof(Member), request.MemberId);
+
+        _userContext.EnsureCanActOnBehalfOfMember(member);
 
         // --- Package existence validation ---
         var package = await _context.MembershipPackages

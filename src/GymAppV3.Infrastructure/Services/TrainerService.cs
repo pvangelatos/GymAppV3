@@ -249,13 +249,7 @@ public class TrainerService : ITrainerCommandService, ITrainerQueryService
     private string RequireAuthenticatedUserId()
         => _userContext.UserId ?? throw new UnauthorizedAccessException("User is not authenticated.");
 
-    private void EnsureIsAdmin()
-    {
-        RequireAuthenticatedUserId();
-
-        if (!_userContext.IsInRole(RoleConstants.Admin))
-            throw new ForbiddenException("Only administrators can perform this operation.");
-    }
+    private void EnsureIsAdmin() => _userContext.EnsureIsAdmin();
 
     // Admins edit anyone; a trainer may edit their own profile.
     private void EnsureCanModify(Trainer trainer)

@@ -346,23 +346,9 @@ public class MemberService : IMemberCommandService, IMemberQueryService
         _userContext.UserId
             ?? throw new UnauthorizedAccessException("User is not authenticated.");
 
-    private void EnsureIsAdmin()
-    {
-        RequireAuthenticatedUserId();
+    private void EnsureIsAdmin() => _userContext.EnsureIsAdmin();
 
-        if (!_userContext.IsInRole(RoleConstants.Admin))
-            throw new ForbiddenException("Only administrators can perform this operation.");
-    }
-
-    private void EnsureIsAdminOrTrainer()
-    {
-        RequireAuthenticatedUserId();
-
-        if (!_userContext.IsInRole(RoleConstants.Admin) &&
-            !_userContext.IsInRole(RoleConstants.Trainer) &&
-            !_userContext.IsInRole(RoleConstants.TrainerAdmin))
-            throw new ForbiddenException("Only administrators or trainers can perform this operation.");
-    }
+    private void EnsureIsAdminOrTrainer() => _userContext.EnsureIsStaff();
 
     // Takes the already-loaded member so we don't hit the database a second time.
     private void EnsureCanModify(Member member)

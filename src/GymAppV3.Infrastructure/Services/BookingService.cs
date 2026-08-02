@@ -10,6 +10,7 @@ using GymAppV3.Infrastructure.Data;
 using GymAppV3.Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 using GymAppV3.Core.Common;
+using GymAppV3.Infrastructure.Identity;
 
 namespace GymAppV3.Infrastructure.Services;
 
@@ -17,11 +18,13 @@ public class BookingService : IBookingCommandService, IBookingQueryService
 {
     private readonly ApplicationDbContext _context;
     private readonly IDateTimeProvider _clock;
+    private readonly IUserContext _userContext;
 
-    public BookingService(ApplicationDbContext context, IDateTimeProvider clock)
+    public BookingService(ApplicationDbContext context, IDateTimeProvider clock, IUserContext userContext)
     {
         _context = context;
         _clock = clock;
+        _userContext = userContext;
     }
 
     public async Task<BookingDto> BookAsync(CreateBookingCommand request, CancellationToken cancellationToken = default)
@@ -33,7 +36,8 @@ public class BookingService : IBookingCommandService, IBookingQueryService
             .FirstOrDefaultAsync(m => m.Id == request.MemberId, cancellationToken)
             ?? throw new NotFoundException(nameof(Member), request.MemberId);
 
-       
+        _userContext.EnsureCanActOnBehalfOfMember(member);
+
         var session = await _context.ClassSessions
             .FirstOrDefaultAsync(s => s.Id == request.ClassSessionId, cancellationToken)
             ?? throw new NotFoundException(nameof(ClassSession), request.ClassSessionId);
@@ -101,8 +105,11 @@ public class BookingService : IBookingCommandService, IBookingQueryService
 
         var booking = await _context.Bookings
             .Include(b => b.ClassSession)
+            .Include(b => b.Member)
             .FirstOrDefaultAsync(b => b.Id == bookingId, cancellationToken)
             ?? throw new NotFoundException(nameof(Booking), bookingId);
+
+        _userContext.EnsureCanActOnBehalfOfMember(booking.Member);
 
         // Only confirmed bookings can be cancelled.
         if (booking.Status != BookingStatus.Confirmed)
@@ -136,6 +143,13 @@ public class BookingService : IBookingCommandService, IBookingQueryService
 
     public async Task<ResultSet<BookingDto>> GetByMemberAsync(GetBookingsByMemberQuery query, CancellationToken cancellationToken)
     {
+        if (!_userContext.IsStaff())
+        {
+            var userId = _userContext.RequireUserId();
+            var isOwner = await _context.Members.AnyAsync(m => m.Id == query.MemberId && m.UserId == userId, cancellationToken);
+            if (!isOwner)
+                throw new ForbiddenException("You are not allowed to view this member's bookings.");
+        }
         // Base query: all bookings for the member
         var q = _context.Bookings.Where(b => b.MemberId == query.MemberId);
 
