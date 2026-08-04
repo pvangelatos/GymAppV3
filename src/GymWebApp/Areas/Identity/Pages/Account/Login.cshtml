@@ -18,6 +18,8 @@
                 <form id="account" method="post">
                     <div asp-validation-summary="ModelOnly" class="text-danger small mb-3" role="alert"></div>
 
+                    <input type="hidden" asp-for="RecaptchaToken" />
+
                     <div class="form-floating mb-3">
                         <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
                         <label asp-for="Input.Email">Email address</label>
@@ -55,4 +57,17 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="https://www.google.com/recaptcha/api.js?render=@Model.RecaptchaSiteKey"></script>
+    <script>
+        document.querySelector('form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        var form = e.target;
+        grecaptcha.ready(function () {
+        grecaptcha.execute('@Model.RecaptchaSiteKey', { action: 'login' }).then(function (token) {
+        document.getElementById('RecaptchaToken').value = token;
+        form.submit();
+        });
+        });
+        });
+    </script>
 }

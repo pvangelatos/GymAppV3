@@ -1,9 +1,8 @@
 using FluentValidation;
-using GymAppV3.Core.Abstractions;
 using GymAppV3.Infrastructure.Data.Interceptors;
 using GymAppV3.Infrastructure.DependencyInjection;
 using GymAppV3.Infrastructure.Identity;
-using GymAppV3.Infrastructure.Services;
+using GymWebApp.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using ApplicationDbContext = GymAppV3.Infrastructure.Data.ApplicationDbContext;
@@ -45,6 +44,9 @@ builder.Services.AddHttpContextAccessor();
 
 // Infrastructure services
 builder.Services.AddGymAppDomainServices();
+
+// 
+builder.Services.AddHttpClient<IRecaptchaService, RecaptchaService>();
 
 // Configure authorization policies using the extension method
 builder.Services.AddAuthorization(options =>

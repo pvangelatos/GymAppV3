@@ -1,4 +1,5 @@
 using GymAppV3.Infrastructure.Identity;
+using GymWebApp.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -13,19 +14,31 @@ public class RegisterModel : PageModel
     private readonly UserManager<IdentityUser> _userManager;
     private readonly SignInManager<IdentityUser> _signInManager;
     private readonly ILogger<RegisterModel> _logger;
+    private readonly IRecaptchaService _recaptchaService;
+
+    public string RecaptchaSiteKey { get; }
 
     public RegisterModel(
         UserManager<IdentityUser> userManager,
         SignInManager<IdentityUser> signInManager,
-        ILogger<RegisterModel> logger)
+        ILogger<RegisterModel> logger,
+        IRecaptchaService recaptchaService,
+        IConfiguration configuration)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _logger = logger;
+        _recaptchaService = recaptchaService;
+        RecaptchaSiteKey = configuration["Recaptcha:SiteKey"]
+            ?? throw new InvalidOperationException("Recaptcha:SiteKey is not configured.");
+
     }
 
     [BindProperty]
     public InputModel Input { get; set; } = new();
+
+    [BindProperty]
+    public string? RecaptchaToken { get; set; }
 
     public class InputModel
     {
@@ -49,9 +62,15 @@ public class RegisterModel : PageModel
 
     public void OnGet() { }
 
-    public async Task<IActionResult> OnPostAsync()
+    public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid) return Page();
+
+        var isHuman = await _recaptchaService.VerifyAsync(RecaptchaToken, "register", cancellationToken);
+        if (!isHuman)
+        {
+            ModelState.AddModelError(string.Empty, "We couldn't verify you 're not a robot. Please try again.");
+        }
 
         var user = new IdentityUser
         {

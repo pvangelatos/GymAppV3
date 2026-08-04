@@ -1,3 +1,4 @@
+using GymWebApp.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -12,11 +13,21 @@ public class LoginModel : PageModel
 {
     private readonly SignInManager<IdentityUser> _signInManager;
     private readonly ILogger<LoginModel> _logger;
+    private readonly IRecaptchaService _recaptchaService;
 
-    public LoginModel(SignInManager<IdentityUser> signInManager, ILogger<LoginModel> logger)
+    public string RecaptchaSiteKey { get; }
+
+    public LoginModel(
+        SignInManager<IdentityUser> signInManager,
+        ILogger<LoginModel> logger,
+        IRecaptchaService recaptchaService,
+        IConfiguration configuration)
     {
         _signInManager = signInManager;
         _logger = logger;
+        _recaptchaService = recaptchaService;
+        RecaptchaSiteKey = configuration["Recaptcha:SiteKey"]
+            ?? throw new InvalidOperationException("Recaptcha:SiteKey is not configured.");
     }
 
     [BindProperty]
@@ -26,6 +37,9 @@ public class LoginModel : PageModel
 
     [TempData]
     public string? ErrorMessage { get; set; }
+
+    [BindProperty]
+    public string? RecaptchaToken { get; set; }
 
     public class InputModel
     {
@@ -56,17 +70,21 @@ public class LoginModel : PageModel
         ReturnUrl = returnUrl;
     }
 
-    public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
+    public async Task<IActionResult> OnPostAsync(string? returnUrl = null, CancellationToken cancellationToken = default)
     {
         returnUrl ??= Url.Content("~/");
 
         if (ModelState.IsValid)
         {
+            var isHuman = await _recaptchaService.VerifyAsync(RecaptchaToken, "login", cancellationToken);
+            if (!isHuman)
+            {
+                ModelState.AddModelError(string.Empty, "We couldn't verify you're not a robot. Please try again.");
+                return Page();
+            }
+
             var result = await _signInManager.PasswordSignInAsync(
-                Input.Email,
-                Input.Password,
-                Input.RememberMe,
-                lockoutOnFailure: false);
+            Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
 
             if (result.Succeeded)
             {
