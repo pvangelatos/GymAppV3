@@ -22,4 +22,8 @@
     <ProjectReference Include="..\GymAppV3.Infrastructure\GymAppV3.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Configuration\" />
+  </ItemGroup>
+
 </Project>

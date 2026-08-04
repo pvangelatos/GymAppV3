@@ -1,4 +1,6 @@
-namespace GymWebApp.Configuration;
+﻿using Microsoft.Extensions.DependencyInjection;
+
+namespace GymAppV3.Infrastructure.DependencyInjection;
 
 /// <summary>
 /// Helpers for wiring services that expose multiple interfaces from a single concrete.
@@ -8,10 +10,6 @@ namespace GymWebApp.Configuration;
 /// </summary>
 public static class ServiceCollectionExtensions
 {
-    /// <summary>
-    /// Registers a single scoped instance of <typeparamref name="TImpl"/> and exposes it
-    /// under two interfaces. Both interface resolutions return the same instance per scope.
-    /// </summary>
     public static IServiceCollection AddScopedShared<TImpl, TInterface1, TInterface2>(
         this IServiceCollection services)
         where TImpl : class, TInterface1, TInterface2

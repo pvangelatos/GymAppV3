@@ -1,11 +1,9 @@
 using FluentValidation;
 using GymAppV3.Core.Abstractions;
-using GymAppV3.Core.Interfaces;
-using GymAppV3.Infrastructure.Data;
 using GymAppV3.Infrastructure.Data.Interceptors;
+using GymAppV3.Infrastructure.DependencyInjection;
 using GymAppV3.Infrastructure.Identity;
 using GymAppV3.Infrastructure.Services;
-using GymWebApp.Configuration;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using ApplicationDbContext = GymAppV3.Infrastructure.Data.ApplicationDbContext;
@@ -46,41 +44,12 @@ builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
 builder.Services.AddHttpContextAccessor();
 
 // Infrastructure services
-builder.Services.AddScoped<IUserContext, UserContext>();
-builder.Services.AddScoped<IDateTimeProvider, DateTimeProvider>();
-builder.Services.AddScoped<IVatRateProvider, VatRateProvider>();
+builder.Services.AddGymAppDomainServices();
 
-// Business services - register each concrete once, share the instance across its interfaces
-builder.Services.AddScopedShared<GymBuildingService, IGymBuildingCommandService, IGymBuildingQueryService>();
-builder.Services.AddScopedShared<ClassCategoryService, IClassCategoryCommandService, IClassCategoryQueryService>();
-builder.Services.AddScopedShared<ClassRoomService, IClassRoomCommandService, IClassRoomQueryService>();
-builder.Services.AddScopedShared<ClassSessionService, IClassSessionCommandService, IClassSessionQueryService>();
-builder.Services.AddScopedShared<MembershipPackageService, IMembershipPackageCommandService, IMembershipPackageQueryService>();
-builder.Services.AddScopedShared<MemberService, IMemberCommandService, IMemberQueryService>();
-builder.Services.AddScopedShared<MembershipService, IMembershipCommandService, IMembershipQueryService>();
-builder.Services.AddScopedShared<BookingService, IBookingCommandService, IBookingQueryService>();
-builder.Services.AddScopedShared<PaymentService, IPaymentCommandService, IPaymentQueryService>();
-builder.Services.AddScopedShared<TrainerService, ITrainerCommandService, ITrainerQueryService>();
-builder.Services.AddScoped<IAuthService, AuthService>();
-
-// Configure authorization policies
+// Configure authorization policies using the extension method
 builder.Services.AddAuthorization(options =>
 {
-    // Member policy - requires Member role
-    options.AddPolicy("MemberOnly", policy =>
-        policy.RequireRole(RoleConstants.Member));
-
-    // Trainer policy - requires Trainer or TrainerAdmin role
-    options.AddPolicy("TrainerOnly", policy =>
-        policy.RequireRole(RoleConstants.Trainer, RoleConstants.TrainerAdmin));
-
-    // Staff policy - requires Trainer, TrainerAdmin, or Admin role
-    options.AddPolicy("StaffOnly", policy =>
-        policy.RequireRole(RoleConstants.Trainer, RoleConstants.TrainerAdmin, RoleConstants.Admin));
-
-    // Admin policy - requires Admin or TrainerAdmin role
-    options.AddPolicy("AdminOnly", policy =>
-        policy.RequireRole(RoleConstants.Admin, RoleConstants.TrainerAdmin));
+    options.AddGymAppPolicies();
 });
 
 // Reuse the same Core command validators already used by the Server API.

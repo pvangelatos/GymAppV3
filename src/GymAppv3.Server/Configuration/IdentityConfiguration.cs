@@ -59,27 +59,8 @@ public static class IdentityConfiguration
         // Configure Authorization Policies
         builder.Services.AddAuthorization(options =>
         {
-            // Require authenticated user for any endpoint by default
             options.FallbackPolicy = options.DefaultPolicy;
-
-            // Role-based policies
-            options.AddPolicy("MemberOnly", policy =>
-                policy.RequireRole(RoleConstants.Member));
-
-            options.AddPolicy("TrainerOnly", policy =>
-                policy.RequireRole(RoleConstants.Trainer));
-
-            options.AddPolicy("AdminOnly", policy =>
-                policy.RequireRole(RoleConstants.Admin));
-
-            options.AddPolicy("TrainerAdminOnly", policy =>
-                policy.RequireRole(RoleConstants.TrainerAdmin));
-
-            options.AddPolicy("StaffOnly", policy =>
-                policy.RequireRole(RoleConstants.Admin, RoleConstants.Trainer, RoleConstants.TrainerAdmin));
-
-            options.AddPolicy("AnyAuthenticated", policy =>
-                policy.RequireAuthenticatedUser());
+            options.AddGymAppPolicies();
         });
     }
 }
