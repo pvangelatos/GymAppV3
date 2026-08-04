@@ -1,6 +1,8 @@
 using GymAppV3.Core.Interfaces;
+using GymAppV3.Core.Queries.ClassSessions;
 using GymAppV3.Core.Queries.Members;
 using GymAppV3.Core.Queries.Memberships;
+using GymAppV3.Core.Queries.Payments;
 using Humanizer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -12,13 +14,19 @@ public class FinancialModel : PageModel
 {
     private readonly IMembershipQueryService _membershipQueryService;
     private readonly IMemberQueryService _memberQueryService;
+    private readonly IPaymentQueryService _paymentQueryService;
+    private readonly IClassSessionQueryService _classSessionQueryService;
 
     public FinancialModel(
         IMembershipQueryService membershipQueryService,
-        IMemberQueryService memberQueryService)
+        IMemberQueryService memberQueryService,
+        IPaymentQueryService paymentQueryService,
+        IClassSessionQueryService classSessionQueryService)
     {
         _membershipQueryService = membershipQueryService;
         _memberQueryService = memberQueryService;
+        _paymentQueryService = paymentQueryService;
+        _classSessionQueryService = classSessionQueryService;
     }
 
     public decimal TotalRevenue { get; private set; }
@@ -26,6 +34,11 @@ public class FinancialModel : PageModel
     public int ActiveMembersCount { get; private set; }
     public int ActiveMembershipsCount { get; private set; }
     public List<MembershipSaleRow> RecentSales { get; private set; } = [];
+
+    public List<string> RevenueMonthLabels { get; private set; } = [];
+    public List<decimal> RevenueMonthValues { get; private set; } = [];
+    public List<string> CategoryLabels { get; private set; } = [];
+    public List<double> CategoryUtilization { get; private set; } = [];
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
@@ -79,6 +92,37 @@ public class FinancialModel : PageModel
             .OrderByDescending(s => s.PurchaseDate)
             .Take(10)
             .ToList();
+
+        // --- Revenue trend, last 6 months (uses the VAT-aware financial report) ---
+        var nowUtc = DateTime.UtcNow;
+        for (var i = 5; i >= 0; i--)
+        {
+            var month = nowUtc.AddMonths(-i);
+            var report = await _paymentQueryService.GetMonthlyFinancialReportAsync(
+                new GetMonthlyFinancialReportQuery(month.Year, month.Month),
+                cancellationToken);
+
+            RevenueMonthLabels.Add(month.ToString("MMM yyyy"));
+            RevenueMonthValues.Add(report.TotalGross);
+        }
+
+        // --- Utilization by Class Category (upcoming sessions, next 30 days) ---
+        var upcoming = await _classSessionQueryService.GetUpcomingAsync(
+            new GetUpcomingClassSessionsQuery(nowUtc, nowUtc.AddDays(30)),
+            cancellationToken);
+
+        var byCategory = upcoming
+            .GroupBy(s => s.ClassCategoryName)
+            .Select(g => new
+            {
+                Category = g.Key,
+                Utilization = g.Average(s => s.Capacity == 0 ? 0 : (double)(s.Capacity - s.AvailableSeats) / s.Capacity * 100)
+            })
+            .OrderByDescending(x => x.Utilization)
+            .ToList();
+
+        CategoryLabels = byCategory.Select(x => x.Category).ToList();
+        CategoryUtilization = byCategory.Select(x => Math.Round(x.Utilization, 1)).ToList();
     }
 
     public record MembershipSaleRow(

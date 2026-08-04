@@ -68,6 +68,26 @@
     </div>
 </div>
 
+<!-- Charts -->
+<div class="row mb-4">
+    <div class="col-md-7 mb-3">
+        <div class="card h-100">
+            <div class="card-header">Revenue Trend — Last 6 Months</div>
+            <div class="card-body">
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-5 mb-3">
+        <div class="card h-100">
+            <div class="card-header">Utilization by Category (next 30 days)</div>
+            <div class="card-body">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Recent Sales Table -->
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
@@ -113,3 +133,46 @@
         }
     </div>
 </div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        const revenueLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RevenueMonthLabels));
+        const revenueValues = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RevenueMonthValues));
+        const categoryLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CategoryLabels));
+        const categoryValues = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CategoryUtilization));
+
+        new Chart(document.getElementById('revenueChart'), {
+        type: 'line',
+        data: {
+        labels: revenueLabels,
+        datasets: [{
+        label: 'Revenue (€)',
+        data: revenueValues,
+        borderColor: '#8FB577',
+        backgroundColor: 'rgba(143,181,119,0.15)',
+        tension: 0.3,
+        fill: true
+        }]
+        },
+        options: { plugins: { legend: { display: false } } }
+        });
+
+        new Chart(document.getElementById('categoryChart'), {
+        type: 'bar',
+        data: {
+        labels: categoryLabels,
+        datasets: [{
+        label: 'Utilization %',
+        data: categoryValues,
+        backgroundColor: '#D9A54B'
+        }]
+        },
+        options: {
+        indexAxis: 'y',
+        plugins: { legend: { display: false } },
+        scales: { x: { max: 100 } }
+        }
+        });
+    </script>
+}
