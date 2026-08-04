@@ -27,7 +27,7 @@ public class GymBuildingMap : IEntityTypeConfiguration<GymBuilding>
         // Gym name is required with max 32 characters
         builder.Property(x => x.Name)
             .IsRequired()
-            .HasMaxLength(TextSizePresets.XS32);
+            .HasMaxLength(TextSizePresets.M256);
 
         // Optional description with max 4000 characters
         builder.Property(x => x.Description)

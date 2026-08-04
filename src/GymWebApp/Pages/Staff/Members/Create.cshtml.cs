@@ -1,6 +1,8 @@
+using FluentValidation;
 using GymAppV3.Core.Commands;
 using GymAppV3.Core.DTOs;
 using GymAppV3.Core.Interfaces;
+using GymWebApp.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -12,10 +14,15 @@ namespace GymWebApp.Pages.Staff.Members;
 public class CreateModel : PageModel
 {
     private readonly IMemberCommandService _memberCommandService;
+    private readonly IValidator<CreateMemberCommand> _validator;
 
-    public CreateModel(IMemberCommandService memberCommandService)
+
+    public CreateModel(
+        IMemberCommandService memberCommandService,
+        IValidator<CreateMemberCommand> validator)
     {
         _memberCommandService = memberCommandService;
+        _validator = validator;
     }
 
     [BindProperty]
@@ -99,6 +106,13 @@ public class CreateModel : PageModel
                 HasMedicalConditions: Input.HasMedicalConditions,
                 MedicalNotes: Input.MedicalNotes
             );
+
+            var validationResult = await _validator.ValidateAsync(command, cancellationToken);
+            if (!validationResult.IsValid)
+            {
+                validationResult.AddToModelState(ModelState);
+                return Page();
+            }
 
             await _memberCommandService.CreateAsync(command, cancellationToken);
 

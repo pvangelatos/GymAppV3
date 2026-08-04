@@ -34,9 +34,11 @@ public class CreateModel : PageModel
 
         [Required]
         [Display(Name = "Street Address")]
+        [StringLength(256)]
         public string Street { get; set; } = string.Empty;
 
         [Required]
+        [StringLength(64)]
         public string City { get; set; } = string.Empty;
 
         [Required]
@@ -44,9 +46,11 @@ public class CreateModel : PageModel
 
         [Required]
         [Display(Name = "Zip Code")]
+        [StringLength(32)]
         public string ZipCode { get; set; } = string.Empty;
 
         [Required]
+        [StringLength(64)]
         public string Country { get; set; } = string.Empty;
 
         [Phone]

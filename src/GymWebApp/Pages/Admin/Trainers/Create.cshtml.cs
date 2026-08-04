@@ -1,7 +1,9 @@
+using FluentValidation;
 using GymAppV3.Core.Commands;
 using GymAppV3.Core.DTOs;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Queries.ClassCategories;
+using GymWebApp.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -14,13 +16,16 @@ public class CreateModel : PageModel
 {
     private readonly ITrainerCommandService _trainerCommandService;
     private readonly IClassCategoryQueryService _categoryQueryService;
+    private readonly IValidator<CreateTrainerCommand> _validator;
 
     public CreateModel(
         ITrainerCommandService trainerCommandService,
-        IClassCategoryQueryService categoryQueryService)
+        IClassCategoryQueryService categoryQueryService,
+        IValidator<CreateTrainerCommand> validator)
     {
         _trainerCommandService = trainerCommandService;
         _categoryQueryService = categoryQueryService;
+        _validator = validator;
     }
 
     [BindProperty]
@@ -59,6 +64,14 @@ public class CreateModel : PageModel
             Input.Phone,
             Input.Bio,
             Input.SpecialtyCategoryIds);
+
+        var validationResult = await _validator.ValidateAsync(command, cancellationToken);
+        if (!validationResult.IsValid)
+        {
+            validationResult.AddToModelState(ModelState);
+            await LoadCategoriesAsync(cancellationToken);
+            return Page();
+        }
 
         var result = await _trainerCommandService.CreateAsync(command, cancellationToken);
 

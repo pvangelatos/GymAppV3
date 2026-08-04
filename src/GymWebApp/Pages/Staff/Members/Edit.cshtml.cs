@@ -1,7 +1,9 @@
+using FluentValidation;
 using GymAppV3.Core.Commands;
 using GymAppV3.Core.DTOs;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Queries.Members;
+using GymWebApp.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -14,13 +16,17 @@ public class EditModel : PageModel
 {
     private readonly IMemberQueryService _memberQueryService;
     private readonly IMemberCommandService _memberCommandService;
+    private readonly IValidator<UpdateMemberCommand> _validator;
+
 
     public EditModel(
         IMemberQueryService memberQueryService,
-        IMemberCommandService memberCommandService)
+        IMemberCommandService memberCommandService,
+        IValidator<UpdateMemberCommand> validator)
     {
         _memberQueryService = memberQueryService;
         _memberCommandService = memberCommandService;
+        _validator = validator;
     }
 
     [BindProperty]
@@ -136,6 +142,13 @@ public class EditModel : PageModel
                 HasMedicalConditions: Input.HasMedicalConditions,
                 MedicalNotes: Input.MedicalNotes
             );
+
+            var validationResult = await _validator.ValidateAsync(command, cancellationToken);
+            if (!validationResult.IsValid)
+            {
+                validationResult.AddToModelState(ModelState);
+                return Page();
+            }
 
             await _memberCommandService.UpdateAsync(command, cancellationToken);
 

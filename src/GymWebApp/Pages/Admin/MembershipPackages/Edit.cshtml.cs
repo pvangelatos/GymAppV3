@@ -1,8 +1,10 @@
+using FluentValidation;
 using GymAppV3.Core.Commands;
 using GymAppV3.Core.DTOs;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Queries.ClassCategories;
 using GymAppV3.Core.Queries.MembershipPackages;
+using GymWebApp.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -17,15 +19,18 @@ public class EditModel : PageModel
     private readonly IMembershipPackageQueryService _packageQueryService;
     private readonly IMembershipPackageCommandService _packageCommandService;
     private readonly IClassCategoryQueryService _categoryQueryService;
+    private readonly IValidator<UpdateMembershipPackageCommand> _validator;
 
     public EditModel(
         IMembershipPackageQueryService packageQueryService,
         IMembershipPackageCommandService packageCommandService,
-        IClassCategoryQueryService categoryQueryService)
+        IClassCategoryQueryService categoryQueryService,
+        IValidator<UpdateMembershipPackageCommand> validator)
     {
         _packageQueryService = packageQueryService;
         _packageCommandService = packageCommandService;
         _categoryQueryService = categoryQueryService;
+        _validator = validator;
     }
 
     [BindProperty]
@@ -102,6 +107,14 @@ public class EditModel : PageModel
             Input.DurationInDays,
             Input.SessionsIncluded,
             Input.ClassCategoryId);
+
+        var validationResult = await _validator.ValidateAsync(command, cancellationToken);
+        if (!validationResult.IsValid)
+        {
+            validationResult.AddToModelState(ModelState);
+            await LoadCategoriesAsync(cancellationToken);
+            return Page();
+        }
 
         await _packageCommandService.UpdateAsync(PackageId, command, cancellationToken);
 

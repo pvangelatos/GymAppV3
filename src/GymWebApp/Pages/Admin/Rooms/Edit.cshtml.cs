@@ -38,7 +38,7 @@ public class EditModel : PageModel
         public string ClassRoomName { get; set; } = string.Empty;
 
         [Required]
-        [Range(1, 500)]
+        [Range(1, 100)]
         public int Capacity { get; set; }
     }
 

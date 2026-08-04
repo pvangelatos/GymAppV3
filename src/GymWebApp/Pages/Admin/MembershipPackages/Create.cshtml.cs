@@ -1,7 +1,9 @@
+using FluentValidation;
 using GymAppV3.Core.Commands;
 using GymAppV3.Core.DTOs;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Queries.ClassCategories;
+using GymWebApp.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -15,13 +17,17 @@ public class CreateModel : PageModel
 {
     private readonly IMembershipPackageCommandService _packageCommandService;
     private readonly IClassCategoryQueryService _categoryQueryService;
+    private readonly IValidator<CreateMembershipPackageCommand> _validator;
+
 
     public CreateModel(
         IMembershipPackageCommandService packageCommandService,
-        IClassCategoryQueryService categoryQueryService)
+        IClassCategoryQueryService categoryQueryService,
+        IValidator<CreateMembershipPackageCommand> validator)
     {
         _packageCommandService = packageCommandService;
         _categoryQueryService = categoryQueryService;
+        _validator = validator;
     }
 
     [BindProperty]
@@ -74,6 +80,14 @@ public class CreateModel : PageModel
             Input.DurationInDays,
             Input.SessionsIncluded,
             Input.ClassCategoryId);
+
+        var validationResult = await _validator.ValidateAsync(command, cancellationToken);
+        if (!validationResult.IsValid)
+        {
+            validationResult.AddToModelState(ModelState);
+            await LoadCategoriesAsync(cancellationToken);
+            return Page();
+        }
 
         await _packageCommandService.CreateAsync(command, cancellationToken);
 
