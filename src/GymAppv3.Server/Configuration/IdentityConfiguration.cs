@@ -33,7 +33,12 @@ public static class IdentityConfiguration
         .AddDefaultTokenProviders();
 
         // JWT-only authentication. No cookie scheme — the client stores the token itself.
-        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        builder.Services.AddAuthentication(options => 
+        {
+            options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
             .AddJwtBearer(options =>
             {
                 var jwtKey = builder.Configuration["Jwt:Key"]

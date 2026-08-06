@@ -12,6 +12,8 @@ using GymAppv3.Server.Endpoints.Payment;
 using GymAppv3.Server.Endpoints.Trainer;
 using GymAppV3.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi;
+using Microsoft.OpenApi.Models;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,9 +25,33 @@ builder.ConfigureRateLimiting();
 // Add endpoints API explorer for OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "GymAppv3 API", Version = "v1" });
+
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Example: \"Bearer {token}\"",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
 var app = builder.Build();
 
-// Seed roles on application startup
 
 // Initialize database in development
 if (app.Environment.IsDevelopment())
@@ -50,11 +76,19 @@ if (app.Environment.IsDevelopment())
     // Seed roles after database is ready
     await SeedData.InitializeRolesAsync(app.Services);
 
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "GymAppv3 API v1");
+    });
+
     // Enable Scalar documentation in development
     app.MapScalarApiReference(options =>
     {
         options.WithTitle("GymAppv3 API");
-    });
+        options.WithOpenApiRoutePattern("/swagger/v1/swagger.json");
+    })
+    .AllowAnonymous();
 }
 
 
