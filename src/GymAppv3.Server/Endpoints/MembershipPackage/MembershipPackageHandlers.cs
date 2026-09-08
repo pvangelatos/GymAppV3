@@ -56,4 +56,12 @@ public static class MembershipPackageHandlers
         return TypedResults.NoContent();
 
     }
+
+    public static async Task<Ok<IReadOnlyList<MembershipPackageAvailabilityDto>>> GetAvailabilityAsync(
+    IMembershipPackageQueryService queryService,
+    CancellationToken cancellationToken)
+    {
+        var result = await queryService.GetAvailabilityAsync(cancellationToken);
+        return TypedResults.Ok(result);
+    }
 }

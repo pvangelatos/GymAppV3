@@ -10,7 +10,8 @@ namespace GymAppV3.Tests;
 
 public class MembershipPackageServiceTests : TestBase
 {
-    private MembershipPackageService CreateSut() => new(Context);
+    private MembershipPackageService CreateSut() => 
+        new(Context, new ClassCategoryCapacityService(Context, new FixedClock(DateTimeOffset.UtcNow)));
 
 
     [Fact]

@@ -1,9 +1,8 @@
 ﻿using GymAppV3.Core.Abstractions;
 using GymAppV3.Infrastructure.Data;
 using GymAppV3.Infrastructure.Data.Interceptors;
-using GymAppV3.Infrastructure.Identity;
-using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace GymAppV3.Tests;
 
@@ -25,6 +24,7 @@ public abstract class TestBase : IDisposable
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .AddInterceptors(interceptor)
+            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .Options;
 
         Context = new ApplicationDbContext(options);

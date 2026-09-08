@@ -16,6 +16,11 @@ public static class MembershipPackageEndpoints
             .RequireAuthorization()
             .Produces<IReadOnlyList<MembershipPackageDto>>(StatusCodes.Status200OK);
 
+        group.MapGet("/availability", MembershipPackageHandlers.GetAvailabilityAsync)
+            .WithName("GetMembershipPackageAvailability")
+            .RequireAuthorization("StaffOnly")
+            .Produces<IReadOnlyList<MembershipPackageAvailabilityDto>>(StatusCodes.Status200OK);
+
         group.MapGet("/{id:guid}", MembershipPackageHandlers.GetByIdAsync)
             .WithName("GetMembershipPackageById")
             .RequireAuthorization()

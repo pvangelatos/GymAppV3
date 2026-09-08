@@ -18,18 +18,21 @@ public class MembershipService : IMembershipCommandService, IMembershipQueryServ
     private readonly IDateTimeProvider _clock;
     private readonly IPaymentCommandService _paymentCommandService;
     private readonly IUserContext _userContext;
-
+    private readonly IClassCategoryCapacityService _capacityService;
 
     public MembershipService(ApplicationDbContext context,
         IDateTimeProvider clock,
         IPaymentCommandService paymentCommandService,
-        IUserContext userContext)
+        IUserContext userContext,
+        IClassCategoryCapacityService capacityService)
     {
         _context = context;
         _clock = clock;
         _paymentCommandService = paymentCommandService;
         _userContext = userContext;
+        _capacityService = capacityService;
     }
+
     public async Task<MembershipDto?> GetByIdAsync(GetMembershipByIdQuery query, CancellationToken cancellationToken = default)
     {
         if (!_userContext.IsStaff())
@@ -57,23 +60,19 @@ public class MembershipService : IMembershipCommandService, IMembershipQueryServ
                 throw new ForbiddenException("You are not allowed to view this member's memberships.");
         }
 
-        // Existence validation for the member
         var q = _context.Memberships
             .Where(m => m.MemberId == query.MemberId);
 
-        // Filter for only active memberships if requested
         if (query.OnlyActive)
         {
             var now = _clock.UtcNow;
             q = q.Where(m => m.Status == MembershipStatus.Active && m.EndDate > now);
         }
 
-        // Order by StartDate descending and project to DTO
         return await q
             .OrderByDescending(m => m.StartDate)
             .Select(ObjectMapper.Membership.ToDto)
             .ToListAsync(cancellationToken);
-
     }
 
     public async Task<MembershipDto> PurchaseAsync(PurchaseMembershipCommand request, CancellationToken cancellationToken = default)
@@ -87,14 +86,35 @@ public class MembershipService : IMembershipCommandService, IMembershipQueryServ
 
         // --- Package existence validation ---
         var package = await _context.MembershipPackages
+            .Include(p => p.ClassCategory)
             .FirstOrDefaultAsync(p => p.Id == request.MembershipPackageId, cancellationToken) ??
             throw new NotFoundException(nameof(MembershipPackage), request.MembershipPackageId);
 
         var now = _clock.UtcNow;
 
+        // --- Business Rule: category capacity check ---
+        // Skipped entirely for a member who already holds an active membership in
+        // this category (any package) — they're keeping the seat they already
+        // have, not claiming a new one, so a renewal ahead of expiry is never blocked.
+        var alreadyHoldsCategory = await _context.Memberships
+            .AnyAsync(m => m.MemberId == request.MemberId
+                         && m.MembershipPackage.ClassCategoryId == package.ClassCategoryId
+                         && m.Status == MembershipStatus.Active
+                         && m.EndDate > now,
+                      cancellationToken);
+
+        if (!alreadyHoldsCategory)
+        {
+            var (weeklySupply, weeklyDemand) = await _capacityService.GetWeeklyCapacityAsync(package.ClassCategoryId, cancellationToken);
+            var weeklyRate = _capacityService.GetWeeklyRate(package.SessionsIncluded, package.DurationInDays);
+
+            if (weeklyRate > 0 && weeklyDemand + weeklyRate > weeklySupply)
+                throw new BusinessRuleException(
+                    $"No membership slots left for '{package.ClassCategory.Name}' this week " +
+                    $"({weeklyDemand:0.##}/{weeklySupply:0.##} sessions/week already booked).");
+        }
+
         // --- Renewal Stacking ---
-        // Latest end-date of any active, non-expired membership for the same package.
-        // Cast to nullable so MaxAsync returns null on empty set instead of throwing.
         var latestEnd = await _context.Memberships
             .Where(m => m.MemberId == request.MemberId
                      && m.MembershipPackageId == request.MembershipPackageId
@@ -107,12 +127,11 @@ public class MembershipService : IMembershipCommandService, IMembershipQueryServ
         var endDate = startDate.AddDays(package.DurationInDays);
 
         // --- Price snapshot ---
-        // PricePaid freezes the package price at the exact moment of purchase.
         var membership = new Membership
         {
             MemberId = member.Id,
             MembershipPackageId = package.Id,
-            PricePaid = package.Price,                     // frozen snapshot
+            PricePaid = package.Price,
             StartDate = startDate,
             EndDate = endDate,
             RemainingSessions = package.SessionsIncluded,
@@ -133,5 +152,4 @@ public class MembershipService : IMembershipCommandService, IMembershipQueryServ
 
         return ObjectMapper.Membership.ToDtoCompiled(membership);
     }
-
 }

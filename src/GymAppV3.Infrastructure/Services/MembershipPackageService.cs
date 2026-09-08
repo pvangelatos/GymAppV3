@@ -1,5 +1,4 @@
-﻿
-using GymAppV3.Core.Exceptions;
+﻿using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Models;
 using GymAppV3.Infrastructure.Data;
@@ -16,18 +15,17 @@ namespace GymAppV3.Infrastructure.Services;
 public class MembershipPackageService : IMembershipPackageCommandService, IMembershipPackageQueryService
 {
     private readonly ApplicationDbContext _context;
+    private readonly IClassCategoryCapacityService _capacityService;
 
-    public MembershipPackageService(ApplicationDbContext context)
+    public MembershipPackageService(ApplicationDbContext context, IClassCategoryCapacityService capacityService)
     {
         _context = context;
+        _capacityService = capacityService;
     }
 
     public async Task<IReadOnlyList<MembershipPackageDto>> GetAllAsync(
         GetAllMembershipPackagesQuery query, CancellationToken cancellationToken = default)
     {
-        // Project straight to the DTO in the query, so EF selects only the needed
-        // columns and never materialises the full entity. AsNoTracking is implied
-        // by projecting to a non-entity type.
         return await _context.MembershipPackages
             .Select(ObjectMapper.MembershipPackage.ToDto)
             .ToListAsync(cancellationToken);
@@ -36,8 +34,6 @@ public class MembershipPackageService : IMembershipPackageCommandService, IMembe
     public async Task<MembershipPackageDto?> GetByIdAsync(
         GetMembershipPackageByIdQuery query, CancellationToken cancellationToken = default)
     {
-        // FirstOrDefaultAsync (not FindAsync) — FindAsync bypasses global query
-        // filters, so it would return soft-deleted rows. This respects the filter.
         return await _context.MembershipPackages
             .Where(p => p.Id == query.Id)
             .Select(ObjectMapper.MembershipPackage.ToDto)
@@ -47,7 +43,6 @@ public class MembershipPackageService : IMembershipPackageCommandService, IMembe
     public async Task<MembershipPackageDto> CreateAsync(
         CreateMembershipPackageCommand request, CancellationToken cancellationToken = default)
     {
-        // The referenced category must exist (and be active).
         var category = await _context.ClassCategories
             .FirstOrDefaultAsync(c => c.Id == request.ClassCategoryId, cancellationToken)
             ?? throw new NotFoundException(nameof(ClassCategory), request.ClassCategoryId);
@@ -70,8 +65,6 @@ public class MembershipPackageService : IMembershipPackageCommandService, IMembe
     public async Task UpdateAsync(
         Guid id, UpdateMembershipPackageCommand request, CancellationToken cancellationToken = default)
     {
-        // Here we DO need the tracked entity (not a projection), because we mutate
-        // it and let the change tracker generate the UPDATE.
         var package = await _context.MembershipPackages
             .FirstOrDefaultAsync(p => p.Id == id, cancellationToken)
             ?? throw new NotFoundException(nameof(MembershipPackage), id);
@@ -99,9 +92,48 @@ public class MembershipPackageService : IMembershipPackageCommandService, IMembe
             .FirstOrDefaultAsync(p => p.Id == id, cancellationToken)
             ?? throw new NotFoundException(nameof(MembershipPackage), id);
 
-        // Remove() marks the entity Deleted; the AuditableEntityInterceptor converts
-        // that into a soft delete (UPDATE IsDeleted = 1) before it reaches the database.
         _context.MembershipPackages.Remove(package);
         await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<MembershipPackageAvailabilityDto>> GetAvailabilityAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var packages = await _context.MembershipPackages
+            .Select(p => new
+            {
+                p.Id,
+                p.Name,
+                p.SessionsIncluded,
+                p.DurationInDays,
+                p.ClassCategoryId,
+                CategoryName = p.ClassCategory.Name
+            })
+            .ToListAsync(cancellationToken);
+
+        var result = new List<MembershipPackageAvailabilityDto>(packages.Count);
+
+        // Cache supply/demand per category so packages sharing a category don't
+        // re-run the same two queries.
+        var categoryCapacity = new Dictionary<Guid, (double Supply, double Demand)>();
+
+        foreach (var package in packages)
+        {
+            if (!categoryCapacity.TryGetValue(package.ClassCategoryId, out var capacity))
+            {
+                capacity = await _capacityService.GetWeeklyCapacityAsync(package.ClassCategoryId, cancellationToken);
+                categoryCapacity[package.ClassCategoryId] = capacity;
+            }
+
+            var rate = _capacityService.GetWeeklyRate(package.SessionsIncluded, package.DurationInDays);
+            var remaining = capacity.Supply - capacity.Demand;
+            var availableSlots = rate > 0 ? Math.Max(0, (int)Math.Floor(remaining / rate)) : 0;
+
+            result.Add(new MembershipPackageAvailabilityDto(
+                package.Id, package.Name, package.ClassCategoryId, package.CategoryName,
+                capacity.Supply, capacity.Demand, rate, availableSlots));
+        }
+
+        return result;
     }
 }

@@ -1,0 +1,61 @@
+﻿@page
+@model CapacityModel
+@{
+    ViewData["Title"] = "Membership Capacity";
+    ViewData["Breadcrumbs"] = new List<(string Label, string? Url)>
+    {
+        ("Home", "/"),
+        ("Staff", null),
+        ("Membership Capacity", null)
+    };
+}
+
+<partial name="_Breadcrumbs" />
+<h1>@ViewData["Title"]</h1>
+<p class="lead">How many new memberships each package can still sell, based on the scheduled timetable and currently active memberships.</p>
+<hr />
+
+@if (!Model.Packages.Any())
+{
+    <p class="text-muted">No membership packages found.</p>
+}
+else
+{
+    foreach (var categoryGroup in Model.Packages.GroupBy(p => new { p.ClassCategoryId, p.ClassCategoryName }))
+    {
+        var first = categoryGroup.First();
+        <h4 class="mt-4">@categoryGroup.Key.ClassCategoryName</h4>
+        <p class="text-muted mb-2">
+            Scheduled capacity: <strong>@first.WeeklySupply.ToString("0.##")</strong> sessions/week &middot;
+            Currently booked: <strong>@first.WeeklyDemand.ToString("0.##")</strong> sessions/week
+        </p>
+        <table class="table table-sm table-bordered">
+            <thead>
+                <tr>
+                    <th>Package</th>
+                    <th>Sessions / week</th>
+                    <th>Available slots</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var package in categoryGroup)
+                {
+                    <tr class="@(package.AvailableSlots == 0 ? "table-danger" : "")">
+                        <td>@package.MembershipPackageName</td>
+                        <td>@package.WeeklyRate.ToString("0.##")</td>
+                        <td>
+                            @if (package.AvailableSlots == 0)
+                            {
+                                <span class="badge bg-danger">Full</span>
+                            }
+                            else
+                            {
+                                <span>@package.AvailableSlots</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}

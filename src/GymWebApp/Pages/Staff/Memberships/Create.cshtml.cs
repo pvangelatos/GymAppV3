@@ -40,6 +40,7 @@ public class CreateModel : PageModel
 
     public MemberDetailDto? Member { get; set; }
     public SelectList Packages { get; set; } = new SelectList(Enumerable.Empty<SelectListItem>());
+    public IReadOnlyList<MembershipPackageAvailabilityDto> Availability { get; set; } = Array.Empty<MembershipPackageAvailabilityDto>();
     public string? ErrorMessage { get; set; }
 
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
@@ -83,5 +84,9 @@ public class CreateModel : PageModel
     {
         var packages = await _packageQueryService.GetAllAsync(new GetAllMembershipPackagesQuery(), cancellationToken);
         Packages = new SelectList(packages, nameof(MembershipPackageDto.Id), nameof(MembershipPackageDto.Name));
+
+        // Shown next to each option so staff sees *before* submitting whether a
+        // package can still be sold, instead of finding out only after a rejection.
+        Availability = await _packageQueryService.GetAvailabilityAsync(cancellationToken);
     }
 }

@@ -17,7 +17,9 @@ public class MembershipServiceTests : TestBase
     private IPaymentCommandService CreatePaymentService() => 
         new PaymentService(Context, new FixedClock(Now), new VatRateProvider(), UserContext);
 
-    private MembershipService CreateSut() => new(Context, new FixedClock(Now), CreatePaymentService(), UserContext);
+    private MembershipService CreateSut() => 
+        new(Context, new FixedClock(Now), CreatePaymentService(), UserContext, 
+            new ClassCategoryCapacityService(Context, new FixedClock(Now)));
 
     // Seeds a member and returns its id.
     private async Task<Guid> SeedMember(string email = "m@gym.gr")
@@ -46,11 +48,16 @@ public class MembershipServiceTests : TestBase
         return member.Id;
     }
 
-    // Seeds a package and returns its id.
+    // Seeds a package and returns its id. Also seeds a same-category ClassSession
+    // with plenty of capacity, so the membership-capacity check (added for the
+    // seats-availability feature) never blocks these purchase tests — this file's
+    // point is business rules around dates/pricing/stacking, not capacity itself.
     private async Task<Guid> SeedPackage(
         string name = "Pilates", decimal price = 50m, int days = 30, int sessions = 8)
     {
         var categoryId = await SeedCategory(name);      // Category with the same name of the package
+        await SeedAmpleCapacity(categoryId);
+
         var package = new MembershipPackage
         {
             Name = name,
@@ -62,6 +69,26 @@ public class MembershipServiceTests : TestBase
         Context.MembershipPackages.Add(package);
         await Context.SaveChangesAsync();
         return package.Id;
+    }
+
+    // Seeds one ClassSession in the given category, inside the capacity service's
+    // 28-day look-ahead window, with a large enough Capacity that no purchase in
+    // these tests can ever be blocked by the seats-availability rule.
+    private async Task SeedAmpleCapacity(Guid categoryId)
+    {
+        Context.ClassSessions.Add(new ClassSession
+        {
+            Title = "Test session",
+            StartsAt = Now.AddDays(1),
+            EndsAt = Now.AddDays(1).AddHours(1),
+            DurationInMinutes = 60,
+            Capacity = 1000,
+            AvailableSeats = 1000,
+            TrainerId = Guid.NewGuid(),
+            ClassRoomId = Guid.NewGuid(),
+            ClassCategoryId = categoryId
+        });
+        await Context.SaveChangesAsync();
     }
 
     // --- First purchase: starts now, derives everything from the package --------

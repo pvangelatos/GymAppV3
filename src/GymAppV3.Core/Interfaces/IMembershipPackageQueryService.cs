@@ -7,4 +7,8 @@ public interface IMembershipPackageQueryService
 {
     Task<IReadOnlyList<MembershipPackageDto>> GetAllAsync(GetAllMembershipPackagesQuery query, CancellationToken cancellationToken = default);
     Task<MembershipPackageDto?> GetByIdAsync(GetMembershipPackageByIdQuery query, CancellationToken cancellationToken = default);
+
+    // Per-package "how many more can I sell" snapshot, grouped implicitly by the
+    // category each package belongs to.
+    Task<IReadOnlyList<MembershipPackageAvailabilityDto>> GetAvailabilityAsync(CancellationToken cancellationToken = default);
 }

@@ -26,6 +26,33 @@
     <div class="alert alert-danger">@Model.ErrorMessage</div>
 }
 
+@if (Model.Availability.Any(a => a.AvailableSlots == 0))
+{
+    <div class="alert alert-warning">
+        <strong>Heads up:</strong> some packages below are at full capacity for their category this week and cannot be assigned.
+    </div>
+}
+
+<table class="table table-sm">
+    <thead>
+        <tr>
+            <th>Package</th>
+            <th>Category</th>
+            <th>Available slots</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var a in Model.Availability)
+        {
+            <tr class="@(a.AvailableSlots == 0 ? "table-danger" : "")">
+                <td>@a.MembershipPackageName</td>
+                <td>@a.ClassCategoryName</td>
+                <td>@(a.AvailableSlots == 0 ? "Full" : a.AvailableSlots.ToString())</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
 <form method="post" class="col-md-6">
     <input type="hidden" asp-for="MemberId" />
 

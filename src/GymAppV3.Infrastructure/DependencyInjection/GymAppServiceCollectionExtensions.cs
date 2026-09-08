@@ -13,6 +13,7 @@ public static class GymAppServiceCollectionExtensions
         services.AddScoped<IUserContext, UserContext>();
         services.AddScoped<IDateTimeProvider, DateTimeProvider>();
         services.AddScoped<IVatRateProvider, VatRateProvider>();
+        services.AddScoped<IClassCategoryCapacityService, ClassCategoryCapacityService>();
 
         services.AddScopedShared<GymBuildingService, IGymBuildingCommandService, IGymBuildingQueryService>();
         services.AddScopedShared<ClassCategoryService, IClassCategoryCommandService, IClassCategoryQueryService>();
