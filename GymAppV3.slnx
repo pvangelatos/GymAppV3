@@ -1,4 +1,6 @@
 <Solution>
+  <Folder Name="/docs/" />
+  <Folder Name="/docs/screenshots/" />
   <Folder Name="/Solution Items/">
     <File Path=".gitignore" />
     <File Path="Plan-Implment-Authentication-Authorizations.md" />

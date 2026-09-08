@@ -1,26 +1,56 @@
 ﻿@using Microsoft.AspNetCore.Identity
+@using GymAppV3.Core.Interfaces
+@using GymAppV3.Core.Queries.Members
+@using GymAppV3.Core.Queries.Trainers
 @inject SignInManager<IdentityUser> SignInManager
 @inject UserManager<IdentityUser> UserManager
+@inject IMemberQueryService MemberQueryService
+@inject ITrainerQueryService TrainerQueryService
 
 <ul class="navbar-nav">
-@if (SignInManager.IsSignedIn(User))
-{
-    <li class="nav-item">
-        <a  class="nav-link text-light" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">Hello @User.Identity?.Name!</a>
-    </li>
-    <li class="nav-item">
-        <form class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Page("/Index", new { area = "" })">
-            <button  type="submit" class="nav-link btn btn-link text-light">Logout</button>
-        </form>
-    </li>
-}
-else
-{
-    <li class="nav-item">
-        <a class="nav-link text-light" asp-area="Identity" asp-page="/Account/Register">Register</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link text-light" asp-area="Identity" asp-page="/Account/Login">Login</a>
-    </li>
-}
+    @if (SignInManager.IsSignedIn(User))
+    {
+        var userId = UserManager.GetUserId(User);
+        string? displayName = null;
+
+        if (!string.IsNullOrEmpty(userId))
+        {
+            var member = await MemberQueryService.GetByUserIdAsync(new GetMemberByUserIdQuery(userId));
+            if (member is not null)
+            {
+                displayName = member.Firstname;
+            }
+            else
+            {
+                var trainer = await TrainerQueryService.GetByUserIdAsync(new GetTrainerByUserIdQuery(userId));
+                if (trainer is not null)
+                {
+                    displayName = trainer.Firstname;
+                }
+            }
+        }
+
+        // Falls back to the account's login name (email) for accounts with no
+        // Member/Trainer profile yet — e.g. the seeded Admin, or a member who
+        // registered but hasn't completed their profile.
+        displayName ??= User.Identity?.Name;
+
+        <li class="nav-item">
+            <a class="nav-link text-light" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">Hello @displayName!</a>
+        </li>
+        <li class="nav-item">
+            <form class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Page("/Index", new { area = "" })">
+                <button type="submit" class="nav-link btn btn-link text-light">Logout</button>
+            </form>
+        </li>
+    }
+    else
+    {
+        <li class="nav-item">
+            <a class="nav-link text-light" asp-area="Identity" asp-page="/Account/Register">Register</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link text-light" asp-area="Identity" asp-page="/Account/Login">Login</a>
+        </li>
+    }
 </ul>

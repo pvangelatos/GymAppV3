@@ -21,15 +21,56 @@
 }
 else
 {
+    <div class="row g-3 mb-4">
+        @foreach (var summaryGroup in Model.Packages.GroupBy(p => new { p.ClassCategoryId, p.ClassCategoryName }))
+        {
+            var summaryFirst = summaryGroup.First();
+            var openCount = summaryGroup.Count(p => p.AvailableSlots > 0);
+            var fullCount = summaryGroup.Count(p => p.AvailableSlots == 0);
+            var summaryFillPercent = summaryFirst.WeeklySupply > 0
+                ? (int)Math.Min(100, Math.Round(summaryFirst.WeeklyDemand / summaryFirst.WeeklySupply * 100))
+                : 100;
+            var borderClass = openCount == 0 ? "border-danger" : fullCount > 0 ? "border-warning" : "border-success";
+
+            <div class="col-md-4">
+                <div class="card h-100 @borderClass">
+                    <div class="card-body">
+                        <h6 class="card-title" style="color: var(--gym-accent);">@summaryGroup.Key.ClassCategoryName</h6>
+                        <p class="mb-1">
+                            <span class="badge bg-success">@openCount open</span>
+                            @if (fullCount > 0)
+                            {
+                                <span class="badge bg-danger">@fullCount full</span>
+                            }
+                        </p>
+                        <div class="text-muted small">@summaryFillPercent% of weekly capacity booked</div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
     foreach (var categoryGroup in Model.Packages.GroupBy(p => new { p.ClassCategoryId, p.ClassCategoryName }))
     {
         var first = categoryGroup.First();
-        <h4 class="mt-4">@categoryGroup.Key.ClassCategoryName</h4>
+        var fillPercent = first.WeeklySupply > 0
+            ? (int)Math.Min(100, Math.Round(first.WeeklyDemand / first.WeeklySupply * 100))
+            : 100;
+        var barColor = fillPercent >= 90 ? "bg-danger" : fillPercent >= 70 ? "bg-warning" : "bg-success";
+
+        <h4 class="gym-section-title"><i class="bi bi-tag-fill"></i> @categoryGroup.Key.ClassCategoryName</h4>
         <p class="text-muted mb-2">
             Scheduled capacity: <strong>@first.WeeklySupply.ToString("0.##")</strong> sessions/week &middot;
             Currently booked: <strong>@first.WeeklyDemand.ToString("0.##")</strong> sessions/week
+            (<strong>@fillPercent%</strong> full)
         </p>
-        <table class="table table-sm table-bordered">
+        <div class="progress mb-3" style="height: 10px;" role="progressbar"
+             aria-valuenow="@fillPercent" aria-valuemin="0" aria-valuemax="100"
+             aria-label="@($"{categoryGroup.Key.ClassCategoryName} weekly capacity used")">
+            <div class="progress-bar @barColor" style="width: @fillPercent%;"></div>
+        </div>
+
+        <table class="table table-sm table-bordered align-middle">
             <thead>
                 <tr>
                     <th>Package</th>
@@ -40,7 +81,7 @@ else
             <tbody>
                 @foreach (var package in categoryGroup)
                 {
-                    <tr class="@(package.AvailableSlots == 0 ? "table-danger" : "")">
+                    <tr>
                         <td>@package.MembershipPackageName</td>
                         <td>@package.WeeklyRate.ToString("0.##")</td>
                         <td>
@@ -50,7 +91,7 @@ else
                             }
                             else
                             {
-                                <span>@package.AvailableSlots</span>
+                                <span class="badge bg-success">@package.AvailableSlots available</span>
                             }
                         </td>
                     </tr>

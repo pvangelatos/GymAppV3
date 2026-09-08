@@ -106,6 +106,20 @@
                     </div>
                 </div>
             </div>
+            <div class="col-md-4">
+                <div class="card h-100 card-accent-left">
+                    <div class="card-body d-flex flex-column">
+                        <div class="mb-3">
+                            <i class="bi bi-graph-up" style="font-size: 1.8rem; color: var(--gym-accent);"></i>
+                        </div>
+                        <h5 class="card-title">Membership Capacity</h5>
+                        <p class="card-text flex-grow-1">See how many new memberships each package can still sell.</p>
+                        <a asp-page="/Staff/Memberships/Capacity" class="btn btn-primary btn-sm mt-2">
+                            <i class="bi bi-arrow-right me-1"></i> View Capacity
+                        </a>
+                    </div>
+                </div>
+            </div>
         }
 
         @if (User.IsInRole(RoleConstants.Admin) || User.IsInRole(RoleConstants.TrainerAdmin))
@@ -133,10 +147,9 @@ else
     <section class="gym-hero">
         <div class="gym-hero-content text-center">
             <p class="gym-hero-eyebrow">Welcome to</p>
-            <h1 class="gym-hero-title">Gym Management<br />System</h1>
+            <h1 class="gym-hero-title">FitHub</h1>
             <p class="gym-hero-sub">
-                Book classes, track your memberships and manage your fitness journey —<br class="d-none d-md-block" />
-                all in one place.
+                Book classes, track your memberships and manage your fitness journey — all in one place.
             </p>
             <div class="gym-hero-actions">
                 <a asp-area="Identity" asp-page="/Account/Register" class="btn btn-primary btn-lg">
