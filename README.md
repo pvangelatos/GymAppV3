@@ -20,12 +20,12 @@
 ```
 GymAppV3/
 ├── GymAppV3.slnx
-├── GymAppV3.Tests/              # Unit tests (xUnit)
+├── GymAppV3.Tests/               # Unit tests (xUnit)
 └── src/
-├── GymAppV3.Core/           # Domain entities, DTOs, interfaces, validators, business rules
-    ├── GymAppV3.Infrastructure/ # EF Core DbContext, Identity, repositories/services, migrations
-    ├── GymAppV3.Server/         # REST API — JWT auth, Swagger/Scalar
-    └── GymWebApp/               # Razor Pages UI — cookie auth, καλεί απευθείας τα Core/Infrastructure services (χωρίς ενδιάμεσο API layer)
+├── GymAppV3.Core/                # Domain entities, DTOs, interfaces, validators, business rules
+    ├── GymAppV3.Infrastructure/  # EF Core DbContext, Identity, repositories/services, migrations
+    ├── GymAppV3.Server/          # REST API — JWT auth, Swagger/Scalar
+    └── GymWebApp/                # Razor Pages UI — cookie auth, καλεί απευθείας τα Core/Infrastructure services (χωρίς ενδιάμεσο API layer)
 ``` 
 Τα **GymAppV3.Server** και **GymWebApp** είναι δύο ανεξάρτητες εφαρμογές (ξεχωριστό `Program.cs`, ξεχωριστό auth scheme, ξεχωριστό pipeline) που μοιράζονται την ίδια βάση δεδομένων και τα ίδια Core/Infrastructure/Identity layers. **Δεν** είναι SSO — δεν μοιράζονται session μεταξύ τους.
 
