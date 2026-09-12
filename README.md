@@ -202,3 +202,14 @@ Unit tests στο `GymAppV3.Tests` (EF Core InMemory provider). Επιπλέον
 
 - Το `appsettings.json` περιέχει μόνο μη-ευαίσθητες ρυθμίσεις (business rules, logging). Ευαίσθητα στοιχεία πάνε πάντα μέσω `user-secrets` (dev) ή environment variables / secret manager (production).
 - Rate limiting ενεργό στα auth endpoints (login/register) και globally ανά χρήστη/IP.
+
+## Author
+
+**Panagiotis Vangelatos**
+
+[![GitHub](https://img.shields.io/badge/GitHub-pvangelatos-181717?style=flat&logo=github&logoColor=white)](https://github.com/pvangelatos)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Panagiotis%20Vangelatos-0A66C2?style=flat&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/panagiotis-vangelatos-71003525a/)
+
+---
+
+Αναπτύχθηκε από τον Παναγιώτη Βαγγελάτο ως τελικό project στο πλαίσιο της εκπαίδευσής του στο Coding Factory 10 — AUEB.
