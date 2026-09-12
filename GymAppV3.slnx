@@ -4,6 +4,7 @@
   <Folder Name="/Solution Items/">
     <File Path=".gitignore" />
     <File Path="Plan-Implment-Authentication-Authorizations.md" />
+    <File Path="README.md" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/GymAppV3.Core/GymAppV3.Core.csproj" />
