@@ -163,7 +163,7 @@ dotnet run
 
 ### 6. Login ως Admin
 
-Χρησιμοποίησε τα credentials που έβαλες στο `DefaultAdmin:Email` / `DefaultAdmin:Password` (π.χ. `admin@gymapp.com` / `Admin123!`) — δημιουργούνται/seed-άρονται αυτόματα στο πρώτο εκκίνημα, τόσο ο ρόλος Admin όσο και οι υπόλοιποι ρόλοι.
+Χρησιμοποίησε τα credentials που έβαλες στο `DefaultAdmin:Email` / `DefaultAdmin:Password` (π.χ. `admin@gymapp.com` / `Admin123!`) — δημιουργούνται/seed-άρονται αυτόματα στην πρώτη εκκίνηση, τόσο ο ρόλος Admin όσο και οι υπόλοιποι ρόλοι.
 
 ### Εναλλακτικά — SQL Server μέσω Docker
 
