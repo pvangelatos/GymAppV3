@@ -1,6 +1,6 @@
 # GymAppV3
 
-Σύστημα διαχείρισης γυμναστηρίου / Pilates studio, αναπτυγμένο ως τελικό project για το **Coding Factory 10 (AUEB)**.
+Σύστημα διαχείρισης γυμναστηρίου / Pilates studio, αναπτυγμένο ως τελικό project για το **Coding Factory 9 (AUEB)**.
 
 Περιλαμβάνει διαχείριση μελών, εκπαιδευτών, χώρων, τμημάτων μαθημάτων (class sessions), συνδρομών (memberships), κρατήσεων (bookings) και πληρωμών, με authentication/authorization τόσο στο backend όσο και στο frontend.
 
