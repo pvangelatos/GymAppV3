@@ -33,7 +33,7 @@ public class PaymentService : IPaymentCommandService, IPaymentQueryService
     public PaymentService(
         ApplicationDbContext context,
         IDateTimeProvider clock,
-        IVatRateProvider vatRates, 
+        IVatRateProvider vatRates,
         IUserContext userContext)
     {
         _context = context;
@@ -98,16 +98,17 @@ public class PaymentService : IPaymentCommandService, IPaymentQueryService
 
     public async Task<PaymentDto> RecordAsync(RecordPaymentCommand command, CancellationToken cancellationToken = default)
     {
+        // Desk payments are recorded by staff only (BFLA fix).
+        _userContext.EnsureIsStaff();
+
         var vatCategory = VatCategory.Services; // default for payments without membership
 
-        // --- Member existence check ---
         var memberExists = await _context.Members
             .AnyAsync(m => m.Id == command.MemberId, cancellationToken);
 
-        if (!memberExists) 
+        if (!memberExists)
             throw new NotFoundException(nameof(Member), command.MemberId);
 
-        // --- Membership verification & VAT category retrieval ---
         if (command.MembershipId is not null)
         {
             var membership = await _context.Memberships
@@ -119,26 +120,13 @@ public class PaymentService : IPaymentCommandService, IPaymentQueryService
             vatCategory = membership.VatCategory;
         }
 
-        // --- VAT Snapshot Calculation ---
-        var rate = _vatRates.GetVatRate(vatCategory);
-        var (net, _) = VatCalculator.Split(command.Amount, rate);
-
-        var payment = new Payment
-        {
-            MemberId = command.MemberId,
-            MembershipId = command.MembershipId,
-            Amount = command.Amount,
-            VatRate = rate,                     // snapshot
-            NetAmount = net,                    // snapshot
-            Method = command.Method,
-            Status = PaymentStatus.Completed,   // recorded payments are completed
-            PaidAt = _clock.UtcNow
-        };
+        var payment = PaymentFactory.Create(
+            command.MemberId, command.MembershipId, command.Amount, command.Method,
+            _vatRates.GetVatRate(vatCategory), PaymentStatus.Completed, _clock.UtcNow);
 
         _context.Payments.Add(payment);
         await _context.SaveChangesAsync(cancellationToken);
 
         return ObjectMapper.Payment.ToDtoCompiled(payment);
     }
-
 }

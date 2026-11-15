@@ -22,6 +22,8 @@ public static class PaymentEndpoints
             .AddEndpointFilter<ValidationFilter<RecordPaymentCommand>>()
             .Accepts<RecordPaymentCommand>("application/json")
             .Produces(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound)
             .Produces<PaymentDto>(StatusCodes.Status201Created);
 
         memberPayments.MapGet("/", PaymentHandlers.GetByMemberAsync)

@@ -16,19 +16,19 @@ public class MembershipService : IMembershipCommandService, IMembershipQueryServ
 {
     private readonly ApplicationDbContext _context;
     private readonly IDateTimeProvider _clock;
-    private readonly IPaymentCommandService _paymentCommandService;
+    private readonly IVatRateProvider _vatRates;
     private readonly IUserContext _userContext;
     private readonly IClassCategoryCapacityService _capacityService;
 
     public MembershipService(ApplicationDbContext context,
         IDateTimeProvider clock,
-        IPaymentCommandService paymentCommandService,
+        IVatRateProvider vatRates,
         IUserContext userContext,
         IClassCategoryCapacityService capacityService)
     {
         _context = context;
         _clock = clock;
-        _paymentCommandService = paymentCommandService;
+        _vatRates = vatRates;
         _userContext = userContext;
         _capacityService = capacityService;
     }
@@ -138,17 +138,17 @@ public class MembershipService : IMembershipCommandService, IMembershipQueryServ
             Status = MembershipStatus.Active
         };
 
-        // --- Atomic: membership + payment succeed or fail together ---
-        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+        // Staff took the money at the desk; self-service has no payment gateway yet,
+        // so the payment stays Pending until staff confirms it.
+        var paymentStatus = _userContext.IsStaff() ? PaymentStatus.Completed : PaymentStatus.Pending;
 
         _context.Memberships.Add(membership);
+        _context.Payments.Add(PaymentFactory.Create(
+            member.Id, membership.Id, package.Price, request.Method,
+            _vatRates.GetVatRate(package.VatCategory), paymentStatus, now));
+
+        // One SaveChanges = one DB transaction. No explicit BeginTransaction needed.
         await _context.SaveChangesAsync(cancellationToken);
-
-        await _paymentCommandService.RecordAsync(
-            new RecordPaymentCommand(member.Id, membership.Id, package.Price, request.Method),
-            cancellationToken);
-
-        await transaction.CommitAsync(cancellationToken);
 
         return ObjectMapper.Membership.ToDtoCompiled(membership);
     }
