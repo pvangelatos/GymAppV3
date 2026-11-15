@@ -1,9 +1,10 @@
-﻿
-using GymAppV3.Core.Exceptions;
+﻿using GymAppV3.Core.Exceptions;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace GymAppV3.Infrastructure.Handlers;
 
@@ -27,23 +28,34 @@ public class GlobalExceptionHandler : IExceptionHandler
             BusinessRuleException => (StatusCodes.Status422UnprocessableEntity, "Business rule violated"),
             ForbiddenException => (StatusCodes.Status403Forbidden, "Forbidden"),
             UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, "Unauthorized"),
+
+            // Optimistic concurrency (RowVersion): another request changed the row first.
+            DbUpdateConcurrencyException => (StatusCodes.Status409Conflict,
+                "The resource was changed by another request. Please retry."),
+
+            // Client sent something we could not parse or bind.
+            BadHttpRequestException or JsonException or FormatException =>
+                (StatusCodes.Status400BadRequest, "Malformed request"),
+            ArgumentOutOfRangeException => (StatusCodes.Status400BadRequest, "Invalid argument"),
+
             _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred")
         };
 
-        // Only the real unexpected are errors.
-        // For instance 404/422 are expected flow-control.
         if (statusCode == StatusCodes.Status500InternalServerError)
-        {
             _logger.LogError(exception, "Unhandled exception on {Path}", httpContext.Request.Path);
-        }
+        else if (statusCode == StatusCodes.Status409Conflict)
+            _logger.LogWarning(exception, "Concurrency conflict on {Path}", httpContext.Request.Path);
+
+        // Only our own domain exceptions carry messages that are safe to show the client.
+        var detail = exception is NotFoundException or BusinessRuleException or ForbiddenException
+            ? exception.Message
+            : title;
 
         var problem = new ProblemDetails
         {
             Status = statusCode,
             Title = title,
-            Detail = statusCode == StatusCodes.Status500InternalServerError ?
-                "See server logs for details." :
-                exception.Message,
+            Detail = detail,
             Instance = httpContext.Request.Path
         };
 

@@ -2,6 +2,7 @@ using GymAppv3.Server.Endpoints.Common;
 using GymAppV3.Core.Commands;
 using GymAppV3.Core.Common;
 using GymAppV3.Core.DTOs;
+using GymAppV3.Core.Queries.Payments;
 
 namespace GymAppv3.Server.Endpoints.Payment;
 
@@ -34,6 +35,9 @@ public static class PaymentEndpoints
         payments.MapGet("/reports/monthly", PaymentHandlers.GetMonthlyReportAsync)
             .WithName("GetMonthlyFinancialReport")
             .RequireAuthorization("AdminOnly")
+            .AddEndpointFilter<ValidationFilter<GetMonthlyFinancialReportQuery>>()
+            .Produces(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
             .Produces<MonthlyFinancialReportDto>(StatusCodes.Status200OK);
 
         return app;
