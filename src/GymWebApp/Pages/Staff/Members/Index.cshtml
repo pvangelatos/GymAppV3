@@ -90,7 +90,7 @@
                                     <a asp-page="/Staff/Members/Edit" asp-route-id="@member.Id" class="btn btn-sm btn-primary">
                                         Edit
                                     </a>
-                                    @if (User.IsInRole(RoleConstants.Admin))
+                                    @if (User.IsInRole(RoleConstants.Admin) || User.IsInRole(RoleConstants.TrainerAdmin))
                                     {
                                         <button type="button" class="btn btn-sm btn-outline-danger"
                                                 data-bs-toggle="modal" data-bs-target="#deleteMemberModal"
@@ -190,7 +190,7 @@ else
     </div>
 }
 
-@if (User.IsInRole(RoleConstants.Admin))
+@if (User.IsInRole(RoleConstants.Admin) || User.IsInRole(RoleConstants.TrainerAdmin))
 {
     <div class="modal fade" id="deleteMemberModal" tabindex="-1" aria-labelledby="deleteMemberModalLabel" aria-hidden="true">
         <div class="modal-dialog">

@@ -1,14 +1,12 @@
 ﻿using FluentAssertions;
 using GymAppV3.Core.Abstractions;
+using GymAppV3.Core.Commands;
 using GymAppV3.Core.Enums;
 using GymAppV3.Core.Exceptions;
-using GymAppV3.Infrastructure.Services;
-using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Models;
-using GymAppV3.Core.Commands;
-using GymAppV3.Core.Common;
 using GymAppV3.Core.Queries.Payments;
 using GymAppV3.Infrastructure.Identity;
+using GymAppV3.Infrastructure.Services;
 
 namespace GymAppV3.Tests;
 
@@ -19,6 +17,9 @@ public class PaymentServiceTests : TestBase
     private readonly IVatRateProvider _vatRates = new MockVatRateProvider();
 
     private PaymentService CreateSut() => new(Context, new FixedClock(Now), _vatRates, UserContext);
+
+    private void AsStaff() => UserContext.As("staff1", RoleConstants.Admin);
+
     private async Task<Member> SeedMember(string email = "m@gym.gr")
     {
         var member = new Member
@@ -50,6 +51,7 @@ public class PaymentServiceTests : TestBase
     public async Task RecordAsync_persists_payment_with_derived_net_and_vat()
     {
         var member = await SeedMember();
+        AsStaff();
         var sut = CreateSut();
 
         // 113 gross at 13% → 100 net + 13 VAT.
@@ -65,6 +67,7 @@ public class PaymentServiceTests : TestBase
     [Fact]
     public async Task RecordAsync_throws_NotFound_when_member_missing()
     {
+        AsStaff();
         var sut = CreateSut();
 
         var act = () => sut.RecordAsync(new RecordPaymentCommand(
@@ -79,6 +82,7 @@ public class PaymentServiceTests : TestBase
     public async Task RecordAsync_net_plus_vat_always_equals_gross()
     {
         var member = await SeedMember();
+        AsStaff();
         var sut = CreateSut();
 
         // An amount that doesn't divide cleanly, to stress the rounding.
@@ -104,7 +108,7 @@ public class PaymentServiceTests : TestBase
         await sut.RecordAsync(new RecordPaymentCommand(
             member.Id, null, 62m, PaymentMethod.Cash));
 
-        var report = await sut.GetMonthlyFinancialReportAsync(new GetMonthlyFinancialReportQuery(2026,1));
+        var report = await sut.GetMonthlyFinancialReportAsync(new GetMonthlyFinancialReportQuery(2026, 1));
 
         report.PaymentCount.Should().Be(2);
         report.TotalGross.Should().Be(186m);          // 124 + 62
@@ -120,7 +124,7 @@ public class PaymentServiceTests : TestBase
         var sut = CreateSut();
 
         // A month far in the past with no payments.
-        
+
         var report = await sut.GetMonthlyFinancialReportAsync(new GetMonthlyFinancialReportQuery(2000, 1));
 
         report.PaymentCount.Should().Be(0);
@@ -136,15 +140,56 @@ public class PaymentServiceTests : TestBase
     {
         var member = await SeedMember();
         var sut = CreateSut();
+        AsStaff();
 
         await sut.RecordAsync(new RecordPaymentCommand(
             member.Id, null, 100m, PaymentMethod.Card));
         await sut.RecordAsync(new RecordPaymentCommand(
             member.Id, null, 50m, PaymentMethod.Cash));
 
+        UserContext.As(member.UserId!, RoleConstants.Member);
+
         var result = await sut.GetPaymentsByMemberIdAsync(new GetPaymentsByMemberQuery(member.Id));
 
         result.Items.Should().HaveCount(2);
+    }
+
+    // --- Staff vs member access -------------------------------------------------
+
+    [Fact]
+    public async Task RecordAsync_CallerIsMember_ThrowsForbidden()
+    {
+        var member = await SeedMember();            // caller = Member role
+        var sut = CreateSut();
+
+        var act = () => sut.RecordAsync(new RecordPaymentCommand(
+            member.Id, null, 100m, PaymentMethod.Cash));
+
+        await act.Should().ThrowAsync<ForbiddenException>();
+    }
+
+    // -- Monthly report access ---------------------------------------------------
+
+    [Fact]
+    public async Task GetMonthlyFinancialReportAsync_CallerIsTrainerAdmin_ReturnsReport()
+    {
+        UserContext.As("ta1", RoleConstants.TrainerAdmin);
+        var sut = CreateSut();
+
+        var report = await sut.GetMonthlyFinancialReportAsync(new GetMonthlyFinancialReportQuery(2026, 1));
+
+        report.PaymentCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task GetMonthlyFinancialReportAsync_CallerIsTrainer_ThrowsForbidden()
+    {
+        UserContext.As("t1", RoleConstants.Trainer);
+        var sut = CreateSut();
+
+        var act = () => sut.GetMonthlyFinancialReportAsync(new GetMonthlyFinancialReportQuery(2026, 1));
+
+        await act.Should().ThrowAsync<ForbiddenException>();
     }
 
     /// <summary>

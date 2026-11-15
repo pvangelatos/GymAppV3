@@ -1,13 +1,12 @@
 using GymAppV3.Core.Commands;
 using GymAppV3.Core.DTOs;
+using GymAppV3.Core.Enums;
 using GymAppV3.Core.Interfaces;
-using GymAppV3.Core.Queries.MembershipPackages;
 using GymAppV3.Core.Queries.Members;
+using GymAppV3.Core.Queries.MembershipPackages;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using System.ComponentModel;
-using GymAppV3.Core.Enums;
 
 namespace GymWebApp.Pages.Memberships;
 
@@ -80,7 +79,7 @@ public class PurchaseModel : PageModel
 
             await _membershipCommandService.PurchaseAsync(command, cancellationToken);
 
-            TempData["SuccessMessage"] = "Membership purchased successfully!";
+            TempData["SuccessMessage"] = "Membership activated. Please complete the payment at the reception.";
             return RedirectToPage("/Members/Memberships/Index");
         }
         catch (Exception ex)

@@ -34,12 +34,11 @@ public static class PaymentHandlers
     }
 
     public static async Task<Ok<MonthlyFinancialReportDto>> GetMonthlyReportAsync(
-        int year,
-        int month,
-        IPaymentQueryService queryService,
-        CancellationToken cancellationToken)
+    [AsParameters] GetMonthlyFinancialReportQuery query,
+    IPaymentQueryService queryService,
+    CancellationToken cancellationToken)
     {
-        var result = await queryService.GetMonthlyFinancialReportAsync(new GetMonthlyFinancialReportQuery(year, month), cancellationToken);
+        var result = await queryService.GetMonthlyFinancialReportAsync(query, cancellationToken);
         return TypedResults.Ok(result);
     }
 }

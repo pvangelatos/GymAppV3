@@ -14,7 +14,6 @@ using GymAppV3.Infrastructure.Mapper;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace GymAppV3.Infrastructure.Services;
 
@@ -365,7 +364,7 @@ public class MemberService : IMemberCommandService, IMemberQueryService
     {
         var currentUserId = RequireAuthenticatedUserId();
 
-        if (_userContext.IsInRole(RoleConstants.Admin))
+        if (_userContext.IsAdmin())
             return;
 
         if (member.UserId != currentUserId)
@@ -381,7 +380,7 @@ public class MemberService : IMemberCommandService, IMemberQueryService
         if (string.IsNullOrEmpty(currentUserId))
             return false;
 
-        if (_userContext.IsInRole(RoleConstants.Admin))
+        if (_userContext.IsAdmin())
             return true;
 
         // The member's own notes.

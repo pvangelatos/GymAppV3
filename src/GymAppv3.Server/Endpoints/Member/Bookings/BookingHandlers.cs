@@ -14,11 +14,14 @@ namespace GymAppv3.Server.Endpoints.Member.Bookings;
 public static class BookingHandlers
 {
     public static async Task<Created<BookingDto>> BookAsync(
-        CreateBookingCommand command,
-        IBookingCommandService commandService,
-        CancellationToken cancellationToken)
+    Guid memberId,
+    CreateBookingCommand command,
+    IBookingCommandService commandService,
+    CancellationToken cancellationToken)
     {
-        var created = await commandService.BookAsync(command, cancellationToken);
+        // The route is the source of truth. MemberScopedFilter already rejects a
+        // mismatching body; overriding here keeps us safe even if the filter is removed.
+        var created = await commandService.BookAsync(command with { MemberId = memberId }, cancellationToken);
         return TypedResults.Created($"/api/bookings/{created.Id}", created);
     }
 

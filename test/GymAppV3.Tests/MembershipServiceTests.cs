@@ -2,23 +2,19 @@
 using GymAppV3.Core.Commands;
 using GymAppV3.Core.Enums;
 using GymAppV3.Core.Exceptions;
-using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Models;
 using GymAppV3.Core.Queries.Memberships;
 using GymAppV3.Infrastructure.Identity;
 using GymAppV3.Infrastructure.Services;
-using Xunit;
 
 namespace GymAppV3.Tests;
 
 public class MembershipServiceTests : TestBase
 {
     private static readonly DateTimeOffset Now = new(2026, 1, 15, 10, 0, 0, TimeSpan.Zero);
-    private IPaymentCommandService CreatePaymentService() => 
-        new PaymentService(Context, new FixedClock(Now), new VatRateProvider(), UserContext);
 
-    private MembershipService CreateSut() => 
-        new(Context, new FixedClock(Now), CreatePaymentService(), UserContext, 
+    private MembershipService CreateSut() =>
+        new(Context, new FixedClock(Now), new VatRateProvider(), UserContext,
             new ClassCategoryCapacityService(Context, new FixedClock(Now)));
 
     // Seeds a member and returns its id.
@@ -207,6 +203,36 @@ public class MembershipServiceTests : TestBase
         var result = await sut.GetByMemberAsync(new GetMembershipsByMemberQuery(memberId));
 
         result.Should().HaveCount(2);
+    }
+
+    // --- Payment recording: staff vs member --------------------------------------
+
+    [Fact]
+    public async Task PurchaseAsync_CallerIsMember_RecordsPendingPayment()
+    {
+        var memberId = await SeedMember();          // caller = the member
+        var packageId = await SeedPackage();
+        var sut = CreateSut();
+
+        var membership = await sut.PurchaseAsync(new PurchaseMembershipCommand(memberId, packageId, PaymentMethod.Card));
+
+        var payment = Context.Payments.Single(p => p.MembershipId == membership.Id);
+        payment.Status.Should().Be(PaymentStatus.Pending);
+        payment.Amount.Should().Be(50m);
+    }
+
+    [Fact]
+    public async Task PurchaseAsync_CallerIsStaff_RecordsCompletedPayment()
+    {
+        var memberId = await SeedMember();
+        var packageId = await SeedPackage();
+        UserContext.As("staff1", RoleConstants.Admin);
+        var sut = CreateSut();
+
+        var membership = await sut.PurchaseAsync(new PurchaseMembershipCommand(memberId, packageId, PaymentMethod.Card));
+
+        var payment = Context.Payments.Single(p => p.MembershipId == membership.Id);
+        payment.Status.Should().Be(PaymentStatus.Completed);
     }
 
     // Seeds a class category and returns its id. Memberships now requires one.
