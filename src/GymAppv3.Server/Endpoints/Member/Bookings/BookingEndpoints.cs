@@ -14,7 +14,10 @@ public static class BookingEndpoints
     public static IEndpointRouteBuilder MapMemberBookingEndpoints(this IEndpointRouteBuilder app)
     {
         var memberBookings = app.MapGroup("/api/members/{memberId:guid}/bookings")
-            .WithTags("Bookings");
+            .WithTags("Bookings")
+            .RequireAuthorization()
+            .AddEndpointFilter<MemberScopedFilter>()
+            .ProducesProblem(StatusCodes.Status403Forbidden);
 
         memberBookings.MapPost("/", BookingHandlers.BookAsync)
             .WithName("CreateBooking")

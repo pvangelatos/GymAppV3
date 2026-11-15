@@ -1,10 +1,10 @@
-﻿using System.Collections.Concurrent;
-using System.Reflection;
-using GymAppV3.Core.Abstractions;
+﻿using GymAppV3.Core.Abstractions;
 using GymAppV3.Core.Exceptions;
 using GymAppV3.Infrastructure.Data;
 using GymAppV3.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Concurrent;
+using System.Reflection;
 
 namespace GymAppv3.Server.Endpoints.Common;
 
@@ -52,7 +52,10 @@ public class MemberScopedFilter : IEndpointFilter
 
             if (property is not null && (Guid)property.GetValue(argument)! != routeMemberId)
             {
-                throw new BusinessRuleException("The MemberId in the request body does not match the route.");
+                return TypedResults.Problem(
+                    statusCode: StatusCodes.Status400BadRequest,
+                    title: "Route and body disagree",
+                    detail: "The MemberId in the request body does not match the route.");
             }
         }
 

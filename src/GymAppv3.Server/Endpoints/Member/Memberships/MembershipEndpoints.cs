@@ -1,5 +1,4 @@
 using GymAppv3.Server.Endpoints.Common;
-using GymAppV3.Core.Commands;
 using GymAppV3.Core.DTOs;
 
 namespace GymAppv3.Server.Endpoints.Member.Memberships;
@@ -13,7 +12,10 @@ public static class MembershipEndpoints
     public static IEndpointRouteBuilder MapMemberMembershipEndpoints(this IEndpointRouteBuilder app)
     {
         var memberMemberships = app.MapGroup("/api/members/{memberId:guid}/memberships")
-            .WithTags("Memberships");
+            .WithTags("Memberships")
+            .RequireAuthorization()
+            .AddEndpointFilter<MemberScopedFilter>()
+            .ProducesProblem(StatusCodes.Status403Forbidden);
 
         memberMemberships.MapGet("/", MembershipHandlers.GetByMemberAsync)
             .WithName("GetMembershipsByMember")

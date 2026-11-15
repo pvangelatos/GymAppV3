@@ -19,8 +19,10 @@ public static class UserContextAuthorizationExtensions
         userContext.IsInRole(RoleConstants.Trainer) ||
         userContext.IsInRole(RoleConstants.TrainerAdmin);
 
+    // Mirrors the "AdminOnly" policy: TrainerAdmin has admin rights too.
     public static bool IsAdmin(this IUserContext userContext) =>
-        userContext.IsInRole(RoleConstants.Admin);
+        userContext.IsInRole(RoleConstants.Admin) ||
+        userContext.IsInRole(RoleConstants.TrainerAdmin);
 
     public static void EnsureIsAdmin(this IUserContext userContext)
     {

@@ -1,12 +1,7 @@
-using GymAppv3.Server.Endpoints.Common;
-using GymAppV3.Core.Commands;
-using GymAppV3.Core.DTOs;
-using Microsoft.AspNetCore.Http.HttpResults;
-
 namespace GymAppv3.Server.Endpoints.Booking;
 
 /// <summary>
-/// Top-level booking endpoints (admin operations for all bookings).
+/// Top-level booking endpoints (operations addressed by booking id).
 /// Member-scoped booking routes are in Member/Bookings/.
 /// </summary>
 public static class BookingEndpoints
@@ -16,14 +11,11 @@ public static class BookingEndpoints
         var group = app.MapGroup("/api/bookings")
             .WithTags("Bookings");
 
-        var memberBookings = app.MapGroup("/api/members/{memberId:guid}/bookings")
-            .WithTags("Bookings")
-            .AddEndpointFilter<MemberScopedFilter>();
-
         group.MapPost("/{id:guid}/cancel", BookingHandlers.CancelAsync)
             .WithName("CancelBooking")
             .RequireAuthorization()
             .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
             .Produces(StatusCodes.Status404NotFound);
 
         return app;

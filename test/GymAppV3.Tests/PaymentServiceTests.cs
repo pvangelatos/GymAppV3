@@ -168,6 +168,30 @@ public class PaymentServiceTests : TestBase
         await act.Should().ThrowAsync<ForbiddenException>();
     }
 
+    // -- Monthly report access ---------------------------------------------------
+
+    [Fact]
+    public async Task GetMonthlyFinancialReportAsync_CallerIsTrainerAdmin_ReturnsReport()
+    {
+        UserContext.As("ta1", RoleConstants.TrainerAdmin);
+        var sut = CreateSut();
+
+        var report = await sut.GetMonthlyFinancialReportAsync(new GetMonthlyFinancialReportQuery(2026, 1));
+
+        report.PaymentCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task GetMonthlyFinancialReportAsync_CallerIsTrainer_ThrowsForbidden()
+    {
+        UserContext.As("t1", RoleConstants.Trainer);
+        var sut = CreateSut();
+
+        var act = () => sut.GetMonthlyFinancialReportAsync(new GetMonthlyFinancialReportQuery(2026, 1));
+
+        await act.Should().ThrowAsync<ForbiddenException>();
+    }
+
     /// <summary>
     /// Mock implementation of IVatRateProvider with fixed 24% Greece rate
     /// </summary>

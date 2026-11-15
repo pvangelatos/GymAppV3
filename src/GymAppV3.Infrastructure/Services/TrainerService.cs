@@ -177,7 +177,7 @@ public class TrainerService : ITrainerCommandService, ITrainerQueryService
         return await _context.Trainers
              .Where(t => t.Id == query.Id)
              .Select(ObjectMapper.Trainer.ToDto)
-             .FirstOrDefaultAsync(cancellationToken); 
+             .FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<TrainerDto?> GetByUserIdAsync(GetTrainerByUserIdQuery query, CancellationToken cancellationToken = default)
@@ -256,7 +256,7 @@ public class TrainerService : ITrainerCommandService, ITrainerQueryService
     {
         var currentUserId = RequireAuthenticatedUserId();
 
-        if (_userContext.IsInRole(RoleConstants.Admin))
+        if (_userContext.IsAdmin())
             return;
 
         if (trainer.UserId != currentUserId)
