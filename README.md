@@ -1,215 +1,211 @@
 # GymAppV3
 
-Σύστημα διαχείρισης γυμναστηρίου / Pilates studio, αναπτυγμένο ως τελικό project για το **Coding Factory 9 (AUEB)**.
+Σύστημα διαχείρισης γυμναστηρίου / Pilates studio, αναπτυγμένο σε **.NET 10** με **Clean Architecture**, ως τελικό project για το **Coding Factory 9 (AUEB)**.
 
-Περιλαμβάνει διαχείριση μελών, εκπαιδευτών, χώρων, τμημάτων μαθημάτων (class sessions), συνδρομών (memberships), κρατήσεων (bookings) και πληρωμών, με authentication/authorization τόσο στο backend όσο και στο frontend.
+Καλύπτει μέλη, εκπαιδευτές, χώρους, πρόγραμμα μαθημάτων, συνδρομές, κρατήσεις και πληρωμές, μέσα από **δύο εφαρμογές πάνω στο ίδιο domain**: ένα REST API (JWT) και ένα server-rendered UI σε Razor Pages (cookies).
+
+## Με μια ματιά
+
+- **Clean Architecture** — Core (domain, κανόνες) → Infrastructure (EF Core, Identity) → δύο presentation apps
+- **Authorization μέσα στα services**, όχι μόνο στα endpoints: το ίδιο domain προστατεύεται είτε το καλεί το API είτε το UI
+- **Ενιαίος χειρισμός σφαλμάτων** με `IExceptionHandler` + `ProblemDetails` (400 / 403 / 404 / 409 / 422)
+- **Optimistic concurrency** (`RowVersion`) στις κρατήσεις και στις θέσεις μαθημάτων
+- **Soft delete** μέσω EF Core interceptor, με global query filters
+- **64 unit tests** (xUnit) και **fuzz testing** του API με Schemathesis: 6.000+ test cases, **0 server errors**
 
 ## Τεχνολογίες
 
-- **Backend:** .NET 10, ASP.NET Core Minimal APIs, Entity Framework Core
-- **Frontend:** ASP.NET Core Razor Pages (Server-Side Rendering)
-- **Βάση Δεδομένων:** Microsoft SQL Server
-- **Authentication:** ASP.NET Core Identity — JWT Bearer στο API, Cookie auth στο Razor Pages app
-- **Validation:** FluentValidation (με ελληνικό localization μηνυμάτων)
-- **API Documentation:** Swagger / Swashbuckle (`/swagger`) και Scalar (`/scalar`)
-- **Testing:** xUnit (unit tests, EF Core InMemory provider), Schemathesis (API fuzz testing), `.http` αρχεία ως living documentation
+| Περιοχή | Επιλογή |
+|---|---|
+| Backend | .NET 10, ASP.NET Core Minimal APIs, Entity Framework Core 10 |
+| Frontend | ASP.NET Core Razor Pages (SSR), Bootstrap 5, FullCalendar |
+| Βάση | Microsoft SQL Server (LocalDB / Express / Developer) |
+| Auth | ASP.NET Core Identity — JWT Bearer (API), Cookies (UI), reCAPTCHA v3 |
+| Validation | FluentValidation, με μηνύματα στα ελληνικά |
+| Docs | Swagger (Swashbuckle) και Scalar |
+| Testing | xUnit, FluentAssertions, EF Core InMemory, Schemathesis |
 
 ## Αρχιτεκτονική
 
-Το project ακολουθεί **Clean Architecture** με Domain-Driven Design στο μοντέλο:
 ```
 GymAppV3/
 ├── GymAppV3.slnx
-├── GymAppV3.Tests/               # Unit tests (xUnit)
-└── src/
-├── GymAppV3.Core/                # Domain entities, DTOs, interfaces, validators, business rules
-    ├── GymAppV3.Infrastructure/  # EF Core DbContext, Identity, repositories/services, migrations
-    ├── GymAppV3.Server/          # REST API — JWT auth, Swagger/Scalar
-    └── GymWebApp/                # Razor Pages UI — cookie auth, καλεί απευθείας τα Core/Infrastructure services (χωρίς ενδιάμεσο API layer)
-``` 
-Τα **GymAppV3.Server** και **GymWebApp** είναι δύο ανεξάρτητες εφαρμογές (ξεχωριστό `Program.cs`, ξεχωριστό auth scheme, ξεχωριστό pipeline) που μοιράζονται την ίδια βάση δεδομένων και τα ίδια Core/Infrastructure/Identity layers. **Δεν** είναι SSO — δεν μοιράζονται session μεταξύ τους.
+├── src/
+│   ├── GymAppV3.Core/            # Entities, DTOs, interfaces, validators, exceptions
+│   ├── GymAppV3.Infrastructure/  # EF Core DbContext, mappings, migrations, Identity, services
+│   ├── GymAppv3.Server/          # REST API — Minimal APIs, JWT, Swagger/Scalar, rate limiting
+│   └── GymWebApp/                # Razor Pages UI — cookie auth, καλεί απευθείας τα services
+└── test/
+    └── GymAppV3.Tests/           # Unit tests (xUnit)
+```
 
-## Λειτουργίες (Features)
+Τα **GymAppv3.Server** και **GymWebApp** είναι δύο ανεξάρτητες εφαρμογές: κάθε μία έχει δικό της `Program.cs`, auth scheme και pipeline. Μοιράζονται τη βάση και τα layers Core/Infrastructure/Identity. **Δεν** είναι SSO, οπότε δεν μοιράζονται session.
 
-### Διαχείριση Μελών & Εκπαιδευτών
-- Εγγραφή μέλους (self-service, δύο βημάτων: δημιουργία λογαριασμού → συμπλήρωση προφίλ με διεύθυνση, ημ/νία γέννησης, ιατρικά στοιχεία)
-- Δημιουργία μέλους από στελέχη/admin χωρίς λογαριασμό χρήστη (ledger entry)
-- Δημιουργία εκπαιδευτή από admin, με αυτόματη δημιουργία λογαριασμού και one-time password
-- Ανάθεση specialties (κατηγοριών μαθημάτων) σε κάθε εκπαιδευτή
-- Ιατρικά στοιχεία μέλους με έλεγχο πρόσβασης: ορατά σε admin, στο ίδιο το μέλος, ή σε εκπαιδευτή με το μέλος σε δικό του session
-- Soft delete σε μέλη/εκπαιδευτές (ιστορικό διατηρείται)
+Το UI **δεν** καλεί το API. Χρησιμοποιεί απευθείας τα ίδια services μέσω DI. Γι' αυτό οι κανόνες και οι έλεγχοι δικαιωμάτων ζουν στα services: ισχύουν ό,τι κι αν είναι το «μπροστά» μέρος.
 
-### Χώροι, Αίθουσες & Κατηγορίες Μαθημάτων
-- CRUD για κτίρια γυμναστηρίου (GymBuilding), αίθουσες (ClassRoom) και κατηγορίες μαθημάτων (ClassCategory)
+## Λειτουργίες
 
-### Πακέτα Συνδρομών & Συνδρομές (Memberships)
-- CRUD πακέτων συνδρομής (MembershipPackage)
-- Αγορά συνδρομής, με έλεγχο διαθεσιμότητας θέσεων ανά κατηγορία μαθήματος (βλ. παρακάτω)
-- Παύση/επανενεργοποίηση συνδρομής (admin-only)
+### Μέλη & Εκπαιδευτές
+- Εγγραφή μέλους σε δύο βήματα: λογαριασμός και μετά προφίλ (διεύθυνση, ημ/νία γέννησης, ιατρικά στοιχεία)
+- Δημιουργία μέλους από το προσωπικό, χωρίς λογαριασμό χρήστη
+- Δημιουργία εκπαιδευτή από admin, με αυτόματο λογαριασμό και προσωρινό κωδικό
+- Ειδικότητες εκπαιδευτών (κατηγορίες μαθημάτων)
+- Ιατρικές σημειώσεις ορατές μόνο σε admin, στο ίδιο το μέλος, ή σε εκπαιδευτή που έχει το μέλος σε δικό του μάθημα
+- Αναζήτηση, ταξινόμηση και σελιδοποίηση
 
-### Διαθεσιμότητα Θέσεων ανά Κατηγορία (Capacity Management)
-- Υπολογισμός διαθέσιμων θέσεων συνδρομής ανά κατηγορία μαθήματος, με βάση την εβδομαδιαία χωρητικότητα των προγραμματισμένων sessions και την τρέχουσα ζήτηση από ενεργές συνδρομές
-- Αυτόματο μπλοκάρισμα αγοράς όταν δεν υπάρχει διαθέσιμη θέση (μέλος που ανανεώνει συνδρομή στην ίδια κατηγορία δεν μπλοκάρεται ποτέ)
-- Προβολή διαθεσιμότητας στο staff panel, πριν και κατά τη δημιουργία συνδρομής
+### Χώροι & Κατηγορίες
+- Κτίρια, αίθουσες (με χωρητικότητα) και κατηγορίες μαθημάτων
 
-### Προγραμματισμός Μαθημάτων & Κρατήσεις (Bookings)
-- Δημιουργία/διαχείριση class sessions (ημερομηνία, ώρα, αίθουσα, εκπαιδευτής, χωρητικότητα)
-- Προβολή προγράμματος σε εβδομαδιαίο calendar view (μέλος και στελέχη)
-- Κράτηση θέσης από μέλος, με μείωση διαθέσιμων sessions στη συνδρομή του
-- Ακύρωση κράτησης (state change, όχι hard delete) — αντίστοιχη επιστροφή session στη συνδρομή
-- Κράτηση εκ μέρους μέλους από στελέχη, απευθείας μέσα από το calendar
+### Πρόγραμμα Μαθημάτων
+- Προγραμματισμός μεμονωμένου μαθήματος, επαναλαμβανόμενου (εβδομαδιαία) και αντιγραφή ολόκληρης εβδομάδας, με έλεγχο συγκρούσεων αίθουσας και εκπαιδευτή (all-or-nothing)
+- Εβδομαδιαίο calendar για μέλη και προσωπικό
+
+### Συνδρομές & Διαθεσιμότητα
+- Πακέτα συνδρομών (διάρκεια, αριθμός sessions, κατηγορία)
+- Αγορά από το μέλος ή ανάθεση από το προσωπικό
+- **Διαχείριση χωρητικότητας ανά κατηγορία:** η αγορά μπλοκάρεται όταν η εβδομαδιαία ζήτηση των ενεργών συνδρομών ξεπερνά τις διαθέσιμες θέσεις του προγράμματος (βλ. κανόνες). Το προσωπικό βλέπει τη διαθεσιμότητα σε ξεχωριστή σελίδα.
+
+### Κρατήσεις
+- Κράτηση από το μέλος ή εκ μέρους του από το προσωπικό, μέσα από το calendar
+- Ακύρωση ως αλλαγή κατάστασης (όχι διαγραφή)
 
 ### Πληρωμές & Αναφορές
-- Καταγραφή πληρωμών ανά μέλος
-- Μηνιαία οικονομική αναφορά (σύνοψη εσόδων)
+- Καταγραφή πληρωμών με αποθηκευμένο ΦΠΑ (snapshot του συντελεστή τη στιγμή της πληρωμής)
+- Μηνιαία οικονομική αναφορά (μόνο ολοκληρωμένες πληρωμές)
 
-### Authentication / Authorization
-- JWT-based auth στο REST API, cookie-based auth στο Razor Pages UI
-- Ρόλοι: Member, Trainer, Admin, TrainerAdmin, με policy-based εξουσιοδότηση ανά endpoint/σελίδα
-- Rate limiting σε login/register (προστασία από brute-force) και globally ανά χρήστη/IP
+## Επιχειρηματικοί κανόνες
 
-### Ποιότητα & Robustness
-- Στρωματοποιημένη validation (FluentValidation) με μηνύματα στα ελληνικά
-- Ενιαίος χειρισμός σφαλμάτων (IExceptionHandler + ProblemDetails) σε όλα τα endpoints
-- Testing: unit tests (xUnit) + fuzz testing του API με Schemathesis
+- **Κράτηση:** απαιτεί ενεργή συνδρομή στην κατηγορία του μαθήματος με διαθέσιμα sessions. Χρεώνεται η συνδρομή που λήγει πρώτη, και η κράτηση θυμάται ποια χρεώθηκε.
+- **Ακύρωση:** επιτρέπεται μόνο πριν ξεκινήσει το μάθημα. Η θέση ελευθερώνεται πάντα, ενώ το session επιστρέφει στη συνδρομή που χρεώθηκε **μόνο αν η ακύρωση γίνει τουλάχιστον 24 ώρες πριν**.
+- **Πληρωμή αγοράς:** όταν αγοράζει το ίδιο το μέλος, η πληρωμή καταγράφεται ως **Pending** (δεν υπάρχει payment gateway). Όταν την αναθέτει το προσωπικό, καταγράφεται ως **Completed**. Μόνο το προσωπικό καταγράφει πληρωμές.
+- **Χωρητικότητα κατηγορίας:** εβδομαδιαία προσφορά = άθροισμα θέσεων των μαθημάτων των επόμενων 28 ημερών ÷ 4. Εβδομαδιαία ζήτηση = άθροισμα (sessions ÷ εβδομάδες) των ενεργών συνδρομών. Μέλος που ανανεώνει συνδρομή στην ίδια κατηγορία δεν μπλοκάρεται ποτέ.
+- **Διαγραφές:** μέλη, εκπαιδευτές, κτίρια, κατηγορίες και πακέτα διαγράφονται με soft delete. Όταν διαγράφεται μέλος, ακυρώνονται οι **μελλοντικές** κρατήσεις του και ελευθερώνονται οι θέσεις, ενώ το ιστορικό και οι πληρωμές μένουν. Κτίριο με αίθουσες και αίθουσα με μαθήματα δεν διαγράφονται.
 
-## Προαπαιτούμενα
+## Ρόλοι & Δικαιώματα
 
-- [.NET 10 SDK](https://dotnet.microsoft.com/download)
-- Microsoft SQL Server (τοπική εγκατάσταση — Developer/Express edition ή LocalDB)
-- (προαιρετικά) EF Core CLI tools: `dotnet tool install --global dotnet-ef`
-- Git
+| Ρόλος | Δικαιώματα |
+|---|---|
+| **Member** | Δικό του προφίλ, κρατήσεις, συνδρομές και πληρωμές |
+| **Trainer** | Προσωπικό: μέλη, κρατήσεις εκ μέρους μελών, προγραμματισμός μαθημάτων από το UI |
+| **TrainerAdmin / Admin** | Ό,τι ο Trainer, και επιπλέον πλήρης διαχείριση (εκπαιδευτές, πακέτα, χώροι, κατηγορίες, διαγραφές, οικονομικές αναφορές) |
 
-## Build & Deploy (αναλυτικά)
+Στο REST API ο προγραμματισμός μαθημάτων απαιτεί ρόλο admin.
 
-### 1. Clone του repository
+## Σχεδιαστικές αποφάσεις
 
-```bash
-git clone https://github.com/pvangelatos/GymAppV3.git
-cd GymAppV3
-```
+- **Authorization στα services (defense in depth).** Κάθε service ελέγχει ποιος καλεί (`IUserContext`), π.χ. ότι ένα μέλος κάνει κράτηση μόνο για τον εαυτό του. Τα endpoints και οι σελίδες έχουν επιπλέον policies, και ένα endpoint filter (`MemberScopedFilter`) απορρίπτει αμέσως requests σε `/api/members/{id}/...` άλλου μέλους.
+- **Δύο εφαρμογές, ένα domain.** Το UI χρησιμοποιεί τα services απευθείας, χωρίς HTTP hop, ενώ το API μένει διαθέσιμο για μελλοντικό SPA ή mobile client.
+- **Soft delete με interceptor.** Ένα `SaveChangesInterceptor` μετατρέπει τα `Remove()` σε `IsDeleted = true`, συμπληρώνει τα audit πεδία, και διατηρεί τα owned types (π.χ. `Address`) που μοιράζονται τον ίδιο πίνακα.
+- **Optimistic concurrency.** Το `RowVersion` προστατεύει τις τελευταίες θέσεις ενός μαθήματος από ταυτόχρονες κρατήσεις. Το conflict επιστρέφεται ως **409**.
+- **Ενιαία σφάλματα.** Τα domain exceptions (`NotFound`, `BusinessRule`, `Forbidden`) μετατρέπονται σε `ProblemDetails`. Παραβιάσεις constraints της βάσης γίνονται 409, και κανένα εσωτερικό μήνυμα δεν φτάνει στον client.
+- **Projections με Expressions.** Ο `ObjectMapper` κρατά για κάθε entity ένα `Expression` (για `IQueryable`, ώστε να μεταφράζεται σε SQL) και μια compiled εκδοχή του για αντικείμενα στη μνήμη. Δεν χρησιμοποιεί reflection-based mapper.
+- **Σελιδοποίηση με όρια.** Μέγιστο μέγεθος σελίδας 200, και ο υπολογισμός του `skip` γίνεται σε `long` για προστασία από overflow.
+- **Αποδοτικός έλεγχος συγκρούσεων.** Ο επαναλαμβανόμενος προγραμματισμός ελέγχει όλες τις εμφανίσεις με ένα query, αντί για δύο ανά εμφάνιση.
 
-### 2. Restore & Build
-
-```bash
-dotnet restore
-dotnet build
-```
-
-### 3. Ρύθμιση Secrets
-
-Για λόγους ασφαλείας, το connection string, το JWT signing key και τα admin credentials **δεν** βρίσκονται στο `appsettings.json` — ρυθμίζονται μέσω `dotnet user-secrets`. Επειδή τα δύο apps τρέχουν ως ξεχωριστές διεργασίες, χρειάζεται να τα ορίσεις **και στα δύο** projects.
-
-**GymAppV3.Server:**
-
-```bash
-cd src/GymAppV3.Server
-dotnet user-secrets init
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost;Database=GymAppV3;Trusted_Connection=True;TrustServerCertificate=True"
-dotnet user-secrets set "Jwt:Key" "<ένα μεγάλο, τυχαίο secret key — τουλάχιστον 32 χαρακτήρες>"
-dotnet user-secrets set "Jwt:Issuer" "GymAppV3"
-dotnet user-secrets set "Jwt:Audience" "GymAppV3Client"
-dotnet user-secrets set "DefaultAdmin:Email" "admin@gymapp.com"
-dotnet user-secrets set "DefaultAdmin:Password" "Admin123!"
-```
-
-**GymWebApp:**
-
-```bash
-cd ../GymWebApp
-dotnet user-secrets init
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost;Database=GymAppV3;Trusted_Connection=True;TrustServerCertificate=True"
-dotnet user-secrets set "DefaultAdmin:Email" "admin@gymapp.com"
-dotnet user-secrets set "DefaultAdmin:Password" "Admin123!"
-```
-
-> Χρησιμοποίησε **το ίδιο** connection string και στα δύο projects, ώστε να διαβάζουν την ίδια βάση (πίνακες Core + Infrastructure + Identity είναι κοινοί).
-
-Αν η SQL Server σου τρέχει σε named instance (π.χ. `SQLEXPRESS`), προσάρμοσε ανάλογα το `Server=` στο connection string (π.χ. `Server=localhost\SQLEXPRESS;...`).
-
-### 4. Δημιουργία / Migration της βάσης
-
-Δεν χρειάζεται χειροκίνητο βήμα — και τα δύο apps καλούν `MigrateAsync()` στο startup, οπότε η βάση δημιουργείται και γίνεται migrate αυτόματα με το πρώτο `dotnet run`. Αν προτιμάς να το κάνεις χειροκίνητα πριν την πρώτη εκτέλεση:
-
-```bash
-cd src/GymAppV3.Server
-dotnet ef database update --project ../GymAppV3.Infrastructure
-```
-
-### 5. Εκτέλεση της εφαρμογής
-
-Άνοιξε **δύο ξεχωριστά terminal**, καθώς τα δύο apps τρέχουν παράλληλα ως ξεχωριστές διεργασίες:
-
-**Terminal 1 — REST API (GymAppV3.Server):**
-
-```bash
-cd src/GymAppV3.Server
-dotnet run
-```
-
-Η κονσόλα θα δείξει το URL (π.χ. `https://localhost:5001` ή αντίστοιχο — δες `Properties/launchSettings.json` για το ακριβές port). Διαθέσιμα:
-- Swagger UI: `<url>/swagger`
-- Scalar UI: `<url>/scalar`
-- Auth: login μέσω `POST /api/auth/login`, μετά χρήση του JWT token στο κουμπί **Authorize** του Swagger/Scalar.
-
-**Terminal 2 — Razor Pages UI (GymWebApp):**
-
-```bash
-cd src/GymWebApp
-dotnet run
-```
-
-Τρέχει σε ξεχωριστό port (δες `Properties/launchSettings.json`). Το login/register γίνεται από τη δική του UI, με cookie auth και ρόλους Member/Trainer/Admin/TrainerAdmin.
-
-### 6. Login ως Admin
-
-Χρησιμοποίησε τα credentials που έβαλες στο `DefaultAdmin:Email` / `DefaultAdmin:Password` (π.χ. `admin@gymapp.com` / `Admin123!`) — δημιουργούνται/seed-άρονται αυτόματα στην πρώτη εκκίνηση, τόσο ο ρόλος Admin όσο και οι υπόλοιποι ρόλοι.
-
-### Εναλλακτικά — SQL Server μέσω Docker
-
-Αν προτιμάς να τρέξεις τη βάση σε container αντί για τοπική εγκατάσταση:
-
-```bash
-docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=YourStrong!Passw0rd" \
-  -p 1433:1433 --name gymappv3-sql -d mcr.microsoft.com/mssql/server:2022-latest
-```
-
-και προσάρμοσε το connection string σε:
-
-Server=localhost,1433;Database=GymAppV3;User Id=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True
-
-
-## Testing
+## Ποιότητα & Testing
 
 ```bash
 dotnet test
 ```
 
-Unit tests στο `GymAppV3.Tests` (EF Core InMemory provider). Επιπλέον, το REST API ελέγχθηκε με **Schemathesis** πάνω στο Swagger/OpenAPI schema για fuzz/contract testing, και υπάρχουν `.http` αρχεία που λειτουργούν σαν ζωντανό documentation σεναρίων χρήσης.
+- **64 unit tests** (xUnit, FluentAssertions) στο `test/GymAppV3.Tests`: κανόνες κρατήσεων και ακυρώσεων, συνδρομές και χωρητικότητα, πληρωμές, authorization (π.χ. ότι ένα μέλος δεν ενεργεί για άλλο μέλος), soft delete, συγκρούσεις στο πρόγραμμα, validators.
+- **Fuzz testing με [Schemathesis](https://schemathesis.io/):** property-based και stateful έλεγχος του API πάνω στο OpenAPI schema. Τελευταίο run: **6.107 test cases, 0 server errors**. Τα σφάλματα που βρήκαν τα προηγούμενα runs διορθώθηκαν.
+- Το `src/GymAppv3.Server/GymAppv3.Server.http` περιέχει έτοιμα requests για χειροκίνητη δοκιμή.
+- **Security:** rate limiting στο API (login 5/λεπτό, register 3/5 λεπτά, global ανά χρήστη/IP), account lockout και reCAPTCHA v3 στο UI, και ίδια απάντηση για λάθος κωδικό ή ανύπαρκτο email (χωρίς user enumeration).
 
-## API Documentation
+## Εγκατάσταση & Εκτέλεση
 
-- Swagger UI (Swashbuckle): `<GymAppV3.Server URL>/swagger`
-- Scalar (εναλλακτικό UI πάνω στο ίδιο OpenAPI schema): `<GymAppV3.Server URL>/scalar`
+### Προαπαιτούμενα
 
-## Ρόλοι & Δικαιώματα
+- [.NET 10 SDK](https://dotnet.microsoft.com/download)
+- SQL Server — το **LocalDB** έρχεται με το Visual Studio και αρκεί
+- (προαιρετικά) `dotnet tool install --global dotnet-ef`
 
-- **Member** — self-service: προφίλ, bookings, memberships
-- **Trainer** — διαχείριση των δικών του class sessions/bookings
-- **Admin / TrainerAdmin** — πλήρες CRUD σε Trainers, MembershipPackages, ClassCategories, Rooms, Buildings, Members
+### 1. Clone & build
 
-## Σημειώσεις
+```bash
+git clone https://github.com/pvangelatos/GymAppV3.git
+cd GymAppV3
+dotnet build
+```
 
-- Το `appsettings.json` περιέχει μόνο μη-ευαίσθητες ρυθμίσεις (business rules, logging). Ευαίσθητα στοιχεία πάνε πάντα μέσω `user-secrets` (dev) ή environment variables / secret manager (production).
-- Rate limiting ενεργό στα auth endpoints (login/register) και globally ανά χρήστη/IP.
+### 2. Βάση δεδομένων
 
-## Author
+Και τα δύο `appsettings.json` δείχνουν στο LocalDB (`(localdb)\MSSQLLocalDB`, βάση `GymAppV3`, Windows authentication). Αν χρησιμοποιείς άλλον SQL Server, κάνε override με user-secret **και στα δύο** projects:
 
-**Panagiotis Vangelatos**
+```bash
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost;Database=GymAppV3;Trusted_Connection=True;TrustServerCertificate=True"
+```
+
+Η βάση δημιουργείται και γίνεται migrate **αυτόματα** στην εκκίνηση: από το WebApp πάντα, από το API σε Development.
+
+### 3. Secrets
+
+Τα ευαίσθητα στοιχεία δεν είναι στο repository. Ρυθμίζονται με `dotnet user-secrets`.
+
+**API** (`src/GymAppv3.Server`):
+
+```bash
+cd src/GymAppv3.Server
+dotnet user-secrets set "Jwt:Key" "<τυχαίο κλειδί, τουλάχιστον 32 χαρακτήρες>"
+dotnet user-secrets set "Jwt:Issuer" "GymAppV3"
+dotnet user-secrets set "Jwt:Audience" "GymAppV3"
+dotnet user-secrets set "DefaultAdmin:Email" "admin@gymapp.com"
+dotnet user-secrets set "DefaultAdmin:Password" "Admin123!"
+```
+
+**UI** (`src/GymWebApp`):
+
+```bash
+cd ../GymWebApp
+dotnet user-secrets set "DefaultAdmin:Email" "admin@gymapp.com"
+dotnet user-secrets set "DefaultAdmin:Password" "Admin123!"
+dotnet user-secrets set "Recaptcha:SiteKey" "<site key>"
+dotnet user-secrets set "Recaptcha:SecretKey" "<secret key>"
+```
+
+Το login και το register του UI χρησιμοποιούν **reCAPTCHA v3**. Δημιούργησε δικά σου κλειδιά στο [Google reCAPTCHA admin](https://www.google.com/recaptcha/admin) (τύπος v3, domain `localhost`). Το site key που υπάρχει στο `appsettings.Development.json` λειτουργεί μόνο με το secret του συγγραφέα.
+
+Ο admin λογαριασμός και οι ρόλοι δημιουργούνται αυτόματα στην πρώτη εκκίνηση, από τα `DefaultAdmin:*`.
+
+### 4. Εκτέλεση
+
+Τα δύο apps τρέχουν παράλληλα, σε **δύο terminals**:
+
+```bash
+# Terminal 1 — REST API
+cd src/GymAppv3.Server
+dotnet run --launch-profile https
+```
+
+- Swagger: https://localhost:7108/swagger
+- Scalar: https://localhost:7108/scalar
+- Login με `POST /api/auth/login`, και μετά το token στο **Authorize**
+
+```bash
+# Terminal 2 — UI
+cd src/GymWebApp
+dotnet run --launch-profile https
+```
+
+- UI: https://localhost:7072
+
+Το Swagger και το Scalar είναι διαθέσιμα μόνο σε Development, που είναι το default του `dotnet run`.
+
+## Γνωστοί περιορισμοί & επόμενα βήματα
+
+- **Πληρωμές:** δεν υπάρχει payment gateway, ούτε ακόμα ροή επιβεβαίωσης για τις Pending πληρωμές.
+- **Tests:** τα unit tests τρέχουν σε EF Core InMemory, που δεν ελέγχει foreign keys, unique indexes ή case-insensitive collation. Αυτά καλύπτονται από χειροκίνητους ελέγχους και το Schemathesis. Επόμενο βήμα: integration tests με `WebApplicationFactory` και SQL Server (Testcontainers).
+- **Χωρητικότητα:** ο έλεγχος διαθεσιμότητας κατά την αγορά δεν κλειδώνει, οπότε δύο ταυτόχρονες αγορές της τελευταίας θέσης μπορούν να περάσουν και οι δύο.
+- **Rate limiting:** in-memory, για ένα instance. Σε πολλαπλά instances χρειάζεται κοινό store (π.χ. Redis).
+- **OpenAPI:** οι κανόνες του FluentValidation (π.χ. μέγιστα μήκη) δεν εμφανίζονται στο schema.
+- **Σχεδιάζονται:** λίστα αναμονής, ειδοποιήσεις μέσω email, παρουσιολόγιο, δεύτερο frontend σε Angular πάνω στο API.
+
+## Συγγραφέας
+
+**Παναγιώτης Βαγγελάτος**
 
 [![GitHub](https://img.shields.io/badge/GitHub-pvangelatos-181717?style=flat&logo=github&logoColor=white)](https://github.com/pvangelatos)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Panagiotis%20Vangelatos-0A66C2?style=flat&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/panagiotis-vangelatos-71003525a/)
 
----
-
-Αναπτύχθηκε από τον Παναγιώτη Βαγγελάτο ως τελικό project στο πλαίσιο της εκπαίδευσής του στο Coding Factory 10 — AUEB.
+Τελικό project στο πλαίσιο του Coding Factory 9 — AUEB.
