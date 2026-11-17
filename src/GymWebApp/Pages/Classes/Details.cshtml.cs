@@ -85,7 +85,7 @@ public class DetailsModel : PageModel
             TempData["SuccessMessage"] = "Class booked successfully!";
             return RedirectToPage("/Members/Bookings/Index");
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is BusinessRuleException or NotFoundException or ForbiddenException)
         {
             ErrorMessage = ex.Message;
             await OnGetAsync(id, cancellationToken);

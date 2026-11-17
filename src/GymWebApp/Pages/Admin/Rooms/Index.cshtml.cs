@@ -41,11 +41,11 @@ public class IndexModel : PageModel
     {
         try
         {
-            
+
             await _roomCommandService.DeleteAsync(Id, cancellationToken);
             TempData["SuccessMessage"] = "Room deleted successfully.";
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is BusinessRuleException or NotFoundException or ForbiddenException)
         {
             TempData["ErrorMessage"] = $"Failed to delete room: {ex.Message}";
         }

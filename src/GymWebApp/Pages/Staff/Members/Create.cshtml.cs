@@ -119,9 +119,9 @@ public class CreateModel : PageModel
             TempData["SuccessMessage"] = "Member created successfully!";
             return RedirectToPage("/Staff/Members/Index");
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is BusinessRuleException or NotFoundException or ForbiddenException)
         {
-            ModelState.AddModelError(string.Empty, $"An error occurred: {ex.Message}");
+            ModelState.AddModelError(string.Empty, ex.Message);
             return Page();
         }
     }

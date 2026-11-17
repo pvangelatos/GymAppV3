@@ -199,9 +199,9 @@ public class EditProfileModel : PageModel
             TempData["SuccessMessage"] = "Your profile has been updated successfully!";
             return RedirectToPage("/Members/Profile");
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is BusinessRuleException or NotFoundException or ForbiddenException)
         {
-            ModelState.AddModelError(string.Empty, $"An error occurred: {ex.Message}");
+            ModelState.AddModelError(string.Empty, ex.Message);
             return Page();
         }
     }
