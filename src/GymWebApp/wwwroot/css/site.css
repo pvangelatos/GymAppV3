@@ -678,7 +678,7 @@ select[multiple].form-select option:checked {
     color: var(--gym-text);
 }
 
-    .fh-brand span {
+    .fh-brand-accent {
         color: var(--gym-accent);
     }
 
@@ -902,3 +902,31 @@ select[multiple].form-select option:checked {
         flex-direction: row;
         gap: .5rem;
     }
+
+/* The footer was removed with the sidebar layout */
+body {
+    margin-bottom: 0;
+}
+
+/* _LoginPartial inside the sidebar footer: align "Hello" and "Logout" */
+.fh-sidebar-foot .navbar-nav {
+    gap: 2px;
+}
+
+.fh-sidebar-foot .nav-link,
+.fh-sidebar-foot .form-inline .btn.nav-link {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: .4rem .65rem;
+    border-radius: .5rem;
+    font-size: .85rem;
+}
+
+    .fh-sidebar-foot .nav-link:hover {
+        background: var(--gym-bg-hover);
+    }
+
+.fh-sidebar-foot .form-inline {
+    display: block;
+}
