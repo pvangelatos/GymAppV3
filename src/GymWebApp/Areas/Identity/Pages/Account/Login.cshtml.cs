@@ -84,7 +84,7 @@ public class LoginModel : PageModel
             }
 
             var result = await _signInManager.PasswordSignInAsync(
-            Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+                Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: true);
 
             if (result.Succeeded)
             {
@@ -92,10 +92,18 @@ public class LoginModel : PageModel
                 return LocalRedirect(returnUrl);
             }
 
+            if (result.IsLockedOut)
+            {
+                // Logged for staff, but the user sees the same generic message:
+                // a distinct "account locked" text would confirm that the email exists.
+                _logger.LogWarning("Login locked out for {Email}.", Input.Email);
+            }
+
             ModelState.AddModelError(string.Empty, "Invalid login attempt.");
             return Page();
         }
 
+        // Invalid form (e.g. empty email): show the validation errors.
         return Page();
     }
 }
