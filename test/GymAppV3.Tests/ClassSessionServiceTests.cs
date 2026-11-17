@@ -1,9 +1,11 @@
 ﻿using FluentAssertions;
+using GymAppV3.Core.Command;
 using GymAppV3.Core.Commands;
 using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.Models;
 using GymAppV3.Core.Queries.ClassSessions;
 using GymAppV3.Infrastructure.Services;
+using Microsoft.EntityFrameworkCore;
 
 
 namespace GymAppV3.Tests;
@@ -148,7 +150,7 @@ public class ClassSessionServiceTests : TestBase
     [Fact]
     public async Task ScheduleAsync_rejects_overlapping_session_in_same_room()
     {
-        var (trainerId, roomId, categoryId ) = await SeedTrainerAndRoom();
+        var (trainerId, roomId, categoryId) = await SeedTrainerAndRoom();
         var sut = CreateSut();
 
         // First session: tomorrow 09:00, 60 min → ends 10:00.
@@ -267,6 +269,60 @@ public class ClassSessionServiceTests : TestBase
             new GetUpcomingClassSessionsQuery(Now, Now.AddDays(91)));
 
         await act.Should().ThrowAsync<BusinessRuleException>();
+    }
+
+    // --- Recurring & duplicate week ---------------------------------------------
+
+    private static ScheduleRecurringClassSessionCommand RecurringRequest(
+        Guid trainerId, Guid roomId, Guid categoryId, DateTimeOffset startsAt, int weeks) =>
+        new("Morning Yoga", categoryId, startsAt, 60, 6, trainerId, roomId, weeks);
+
+    [Fact]
+    public async Task ScheduleRecurringAsync_NoConflicts_CreatesAllOccurrencesWithSharedGroup()
+    {
+        var (trainerId, roomId, categoryId) = await SeedTrainerAndRoom();
+        var sut = CreateSut();
+
+        var result = await sut.ScheduleRecurringAsync(
+            RecurringRequest(trainerId, roomId, categoryId, Now.AddDays(1), weeks: 4));
+
+        result.Should().HaveCount(4);
+        var sessions = await Context.ClassSessions.ToListAsync();
+        sessions.Select(s => s.RecurrenceGroupId).Distinct().Should().ContainSingle()
+            .Which.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task ScheduleRecurringAsync_ConflictInLaterWeek_ThrowsAndCreatesNothing()
+    {
+        var (trainerId, roomId, categoryId) = await SeedTrainerAndRoom();
+        var sut = CreateSut();
+
+        // Existing session on the 3rd occurrence (day 15).
+        await sut.ScheduleAsync(Request(trainerId, roomId, categoryId, startsAt: Now.AddDays(15)));
+
+        var act = () => sut.ScheduleRecurringAsync(
+            RecurringRequest(trainerId, roomId, categoryId, Now.AddDays(1), weeks: 4));
+
+        await act.Should().ThrowAsync<BusinessRuleException>();
+        (await Context.ClassSessions.CountAsync()).Should().Be(1);   // all-or-nothing
+    }
+
+    [Fact]
+    public async Task DuplicateWeekAsync_TargetWeekHasConflict_ThrowsAndCreatesNothing()
+    {
+        var (trainerId, roomId, categoryId) = await SeedTrainerAndRoom();
+        var sut = CreateSut();
+
+        // Source week: one session on day 1. Its copy lands on day 8, which is already taken.
+        await sut.ScheduleAsync(Request(trainerId, roomId, categoryId, startsAt: Now.AddDays(1)));
+        await sut.ScheduleAsync(Request(trainerId, roomId, categoryId, startsAt: Now.AddDays(8)));
+
+        var act = () => sut.DuplicateWeekAsync(
+            new DuplicateWeekCommand(Now, Now.AddDays(7), RepeatWeeks: 1));
+
+        await act.Should().ThrowAsync<BusinessRuleException>();
+        (await Context.ClassSessions.CountAsync()).Should().Be(2);
     }
 
 }
