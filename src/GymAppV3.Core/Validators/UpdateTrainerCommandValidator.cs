@@ -13,6 +13,7 @@ public class UpdateTrainerCommandValidator : AbstractValidator<UpdateTrainerComm
         RuleFor(x => x.Phone).MaximumLength(32);
         RuleFor(x => x.Bio).MaximumLength(2048);
         RuleFor(x => x.SpecialtyCategoryIds)
+            .Cascade(CascadeMode.Stop)                      // Must() below would throw on null
             .NotNull()
             .Must(ids => ids.All(id => id != Guid.Empty))
             .WithMessage("Specialty category IDs must not contain empty GUIDs.");

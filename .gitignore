@@ -482,3 +482,7 @@ $RECYCLE.BIN/
 *.swp
 
 **/.md
+
+# Schemathesis fuzzing artifacts
+.schemathesis/
+schemathesis-report/

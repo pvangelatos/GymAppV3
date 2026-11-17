@@ -1,7 +1,6 @@
 using GymAppv3.Server.Endpoints.Common;
 using GymAppV3.Core.Commands;
 using GymAppV3.Core.DTOs;
-using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace GymAppv3.Server.Endpoints.Membership;
 
@@ -15,10 +14,6 @@ public static class MembershipEndpoints
     {
         var group = app.MapGroup("/api/memberships")
             .WithTags("Memberships");
-
-        var memberMemberships = app.MapGroup("/api/members/{memberId:guid}/memberships")
-            .WithTags("Memberships")
-            .AddEndpointFilter<MemberScopedFilter>();
 
         group.MapPost("/", MembershipHandlers.PurchaseAsync)
             .WithName("PurchaseMembership")
