@@ -279,4 +279,39 @@ public class BookingServiceTests : TestBase
         m!.RemainingSessions.Should().Be(7);   // credit NOT returned (forfeited)
     }
 
+    [Fact]
+    public async Task CancelAsync_MoreThan24hAhead_RefundsChargedMembershipNotSoonestExpiring()
+    {
+        var category = await SeedCategory("Pilates");
+        var member = await SeedMember();
+        // A expires first but is empty, so the booking charges B.
+        var a = await SeedMembership(member.Id, category.Id, remaining: 0, end: Now.AddDays(10));
+        var b = await SeedMembership(member.Id, category.Id, remaining: 8, end: Now.AddDays(29));
+        var session = await SeedSession(category.Id, startsAt: Now.AddDays(2));
+        var sut = CreateSut();
+
+        var booking = await sut.BookAsync(new CreateBookingCommand(member.Id, session.Id));
+        await sut.CancelAsync(booking.Id);
+
+        (await Context.Memberships.FindAsync(b.Id))!.RemainingSessions.Should().Be(8);
+        (await Context.Memberships.FindAsync(a.Id))!.RemainingSessions.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task CancelAsync_SessionAlreadyStarted_ThrowsBusinessRule()
+    {
+        var category = await SeedCategory("Pilates");
+        var member = await SeedMember();
+        await SeedMembership(member.Id, category.Id);
+        var session = await SeedSession(category.Id, startsAt: Now.AddDays(2));
+
+        var booking = await CreateSut().BookAsync(new CreateBookingCommand(member.Id, session.Id));
+
+        // Same service, but the clock is now past the session start.
+        var later = new BookingService(Context, new FixedClock(Now.AddDays(3)), UserContext);
+        var act = () => later.CancelAsync(booking.Id);
+
+        await act.Should().ThrowAsync<BusinessRuleException>();
+    }
+
 }

@@ -12,7 +12,6 @@ using GymAppv3.Server.Endpoints.Payment;
 using GymAppv3.Server.Endpoints.Trainer;
 using GymAppV3.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi;
 using Microsoft.OpenApi.Models;
 using Scalar.AspNetCore;
 
@@ -59,18 +58,11 @@ if (app.Environment.IsDevelopment())
     using (var scope = app.Services.CreateScope())
     {
         var services = scope.ServiceProvider;
-        try
-        {
-            var context = services.GetRequiredService<ApplicationDbContext>();
-            // Apply any pending migrations and create database if it doesn't exist
-            await context.Database.MigrateAsync();
+        var context = services.GetRequiredService<ApplicationDbContext>();
 
-            Console.WriteLine("Database created and migrations applied successfully.");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"An error occurred creating the database: {ex.Message}");
-        }
+        // Fail fast: if the schema can't be migrated, the app must not start half-working.
+        await context.Database.MigrateAsync();
+        app.Logger.LogInformation("Database migrations applied.");
     }
 
     // Seed roles after database is ready

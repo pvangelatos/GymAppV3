@@ -8,16 +8,23 @@ public class Booking : AuditableEntity
     public Guid Id { get; set; } = Guid.NewGuid();
 
     // Reference to the member who made the booking
-    public Guid MemberId { get; set; } 
+    public Guid MemberId { get; set; }
 
     // Navigation property to the Member entity
     public required Member Member { get; set; }
 
     // Reference to the class session being booked
-    public Guid ClassSessionId { get; set; } 
+    public Guid ClassSessionId { get; set; }
 
     // Navigation property to the ClassSession entity
     public required ClassSession ClassSession { get; set; }
+
+    // The membership this booking was charged to. Nullable: bookings created
+    // before this column existed have no recorded membership.
+    public Guid? MembershipId { get; set; }
+
+    // Navigation property to the charged Membership
+    public Membership? Membership { get; set; }
 
     // Current status of the booking (e.g., Confirmed, Cancelled, Pending)
     public BookingStatus Status { get; set; } = BookingStatus.Confirmed;

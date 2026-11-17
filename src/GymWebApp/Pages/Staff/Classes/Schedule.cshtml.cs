@@ -1,5 +1,4 @@
 using GymAppV3.Core.Commands;
-using GymAppV3.Core.Common;
 using GymAppV3.Core.DTOs;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Queries.ClassCategories;
@@ -126,7 +125,7 @@ public class ScheduleModel : PageModel
                 : "Class session scheduled successfully!";
             return RedirectToPage("./Schedule");
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is BusinessRuleException or NotFoundException or ForbiddenException)
         {
             ModelState.AddModelError(string.Empty, ex.Message);
             await LoadDropdownsAsync(cancellationToken);

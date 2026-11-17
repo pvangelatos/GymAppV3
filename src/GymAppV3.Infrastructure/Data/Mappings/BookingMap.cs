@@ -49,6 +49,12 @@ public class BookingMap : IEntityTypeConfiguration<Booking>
             .HasForeignKey(x => x.ClassSessionId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // Relationship to the charged Membership - optional (legacy rows have none)
+        builder.HasOne(x => x.Membership)
+            .WithMany()
+            .HasForeignKey(x => x.MembershipId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // Unique index on MemberId and BookedAt to prevent duplicate bookings for the same member at the same time
         // Soft-deleted records (IsDeleted = true) are excluded from this index
         // to allow more efficient queries and live data integrity

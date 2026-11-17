@@ -44,6 +44,14 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                     case EntityState.Modified:
                         entry.Entity.UpdatedAt = now;
                         entry.Entity.UpdatedBy = userId;
+
+                        // Manual soft delete (IsDeleted flipped false -> true): stamp who and when.
+                        var isDeletedProp = entry.Property(e => e.IsDeleted);
+                        if (isDeletedProp.IsModified && !(bool)isDeletedProp.OriginalValue! && entry.Entity.IsDeleted)
+                        {
+                            entry.Entity.DeletedAt = now;
+                            entry.Entity.DeletedBy = userId;
+                        }
                         break;
 
                     case EntityState.Deleted:

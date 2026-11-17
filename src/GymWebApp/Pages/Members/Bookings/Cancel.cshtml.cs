@@ -33,7 +33,7 @@ public class CancelModel : PageModel
             TempData["SuccessMessage"] = "Booking cancelled successfully.";
             return RedirectToPage("/Members/Bookings/Index");
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is BusinessRuleException or NotFoundException or ForbiddenException)
         {
             TempData["ErrorMessage"] = $"Failed to cancel booking: {ex.Message}";
             return RedirectToPage("/Members/Bookings/Index");

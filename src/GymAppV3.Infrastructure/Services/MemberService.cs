@@ -167,30 +167,37 @@ public class MemberService : IMemberCommandService, IMemberQueryService
 
     public async Task DeleteAsync(DeleteMemberCommand command, CancellationToken cancellationToken = default)
     {
-        // Check permission before doing the expensive load.
         EnsureIsAdmin();
 
         var member = await _context.Members
             .Include(m => m.Memberships)
-            .Include(m => m.Bookings)
             .FirstOrDefaultAsync(m => m.Id == command.MemberId, cancellationToken)
             ?? throw new NotFoundException(nameof(Member), command.MemberId);
 
         var now = _clock.UtcNow;
 
-        // Cancel active bookings — booking history stays as Cancelled, not soft-deleted.
-        foreach (var booking in member.Bookings.Where(b => b.Status != BookingStatus.Cancelled))
+        // Only future confirmed bookings are cancelled; past ones stay as history.
+        var futureBookings = await _context.Bookings
+            .Include(b => b.ClassSession)
+            .Where(b => b.MemberId == member.Id
+                     && b.Status == BookingStatus.Confirmed
+                     && b.ClassSession.StartsAt > now)
+            .ToListAsync(cancellationToken);
+
+        foreach (var booking in futureBookings)
         {
             booking.Status = BookingStatus.Cancelled;
             booking.CancelledAt = now;
+            booking.ClassSession.AvailableSeats++;   // release the seat
         }
 
-        // Member + Memberships soft-delete via the interceptor. Payments stay untouched.
-        _context.Memberships.RemoveRange(member.Memberships);
-        _context.Members.Remove(member);
+        // Flag-based soft delete: Remove() would trip EF's required-FK check
+        // (Booking -> Member is Restrict) before the interceptor runs.
+        foreach (var membership in member.Memberships)
+            membership.IsDeleted = true;
+        member.IsDeleted = true;
 
-        // Payments are preserved (no changes)
-
+        // Payments are preserved for financial history.
         await _context.SaveChangesAsync(cancellationToken);
     }
 
@@ -234,14 +241,14 @@ public class MemberService : IMemberCommandService, IMemberQueryService
 
         var membersQuery = _context.Members.AsQueryable();
 
-        // Apply search filter
+        // DB collation is case-insensitive (CI), so no ToLower(): it would also block index use.
         if (!string.IsNullOrWhiteSpace(query.SearchTerm))
         {
-            var search = query.SearchTerm;
+            var search = query.SearchTerm.Trim();
             membersQuery = membersQuery.Where(m =>
-                m.Firstname.ToLower().Contains(search) ||
-                m.Lastname.ToLower().Contains(search) ||
-                m.Email.ToLower().Contains(search));
+                m.Firstname.Contains(search) ||
+                m.Lastname.Contains(search) ||
+                m.Email.Contains(search));
         }
 
         // Apply active membership filter
@@ -312,11 +319,11 @@ public class MemberService : IMemberCommandService, IMemberQueryService
 
         if (!string.IsNullOrWhiteSpace(query.SearchTerm))
         {
-            var search = query.SearchTerm.ToLower();
+            var search = query.SearchTerm.Trim();
             membersQuery = membersQuery.Where(m =>
-                m.Firstname.ToLower().Contains(search) ||
-                m.Lastname.ToLower().Contains(search) ||
-                m.Email.ToLower().Contains(search));
+                m.Firstname.Contains(search) ||
+                m.Lastname.Contains(search) ||
+                m.Email.Contains(search));
         }
 
         var raw = await membersQuery

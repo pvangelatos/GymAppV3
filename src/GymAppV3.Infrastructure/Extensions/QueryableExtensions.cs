@@ -1,6 +1,6 @@
 using GymAppV3.Core.Common;
-using Microsoft.EntityFrameworkCore;
 using GymAppV3.Core.Exceptions;
+using Microsoft.EntityFrameworkCore;
 
 namespace GymAppV3.Infrastructure.Extensions;
 
@@ -39,14 +39,17 @@ public static class QueryableExtensions
     /// <typeparam name="T">The type to contain in the result items.</typeparam>
     /// <param name="source">The source queryable collection.</param>
     /// <param name="page">The page number (1-based).</param>
-    /// <param name="size">The page size.</param>
+    /// <param name="size">The page size. Capped at <see cref="ListOptions.MaxSize"/>; 0 returns the count only.</param>
     /// <param name="cancellationToken">Propagates notification that operations should be canceled.</param>
     /// <returns>A paginated result set with items and total count.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when <paramref name="page"/> is not positive or too large, or <paramref name="size"/> is negative.
+    /// </exception>
     public static async Task<ResultSet<T>> ToResultSetAsync<T>(
-        this IQueryable<T> source,
-        int page,
-        int size,
-        CancellationToken cancellationToken = default)
+     this IQueryable<T> source,
+     int page,
+     int size,
+     CancellationToken cancellationToken = default)
     {
         if (page <= 0)
         {
@@ -58,7 +61,8 @@ public static class QueryableExtensions
             throw new ArgumentOutOfRangeException(nameof(size), "Must be a non-negative integer.");
         }
 
-        var index = page - 1;
+        // Callers that bypass ListOptions (e.g. passing page/size directly) are capped too.
+        size = Math.Min(size, ListOptions.MaxSize);
 
         // Size 0 means return count only, no items
         if (size == 0)
@@ -67,9 +71,16 @@ public static class QueryableExtensions
             return new ResultSet<T>(Array.Empty<T>(), count);
         }
 
+        // (page - 1) * size can overflow int for huge pages: compute in long first.
+        var skip = (long)(page - 1) * size;
+        if (skip > int.MaxValue)
+        {
+            throw new ArgumentOutOfRangeException(nameof(page), "Page is too large.");
+        }
+
         // Get items for current page
         var items = await source
-            .Skip(index * size)
+            .Skip((int)skip)
             .Take(size)
             .ToListAsync(cancellationToken);
 
@@ -77,7 +88,7 @@ public static class QueryableExtensions
         // we know we're on the last page
         var isLastPage = items.Count < size && items.Count > 0;
         var totalCount = isLastPage
-            ? (index * size) + items.Count
+            ? (int)skip + items.Count
             : await source.CountAsync(cancellationToken);
 
         return new ResultSet<T>(items, totalCount, size);

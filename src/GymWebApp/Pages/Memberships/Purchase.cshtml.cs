@@ -82,7 +82,7 @@ public class PurchaseModel : PageModel
             TempData["SuccessMessage"] = "Membership activated. Please complete the payment at the reception.";
             return RedirectToPage("/Members/Memberships/Index");
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is BusinessRuleException or NotFoundException or ForbiddenException)
         {
             ErrorMessage = ex.Message;
             await OnGetAsync(PackageId, cancellationToken);

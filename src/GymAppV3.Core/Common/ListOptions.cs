@@ -9,6 +9,11 @@ public class ListOptions
     private int _size = 50;
 
     /// <summary>
+    /// Upper bound for page size, to prevent unbounded result sets.
+    /// </summary>
+    public const int MaxSize = 200;
+
+    /// <summary>
     /// Gets or sets the page number (1-based). Defaults to 1.
     /// </summary>
     public int Page
@@ -18,12 +23,12 @@ public class ListOptions
     }
 
     /// <summary>
-    /// Gets or sets the page size. Defaults to 50. Set to 0 to return count only without items.
+    /// Gets or sets the page size. Defaults to 50, capped at MaxSize. Set to 0 to return count only without items.
     /// </summary>
     public int Size
     {
         get => _size;
-        set => _size = value >= 0 ? value : 50;
+        set => _size = value < 0 ? 50 : Math.Min(value, MaxSize);
     }
 
     /// <summary>
