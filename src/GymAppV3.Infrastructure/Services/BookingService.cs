@@ -1,5 +1,6 @@
 ﻿using GymAppV3.Core.Abstractions;
 using GymAppV3.Core.Commands;
+using GymAppV3.Core.Common;
 using GymAppV3.Core.DTOs;
 using GymAppV3.Core.Enums;
 using GymAppV3.Core.Exceptions;
@@ -8,9 +9,8 @@ using GymAppV3.Core.Models;
 using GymAppV3.Core.Queries.Bookings;
 using GymAppV3.Infrastructure.Data;
 using GymAppV3.Infrastructure.Extensions;
-using Microsoft.EntityFrameworkCore;
-using GymAppV3.Core.Common;
 using GymAppV3.Infrastructure.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace GymAppV3.Infrastructure.Services;
 
@@ -80,6 +80,7 @@ public class BookingService : IBookingCommandService, IBookingQueryService
             Member = member,
             ClassSessionId = session.Id,
             ClassSession = session,
+            MembershipId = membership.Id,
             Status = BookingStatus.Confirmed,
             BookedAt = now
         };
@@ -117,7 +118,10 @@ public class BookingService : IBookingCommandService, IBookingQueryService
 
         var session = booking.ClassSession;
 
-        // Mark the booking cancelled either way.
+        // A session that has started (or finished) can no longer be cancelled.
+        if (session.StartsAt <= now)
+            throw new BusinessRuleException("Cannot cancel a booking for a session that has already started.");
+
         booking.Status = BookingStatus.Cancelled;
         booking.CancelledAt = now;
 
@@ -126,15 +130,15 @@ public class BookingService : IBookingCommandService, IBookingQueryService
 
         // --- 24-Hour Policy Rule ---
         // Session credit is refunded ONLY if cancelled >= 24h ahead of class start time.
-        var hoursUntilStart = (session.StartsAt - now).TotalHours;
-        if (hoursUntilStart >= 24)
+        if ((session.StartsAt - now).TotalHours >= 24)
         {
-            // Find the membership this booking was charged from: same member, same
-            // category as the session. Return one credit to it.
-            var membership = await FindMembershipToRefund(
-                booking.MemberId, session.ClassCategoryId, cancellationToken);
+            // Refund the membership that was actually charged; legacy rows fall back to the old lookup.
+            var membership = booking.MembershipId is { } membershipId
+                ? await _context.Memberships.FirstOrDefaultAsync(m => m.Id == membershipId, cancellationToken)
+                : await FindMembershipToRefund(booking.MemberId, session.ClassCategoryId, cancellationToken);
 
-            if (membership is not null)
+            // No refund to an expired or inactive membership.
+            if (membership is { Status: MembershipStatus.Active } && membership.EndDate >= now)
                 membership.RemainingSessions++;
         }
 
@@ -155,7 +159,7 @@ public class BookingService : IBookingCommandService, IBookingQueryService
 
         // If OnlyActive is true, filter to only confirmed bookings for future sessions
         if (query.OnlyActive)
-        {   
+        {
             var now = _clock.UtcNow;
             q = q.Where(b => b.Status == BookingStatus.Confirmed
                           && b.ClassSession.StartsAt > now);

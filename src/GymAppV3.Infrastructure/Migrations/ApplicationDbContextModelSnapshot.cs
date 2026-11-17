@@ -55,6 +55,9 @@ namespace GymAppV3.Infrastructure.Migrations
                     b.Property<Guid>("MemberId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("MembershipId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(32)
@@ -72,6 +75,8 @@ namespace GymAppV3.Infrastructure.Migrations
 
                     b.HasIndex("IsDeleted")
                         .HasFilter("[IsDeleted] = 0");
+
+                    b.HasIndex("MembershipId");
 
                     b.HasIndex("MemberId", "BookedAt")
                         .HasDatabaseName("IX_Bookings_MemberId_BookedAt")
@@ -895,9 +900,16 @@ namespace GymAppV3.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("GymAppV3.Core.Models.Membership", "Membership")
+                        .WithMany()
+                        .HasForeignKey("MembershipId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("ClassSession");
 
                     b.Navigation("Member");
+
+                    b.Navigation("Membership");
                 });
 
             modelBuilder.Entity("GymAppV3.Core.Models.ClassRoom", b =>
