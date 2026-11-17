@@ -241,14 +241,14 @@ public class MemberService : IMemberCommandService, IMemberQueryService
 
         var membersQuery = _context.Members.AsQueryable();
 
-        // Apply search filter
+        // DB collation is case-insensitive (CI), so no ToLower(): it would also block index use.
         if (!string.IsNullOrWhiteSpace(query.SearchTerm))
         {
-            var search = query.SearchTerm;
+            var search = query.SearchTerm.Trim();
             membersQuery = membersQuery.Where(m =>
-                m.Firstname.ToLower().Contains(search) ||
-                m.Lastname.ToLower().Contains(search) ||
-                m.Email.ToLower().Contains(search));
+                m.Firstname.Contains(search) ||
+                m.Lastname.Contains(search) ||
+                m.Email.Contains(search));
         }
 
         // Apply active membership filter
@@ -319,11 +319,11 @@ public class MemberService : IMemberCommandService, IMemberQueryService
 
         if (!string.IsNullOrWhiteSpace(query.SearchTerm))
         {
-            var search = query.SearchTerm.ToLower();
+            var search = query.SearchTerm.Trim();
             membersQuery = membersQuery.Where(m =>
-                m.Firstname.ToLower().Contains(search) ||
-                m.Lastname.ToLower().Contains(search) ||
-                m.Email.ToLower().Contains(search));
+                m.Firstname.Contains(search) ||
+                m.Lastname.Contains(search) ||
+                m.Email.Contains(search));
         }
 
         var raw = await membersQuery
