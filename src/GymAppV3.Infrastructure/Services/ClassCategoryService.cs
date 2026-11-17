@@ -21,6 +21,10 @@ public class ClassCategoryService : IClassCategoryCommandService, IClassCategory
     }
     public async Task<ClassCategoryDto> CreateAsync(CreateClassCategoryCommand request, CancellationToken cancellationToken = default)
     {
+        // Friendly check; the filtered unique index is the real guarantee (see GlobalExceptionHandler).
+        if (await _context.ClassCategories.AnyAsync(c => c.Name == request.Name, cancellationToken))
+            throw new BusinessRuleException($"A class category named '{request.Name}' already exists.");
+
         var category = new ClassCategory { Name = request.Name };
 
         _context.ClassCategories.Add(category);
@@ -68,6 +72,10 @@ public class ClassCategoryService : IClassCategoryCommandService, IClassCategory
         var category = await _context.ClassCategories
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken) ??
             throw new NotFoundException(nameof(ClassCategory), id);
+
+        // Another category (not this one) already uses the name?
+        if (await _context.ClassCategories.AnyAsync(c => c.Id != id && c.Name == request.Name, cancellationToken))
+            throw new BusinessRuleException($"A class category named '{request.Name}' already exists.");
 
         category.Name = request.Name;
         await _context.SaveChangesAsync(cancellationToken);
