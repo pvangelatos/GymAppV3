@@ -33,6 +33,11 @@ public class GlobalExceptionHandler : IExceptionHandler
             DbUpdateConcurrencyException => (StatusCodes.Status409Conflict,
                 "The resource was changed by another request. Please retry."),
 
+            // Safety net for DB constraints (unique index, FK) that a service pre-check missed,
+            // e.g. two concurrent requests creating the same name.
+            DbUpdateException => (StatusCodes.Status409Conflict,
+                "The request conflicts with existing data."),
+
             // Client sent something we could not parse or bind.
             BadHttpRequestException or JsonException or FormatException =>
                 (StatusCodes.Status400BadRequest, "Malformed request"),

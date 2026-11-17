@@ -63,6 +63,18 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                         entry.Entity.DeletedBy = userId;
                         entry.Entity.UpdatedAt = now;
                         entry.Entity.UpdatedBy = userId;
+
+                        // Owned types (e.g. Address) are cascade-deleted with their owner. They share the
+                        // owner's table, so leaving them Deleted makes EF write NULLs into those columns.
+                        foreach (var reference in entry.References)
+                        {
+                            if (reference.TargetEntry is { State: EntityState.Deleted } owned
+                                && owned.Metadata.IsOwned())
+                            {
+                                owned.State = EntityState.Unchanged;
+                            }
+                        }
+
                         break;
                 }
             }

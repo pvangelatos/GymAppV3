@@ -1,11 +1,8 @@
 ﻿using FluentValidation;
-using GymAppV3.Core.Abstractions;
 using GymAppV3.Infrastructure.Data;
 using GymAppV3.Infrastructure.Data.Interceptors;
 using GymAppV3.Infrastructure.DependencyInjection;
 using GymAppV3.Infrastructure.Handlers;
-using GymAppV3.Infrastructure.Identity;
-using GymAppV3.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 
@@ -40,6 +37,10 @@ public static class ApplicationConfiguration
 
         // All FluentValidation default messages switches to Greek.
         ValidatorOptions.Global.LanguageManager.Culture = new CultureInfo("el-GR");
+
+        // Within one RuleFor chain, stop at the first failure (e.g. NotNull before Must),
+        // so later rules never run against null. Other properties are still validated.
+        ValidatorOptions.Global.DefaultRuleLevelCascadeMode = CascadeMode.Stop;
 
         // Scan both Core (for command validators) and Server (for wire-request validators).
         builder.Services.AddValidatorsFromAssemblies(new[]
