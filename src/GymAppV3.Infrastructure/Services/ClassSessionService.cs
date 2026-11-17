@@ -7,6 +7,7 @@ using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Models;
 using GymAppV3.Core.Queries.ClassSessions;
 using GymAppV3.Infrastructure.Data;
+using GymAppV3.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace GymAppV3.Infrastructure.Services;
@@ -15,14 +16,17 @@ public class ClassSessionService : IClassSessionCommandService, IClassSessionQue
 {
     private readonly ApplicationDbContext _context;
     private readonly IDateTimeProvider _clock;
+    private readonly IUserContext _userContext;
     private const int MaxRangeDays = 90; // The maximum range in days for fetching upcoming sessions.
     private static readonly TimeSpan DefaultWindow = TimeSpan.FromDays(7);  // Default window for upcoming sessions if no range is specified.
 
-    public ClassSessionService(ApplicationDbContext context, IDateTimeProvider clock)
+    public ClassSessionService(ApplicationDbContext context, IDateTimeProvider clock, IUserContext userContext)
     {
         _context = context;
         _clock = clock;
+        _userContext = userContext;
     }
+
     public async Task<ClassSessionDto?> GetClassSessionByIdAsync(GetClassSessionByIdQuery query, CancellationToken cancellationToken = default)
     {
         return await _context.ClassSessions
@@ -55,14 +59,15 @@ public class ClassSessionService : IClassSessionCommandService, IClassSessionQue
 
     public async Task<ClassSessionDto> ScheduleAsync(ScheduleClassSessionCommand request, CancellationToken cancellationToken = default)
     {
+        _userContext.EnsureIsStaff();
+
         // --- Business Rule: Future scheduling validation ---
         if (request.StartsAt <= _clock.UtcNow)
             throw new BusinessRuleException("A session cannot be scheduled in the past.");
 
         // --- Business Rule: Trainer existence check ---
         // Global query filters automatically exclude soft-deleted trainers
-        var trainer = await _context.Trainers
-            .FirstOrDefaultAsync(t => t.Id == request.TrainerId, cancellationToken) ??
+        if (!await _context.Trainers.AnyAsync(t => t.Id == request.TrainerId, cancellationToken))
             throw new NotFoundException(nameof(Trainer), request.TrainerId);
 
         // --- Business Rule: Room existence & physical capacity check ---
@@ -75,27 +80,26 @@ public class ClassSessionService : IClassSessionCommandService, IClassSessionQue
                 $"Session capacity ({request.Capacity}) exceeds room capacity ({room.Capacity}).");
 
         // --- Business Rule: Category existence check ---
-        var category = await _context.ClassCategories
-            .FirstOrDefaultAsync(c => c.Id == request.ClassCategoryId, cancellationToken)
-            ?? throw new NotFoundException(nameof(ClassCategory), request.ClassCategoryId);
+        if (!await _context.ClassCategories.AnyAsync(c => c.Id == request.ClassCategoryId, cancellationToken))
+            throw new NotFoundException(nameof(ClassCategory), request.ClassCategoryId);
 
         // --- Business Rule: Room schedule overlap check ---
         var newStart = request.StartsAt;
         var newEnd = request.StartsAt.AddMinutes(request.DurationInMinutes);
 
-        var hasRoomSessionsConficts = await _context.ClassSessions
+        var hasRoomConfict = await _context.ClassSessions
             .Where(s => s.ClassRoomId == request.ClassRoomId && s.StartsAt < newEnd && s.EndsAt > newStart)
             .AnyAsync(cancellationToken);
 
-        if (hasRoomSessionsConficts)
+        if (hasRoomConfict)
             throw new BusinessRuleException("The room is already booked for an overlapping time slot.");
 
         // --- Business Rule: Trainer schedule overlap check ---
-        var hasTrainerSessionsConflicts = await _context.ClassSessions
+        var hasTrainerConflict = await _context.ClassSessions
             .Where(s => s.TrainerId == request.TrainerId && s.StartsAt < newEnd && s.EndsAt > newStart)
             .AnyAsync(cancellationToken);
 
-        if (hasTrainerSessionsConflicts)
+        if (hasTrainerConflict)
             throw new BusinessRuleException("The trainer already has a session scheduled for an overlapping time slot.");
 
         // --- Construct entity ---
@@ -122,6 +126,8 @@ public class ClassSessionService : IClassSessionCommandService, IClassSessionQue
 
     public async Task<IReadOnlyList<ClassSessionDto>> ScheduleRecurringAsync(ScheduleRecurringClassSessionCommand request, CancellationToken cancellationToken = default)
     {
+        _userContext.EnsureIsStaff();
+
         if (request.RepeatWeeks < 1 || request.RepeatWeeks > 52)
             throw new BusinessRuleException("The number of repeat weeks must be between 1 and 52.");
 
@@ -189,6 +195,8 @@ public class ClassSessionService : IClassSessionCommandService, IClassSessionQue
 
     public async Task<IReadOnlyList<ClassSessionDto>> DuplicateWeekAsync(DuplicateWeekCommand request, CancellationToken cancellationToken = default)
     {
+        _userContext.EnsureIsStaff();
+
         if (request.RepeatWeeks < 1 || request.RepeatWeeks > 52)
             throw new BusinessRuleException("The number of weeks must be between 1 and 52.");
 

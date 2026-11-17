@@ -4,6 +4,7 @@ using GymAppV3.Core.Commands;
 using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.Models;
 using GymAppV3.Core.Queries.ClassSessions;
+using GymAppV3.Infrastructure.Identity;
 using GymAppV3.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,8 +17,12 @@ public class ClassSessionServiceTests : TestBase
     // injected clock, so tests are not affected by the real wall-clock time.
     private static readonly DateTimeOffset Now = new(2026, 1, 15, 10, 0, 0, TimeSpan.Zero);
 
-    private ClassSessionService CreateSut() =>
-        new(Context, new FixedClock(Now));
+    private ClassSessionService CreateSut()
+    {
+        // Scheduling is staff-only; tests that need another role override it after creating the SUT.
+        UserContext.As("staff1", RoleConstants.Trainer);
+        return new(Context, new FixedClock(Now), UserContext);
+    }
 
     // Seeds a trainer and a room (capacity 8) and returns their ids, since every
     // schedule call needs both to exist.
@@ -325,4 +330,15 @@ public class ClassSessionServiceTests : TestBase
         (await Context.ClassSessions.CountAsync()).Should().Be(2);
     }
 
+    [Fact]
+    public async Task ScheduleAsync_CallerIsMember_ThrowsForbidden()
+    {
+        var (trainerId, roomId, categoryId) = await SeedTrainerAndRoom();
+        var sut = CreateSut();
+        UserContext.As("m1", RoleConstants.Member);
+
+        var act = () => sut.ScheduleAsync(Request(trainerId, roomId, categoryId));
+
+        await act.Should().ThrowAsync<ForbiddenException>();
+    }
 }
