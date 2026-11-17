@@ -91,7 +91,7 @@ public class ScheduleModel : PageModel
             title = $"{s.Title} ({s.TrainerName} · {s.ClassRoomName})",
             start = s.StartsAt.ToString("o"),
             end = s.StartsAt.AddMinutes(s.DurationInMinutes).ToString("o"),
-            color = s.AvailableSeats > 5 ? "#8FB577" : s.AvailableSeats > 0 ? "#D9A54B" : "#B85450"
+            classNames = new[] { s.AvailableSeats > 5 ? "gym-ev-open" : s.AvailableSeats > 0 ? "gym-ev-few" : "gym-ev-full" }
         });
 
         return new JsonResult(events);

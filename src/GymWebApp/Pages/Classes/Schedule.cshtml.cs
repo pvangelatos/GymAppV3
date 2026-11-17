@@ -1,14 +1,10 @@
-using GymAppV3.Core.Common;
 using GymAppV3.Core.DTOs;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Queries.ClassCategories;
-using GymAppV3.Core.Queries.ClassRooms;
 using GymAppV3.Core.Queries.ClassSessions;
-using GymAppV3.Core.Queries.Trainers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace GymWebApp.Pages.Classes;
 
@@ -76,7 +72,7 @@ public class ScheduleModel : PageModel
             title = s.Title,
             start = s.StartsAt.ToString("o"),
             end = s.StartsAt.AddMinutes(s.DurationInMinutes).ToString("o"),
-            color = s.AvailableSeats > 5 ? "#8FB577" : s.AvailableSeats > 0 ? "#D9A54B" : "#B85450",
+            classNames = new[] { s.AvailableSeats > 5 ? "gym-ev-open" : s.AvailableSeats > 0 ? "gym-ev-few" : "gym-ev-full" },
             url = Url.Page("/Classes/Details", new { id = s.Id })
         });
 

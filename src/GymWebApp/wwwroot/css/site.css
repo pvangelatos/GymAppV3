@@ -518,3 +518,154 @@ select[multiple].form-select option:checked {
 .gym-section-title:first-of-type {
     margin-top: 8px;
 }
+
+/* ===== FullCalendar — Athens Marble theme ===== */
+/* FullCalendar v6 is themed through CSS variables; scoping them to .fc
+   overrides the library's :root defaults (e.g. the white header). */
+.fc {
+    --fc-page-bg-color: var(--gym-bg);
+    --fc-neutral-bg-color: var(--gym-bg-elevated);
+    --fc-neutral-text-color: var(--gym-text-muted);
+    --fc-border-color: var(--gym-border);
+    --fc-today-bg-color: rgba(197, 209, 78, 0.04);
+    --fc-now-indicator-color: var(--gym-danger);
+    --fc-highlight-color: var(--gym-accent-focus);
+    --fc-button-text-color: var(--gym-text);
+    --fc-button-bg-color: var(--gym-bg-elevated);
+    --fc-button-border-color: var(--gym-border-strong);
+    --fc-button-hover-bg-color: var(--gym-bg-hover);
+    --fc-button-hover-border-color: var(--gym-border-strong);
+    --fc-button-active-bg-color: var(--gym-accent);
+    --fc-button-active-border-color: var(--gym-accent);
+    font-size: 14px;
+}
+
+    /* Toolbar */
+    .fc .fc-toolbar-title {
+        font-family: var(--gym-font-display);
+        font-size: 1.4rem;
+        font-weight: 500;
+    }
+
+    .fc .fc-button {
+        font-size: 13px;
+        font-weight: 500;
+        box-shadow: none !important;
+    }
+
+    .fc .fc-button-primary:not(:disabled).fc-button-active,
+    .fc .fc-button-primary:not(:disabled):active {
+        color: var(--gym-on-accent);
+    }
+
+    /* Day headers: quiet labels, today in accent */
+    .fc .fc-col-header-cell {
+        background: var(--gym-bg-elevated);
+        padding: 10px 0;
+    }
+
+    .fc .fc-col-header-cell-cushion {
+        color: var(--gym-text-muted);
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        text-decoration: none;
+    }
+
+    .fc .fc-day-today .fc-col-header-cell-cushion {
+        color: var(--gym-accent);
+    }
+
+    /* Time axis: only hour lines, tabular digits */
+    .fc .fc-timegrid-slot {
+        height: 3.2em;
+    }
+
+    .fc .fc-timegrid-slot-minor {
+        border-top-style: none;
+    }
+
+    .fc .fc-timegrid-slot-label-cushion {
+        color: var(--gym-text-muted);
+        font-size: 12px;
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* Events: dark tinted card + coloured stripe = readable text, colour still carries meaning */
+    .fc .fc-timegrid-event,
+    .fc .fc-daygrid-event {
+        border: none;
+        border-left: 3px solid;
+        border-radius: 6px;
+        padding: 4px 6px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+    }
+
+    .fc .fc-event-main {
+        color: var(--gym-text);
+    }
+
+    .fc .fc-event-time {
+        font-size: 11px;
+        opacity: 0.75;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .fc .fc-event-title {
+        font-size: 12.5px;
+        font-weight: 600;
+        line-height: 1.25;
+    }
+
+    .fc .fc-event:hover {
+        filter: brightness(1.2);
+        cursor: pointer;
+    }
+
+    .fc .gym-ev-open {
+        background: #262C1F;
+        border-left-color: var(--gym-success);
+    }
+
+    .fc .gym-ev-few {
+        background: #332917;
+        border-left-color: var(--gym-warning);
+    }
+
+    .fc .gym-ev-full {
+        background: #311C1A;
+        border-left-color: var(--gym-danger);
+    }
+
+/* Legend under the calendar */
+.gym-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    font-size: 12px;
+    color: var(--gym-text-muted);
+    margin-top: 10px;
+}
+
+    .gym-legend span::before {
+        content: "";
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 2px;
+        margin-right: 6px;
+        vertical-align: -1px;
+    }
+
+    .gym-legend .open::before {
+        background: var(--gym-success);
+    }
+
+    .gym-legend .few::before {
+        background: var(--gym-warning);
+    }
+
+    .gym-legend .full::before {
+        background: var(--gym-danger);
+    }
