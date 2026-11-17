@@ -1,0 +1,73 @@
+﻿@{
+    // Current Razor Page path, e.g. "/Staff/Members/Details"
+    var current = ViewContext.RouteData.Values["page"] as string ?? "";
+
+    var isAdmin = User.IsInRole(RoleConstants.Admin) || User.IsInRole(RoleConstants.TrainerAdmin);
+    var isStaff = isAdmin || User.IsInRole(RoleConstants.Trainer);
+    var isMember = User.IsInRole(RoleConstants.Member);
+
+    var groups = new List<(string Title, (string Page, string Label, string Icon)[] Items)>();
+
+    if (isMember)
+        groups.Add(("Ο λογαριασμός μου", new[] {
+            ("/Members/Dashboard", "Αρχική", "bi-grid-1x2"),
+            ("/Classes/Schedule", "Πρόγραμμα", "bi-calendar3"),
+            ("/Members/Bookings/Index", "Κρατήσεις", "bi-calendar-check"),
+            ("/Members/Memberships/Index", "Συνδρομές", "bi-card-checklist"),
+            ("/Memberships/Packages", "Πακέτα", "bi-bag"),
+            ("/Members/Profile", "Προφίλ", "bi-person") }));
+
+    if (isStaff)
+        groups.Add(("Προσωπικό", new[] {
+            ("/Staff/Members/Index", "Μέλη", "bi-people"),
+            ("/Staff/Classes/Index", "Κρατήσεις μαθημάτων", "bi-calendar-week"),
+            ("/Staff/Classes/Schedule", "Προγραμματισμός", "bi-calendar-plus"),
+            ("/Staff/Bookings/Index", "Λίστα κρατήσεων", "bi-journal-check"),
+            ("/Staff/Memberships/Capacity", "Χωρητικότητα", "bi-graph-up") }));
+
+    if (isAdmin)
+        groups.Add(("Διαχείριση", new[] {
+            ("/Admin/Trainers/Index", "Εκπαιδευτές", "bi-person-badge"),
+            ("/Admin/MembershipPackages/Index", "Πακέτα συνδρομών", "bi-gem"),
+            ("/Admin/ClassCategories/Index", "Κατηγορίες", "bi-tags"),
+            ("/Admin/Buildings/Index", "Κτίρια", "bi-building"),
+            ("/Admin/Rooms/Index", "Αίθουσες", "bi-door-open"),
+            ("/Admin/Reports/Finance", "Οικονομικά", "bi-bar-chart-line") }));
+
+    // A link is active on its own page, or (for ".../Index" links) on sibling pages such as
+    // Details/Edit — unless another link matches the current page exactly.
+    var exactMatch = groups.SelectMany(g => g.Items).Any(i => i.Page == current);
+    bool IsActive(string page) =>
+        page == current
+        || (!exactMatch && page.EndsWith("/Index") && current.StartsWith(page[..^"Index".Length]));
+}
+<aside class="fh-sidebar" id="fhSidebar" aria-label="Κύριο μενού">
+    <div class="fh-sidebar-head">
+        <a class="fh-brand text-decoration-none" asp-area="" asp-page="/Index">
+            <span class="fh-hide-collapsed">Fit<span class="fh-brand-accent">Hub</span></span>
+            <span class="fh-show-collapsed fh-brand-accent">F</span>
+        </a>
+    </div>
+    <nav class="fh-nav">
+        @foreach (var group in groups)
+        {
+            <div class="fh-nav-group">@group.Title</div>
+            @foreach (var item in group.Items)
+            {
+                var active = IsActive(item.Page);
+                <a class="fh-nav-link @(active ? "active" : "")" asp-area="" asp-page="@item.Page"
+                   aria-current="@(active ? "page" : null)"
+                   data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="@item.Label">
+                    <i class="bi @item.Icon" aria-hidden="true"></i>
+                    <span class="fh-hide-collapsed">@item.Label</span>
+                </a>
+            }
+        }
+    </nav>
+    <div class="fh-sidebar-foot fh-hide-collapsed">
+        <partial name="_LoginPartial" />
+    </div>
+    <button type="button" class="fh-collapse-btn d-none d-md-flex" data-fh-toggle="collapse" aria-expanded="true">
+        <i class="bi bi-chevron-double-left" aria-hidden="true"></i><span class="fh-hide-collapsed">Σύμπτυξη</span>
+    </button>
+</aside>

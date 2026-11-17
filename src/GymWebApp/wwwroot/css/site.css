@@ -669,3 +669,264 @@ select[multiple].form-select option:checked {
     .gym-legend .full::before {
         background: var(--gym-danger);
     }
+
+/* ===== App shell (sidebar layout) ===== */
+.fh-brand {
+    font-family: var(--gym-font-display);
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--gym-text);
+}
+
+    .fh-brand-accent {
+        color: var(--gym-accent);
+    }
+
+.fh-shell {
+    display: flex;
+    min-height: 100vh;
+}
+
+.fh-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.fh-content {
+    padding: 2rem;
+    max-width: 1400px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.fh-sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    width: 15rem;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    background: #131210;
+    border-right: 1px solid var(--gym-border);
+    transition: width .2s ease;
+}
+
+.fh-sidebar-head {
+    height: 3.5rem;
+    display: flex;
+    align-items: center;
+    padding: 0 1rem;
+}
+
+.fh-nav {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 .5rem 1rem;
+}
+
+.fh-nav-group {
+    font-size: .62rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--gym-text-muted);
+    padding: .9rem .5rem .3rem;
+}
+
+.fh-nav-link {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .5rem .65rem;
+    border-radius: .5rem;
+    color: var(--gym-text);
+    text-decoration: none;
+    font-size: .9rem;
+}
+
+    .fh-nav-link i {
+        font-size: 1rem;
+        width: 1.1rem;
+        text-align: center;
+    }
+
+    .fh-nav-link:hover {
+        background: var(--gym-bg-hover);
+        color: var(--gym-text);
+    }
+
+    .fh-nav-link.active {
+        background: var(--gym-bg-hover);
+        color: var(--gym-accent);
+    }
+
+        .fh-nav-link.active::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            width: 2px;
+            height: 1.2rem;
+            border-radius: 2px;
+            background: var(--gym-accent);
+        }
+
+.fh-sidebar-foot {
+    border-top: 1px solid var(--gym-border);
+    padding: .5rem;
+    font-size: .85rem;
+}
+
+.fh-collapse-btn {
+    margin: .5rem;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    padding: .5rem;
+    font-size: .75rem;
+    background: none;
+    color: var(--gym-text-muted);
+    border: 1px solid var(--gym-border);
+    border-radius: .5rem;
+}
+
+    .fh-collapse-btn:hover {
+        background: var(--gym-bg-hover);
+        color: var(--gym-text);
+    }
+
+.fh-show-collapsed {
+    display: none;
+}
+
+.fh-icon-btn {
+    color: var(--gym-text);
+    padding: .25rem .4rem;
+}
+
+    .fh-icon-btn:hover {
+        background: var(--gym-bg-hover);
+        color: var(--gym-text);
+    }
+
+/* Collapsed — desktop only, so the mobile drawer always shows labels */
+@media (min-width: 768px) {
+    .fh-collapsed .fh-sidebar {
+        width: 4rem;
+    }
+
+    .fh-collapsed .fh-hide-collapsed {
+        display: none;
+    }
+
+    .fh-collapsed .fh-show-collapsed {
+        display: inline;
+    }
+
+    .fh-collapsed .fh-sidebar-head,
+    .fh-collapsed .fh-nav-link {
+        justify-content: center;
+    }
+
+    .fh-collapsed .fh-nav-group {
+        font-size: 0;
+        height: 1px;
+        margin: .6rem .75rem;
+        padding: 0;
+        background: var(--gym-border);
+    }
+
+    .fh-collapsed .fh-collapse-btn i {
+        transform: rotate(180deg);
+    }
+}
+
+/* Mobile: off-canvas drawer */
+.fh-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    height: 3.5rem;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: 0 1rem;
+    background: rgba(15, 14, 12, .9);
+    border-bottom: 1px solid var(--gym-border);
+    backdrop-filter: blur(8px);
+}
+
+.fh-backdrop {
+    display: none;
+}
+
+@media (max-width: 767.98px) {
+    .fh-content {
+        padding: 1rem;
+    }
+
+    .fh-sidebar {
+        position: fixed;
+        z-index: 40;
+        left: 0;
+        transform: translateX(-100%);
+        transition: transform .2s ease;
+    }
+
+    .fh-shell.is-mobile-open .fh-sidebar {
+        transform: none;
+    }
+
+    .fh-shell.is-mobile-open .fh-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 30;
+        background: rgba(0, 0, 0, .6);
+    }
+}
+
+/* Public pages (not signed in) */
+.fh-public-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 3.5rem;
+    padding: 0 1.5rem;
+    border-bottom: 1px solid var(--gym-border);
+}
+
+    .fh-public-bar .navbar-nav {
+        flex-direction: row;
+        gap: .5rem;
+    }
+
+/* The footer was removed with the sidebar layout */
+body {
+    margin-bottom: 0;
+}
+
+/* _LoginPartial inside the sidebar footer: align "Hello" and "Logout" */
+.fh-sidebar-foot .navbar-nav {
+    gap: 2px;
+}
+
+.fh-sidebar-foot .nav-link,
+.fh-sidebar-foot .form-inline .btn.nav-link {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: .4rem .65rem;
+    border-radius: .5rem;
+    font-size: .85rem;
+}
+
+    .fh-sidebar-foot .nav-link:hover {
+        background: var(--gym-bg-hover);
+    }
+
+.fh-sidebar-foot .form-inline {
+    display: block;
+}
