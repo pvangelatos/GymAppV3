@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System.Reflection;
 using System.Security.Claims;
 using System.Threading.RateLimiting;
 
@@ -12,6 +11,9 @@ public static class RateLimitingConfiguration
 
     public static void ConfigureRateLimiting(this WebApplicationBuilder builder)
     {
+        // Configurable so load/fuzz tests can raise it without code changes. Defaults to 60/min.
+        var globalPermitPerMinute = builder.Configuration.GetValue("RateLimiting:GlobalPermitPerMinute", 60);
+
         builder.Services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -34,7 +36,7 @@ public static class RateLimitingConfiguration
                     Title = "Too Many Requests",
                     Status = StatusCodes.Status429TooManyRequests,
                     Detail = "You have exceeded the allowed number of requests. Please try again later.",
-                    Type = "https://tools.ietf.org/html/rfv6585#section-4"
+                    Type = "https://tools.ietf.org/html/rfc6585#section-4"
                 }, cancellationToken);
             };
 
@@ -71,7 +73,7 @@ public static class RateLimitingConfiguration
                     partitionKey: GetIdentityOrIpPartitionKey(context),
                     _ => new SlidingWindowRateLimiterOptions
                     {
-                        PermitLimit = 60,
+                        PermitLimit = globalPermitPerMinute,
                         Window = TimeSpan.FromMinutes(1),
                         SegmentsPerWindow = 6,
                         QueueLimit = 0
