@@ -10,8 +10,6 @@
     };
 }
 
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
-
 <div class="row">
     <div class="col-md-12">
         <h1>@ViewData["Title"]</h1>
@@ -68,6 +66,11 @@
 
 <div id="calendarView" style="display: none;">
     <div id="scheduleCalendar"></div>
+    <div class="gym-legend">
+        <span class="open">Διαθέσιμες θέσεις</span>
+        <span class="few">Λίγες θέσεις (1–5)</span>
+        <span class="full">Πλήρες</span>
+</div>
 </div>
 
 <!-- Class Sessions List -->
@@ -145,14 +148,11 @@
         const calendarEl = document.getElementById('scheduleCalendar');
 
         const calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'timeGridWeek',
-        locale: 'el',
-        titleFormat: { day: 'numeric', month: 'long', year: 'numeric' },
-        dayHeaderFormat: { weekday: 'short', day: 'numeric', month: 'numeric' },
-        headerToolbar: {
-        left: 'prev,next today',
-        center: 'title',
-        right: 'timeGridWeek,dayGridMonth'
+            ...gymCalendarDefaults,
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'timeGridWeek,dayGridMonth'
         },
         events: {
         url: '?handler=Events',
@@ -201,5 +201,7 @@
         });
         });
     </script>
-}
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+    <script src="~/js/gym-calendar.js" asp-append-version="true"></script>
+
 }

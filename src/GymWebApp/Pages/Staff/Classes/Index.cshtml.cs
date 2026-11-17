@@ -1,6 +1,5 @@
 using GymAppV3.Core.Command;
 using GymAppV3.Core.Commands;
-using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Queries.ClassSessions;
 using GymAppV3.Core.Queries.Members;
@@ -23,7 +22,7 @@ public class IndexModel : PageModel
         IClassSessionQueryService classSessionQueryService,
         IMemberQueryService memberQueryService,
         IBookingCommandService bookingCommandService,
-        IClassSessionCommandService classSessionCommandService  )
+        IClassSessionCommandService classSessionCommandService)
     {
         _classSessionQueryService = classSessionQueryService;
         _memberQueryService = memberQueryService;
@@ -48,7 +47,7 @@ public class IndexModel : PageModel
             title = $"{s.ClassCategoryName} · {s.TrainerName} ({s.AvailableSeats}/{s.Capacity})",
             start = s.StartsAt.ToString("o"),
             end = s.StartsAt.AddMinutes(s.DurationInMinutes).ToString("o"),
-            color = s.AvailableSeats > 5 ? "#8FB577" : s.AvailableSeats > 0 ? "#D9A54B" : "#B85450",
+            classNames = new[] { s.AvailableSeats > 5 ? "gym-ev-open" : s.AvailableSeats > 0 ? "gym-ev-few" : "gym-ev-full" },
             extendedProps = new
             {
                 classCategoryId = s.ClassCategoryId,
