@@ -1,11 +1,11 @@
-﻿using GymAppV3.Core.Exceptions;
+﻿using GymAppV3.Core.Commands;
 using GymAppV3.Core.DTOs;
+using GymAppV3.Core.Exceptions;
 using GymAppV3.Core.Interfaces;
 using GymAppV3.Core.Models;
 using GymAppV3.Core.Queries.GymBuildings;
 using GymAppV3.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
-using GymAppV3.Core.Commands;
 
 namespace GymAppV3.Infrastructure.Services;
 
@@ -91,6 +91,13 @@ public class GymBuildingService : IGymBuildingCommandService, IGymBuildingQueryS
         var building = await _context.GymBuildings
             .FirstOrDefaultAsync(b => b.Id == id, cancellationToken)
             ?? throw new NotFoundException(nameof(GymBuilding), id);
+
+        // Same rule as ClassRoom -> ClassSession: remove the children first.
+        var hasRooms = await _context.ClassRooms
+            .AnyAsync(r => r.GymBuildingId == id, cancellationToken);
+
+        if (hasRooms)
+            throw new BusinessRuleException("Cannot delete a building that still has class rooms.");
 
         _context.GymBuildings.Remove(building);
         await _context.SaveChangesAsync(cancellationToken);
