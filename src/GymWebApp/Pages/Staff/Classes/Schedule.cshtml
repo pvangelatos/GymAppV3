@@ -115,6 +115,7 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+    <script src="~/js/gym-calendar.js" asp-append-version="true"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
         const calendarEl = document.getElementById('scheduleCalendar');
@@ -123,10 +124,8 @@
         const startsAtInput = document.getElementById('Input_StartsAt');
 
         const calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'timeGridWeek',
+        ...gymCalendarDefaults,
         selectable: true,
-        titleFormat: { day: 'numeric', month: 'long', year: 'numeric' },
-        dayHeaderFormat: { weekday: 'short', day: 'numeric', month: 'numeric' },
         headerToolbar: {
         left: 'prev,next today',
         center: 'title',

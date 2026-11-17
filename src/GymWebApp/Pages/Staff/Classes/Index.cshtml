@@ -80,6 +80,7 @@
 
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+    <script src="~/js/gym-calendar.js" asp-append-version="true"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
         const calendarEl = document.getElementById('classesCalendar');
@@ -95,10 +96,7 @@
         let searchDebounce = null;
 
         const calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'timeGridWeek',
-        locale: 'el',
-        titleFormat: { day: 'numeric', month: 'long', year: 'numeric' },
-        dayHeaderFormat: { weekday: 'short', day: 'numeric', month: 'numeric' },
+        ...gymCalendarDefaults,
         headerToolbar: { left: 'prev,next today', center: 'title', right: 'timeGridWeek' },
         events: { url: '?handler=Events', method: 'GET' },
         eventClick: function (info) {

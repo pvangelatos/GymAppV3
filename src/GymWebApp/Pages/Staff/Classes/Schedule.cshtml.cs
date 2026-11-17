@@ -146,7 +146,7 @@ public class ScheduleModel : PageModel
 
         Categories = new SelectList(categories, nameof(ClassCategoryDto.Id), nameof(ClassCategoryDto.Name));
 
-        // ✅ FIX: TrainerDto has no "Name" — project to anonymous type first
+        // TrainerDto has separate first/last names; the dropdown needs a single display name.
         var trainerItems = trainers.Items.Select(t => new
         {
             t.Id,
